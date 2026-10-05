@@ -107,6 +107,51 @@ Keep only dictionary words that actually occur in a corpus (aho-corasick):
 ./target/release/hashcracker mine --dict data/names.txt --corpus some.bin ...
 ```
 
+## Context-driven generation (preferred over cartesian sweeps)
+
+Blind sweeps burn GPU time on candidate spaces of 1e12+. The shipped Lua is the
+naming authority for the game, so constrain candidates with it instead —
+millions of candidates, seconds of runtime, and hits the cartesian scripts miss
+entirely (4-token clips like `axe_move_walk_left_back`, extension-less Lua
+paths, unit/material names referenced as Lua strings).
+
+```bash
+./context_sweep.sh 4            # merge -> rebuild targets -> regenerate -> crack
+```
+
+| tool | what it generates |
+| --- | --- |
+| `build_targets.py` | `data/vocab/targets_<type>.txt` + `unresolved_targets.txt` |
+| `derive_cands.py` | Lua file paths, all Lua string literals, known dir x Lua leaf |
+| `lua_ability_cands.py` | `ability_selection` keys (bare Lua identifiers) x anim shapes |
+| `targeted_anim.py` | edit-distance-1 of each unit's own clips + cross-unit transfer |
+
+### Two traps this tooling exists to avoid
+
+1. **Never measure "unresolved" against the overlay.** The catalogue
+   (`bundle_manifest/04_bundle_resources.csv`) resolves names from
+   `hash_database.json` (142k entries) *plus* both overlays. A target file built
+   as "hash absent from `resource_name_overlay.json`" overstates the unknown set
+   by thousands of entries, and a stale target file silently reports
+   `new matches: 0`. Targets = *rows whose catalogue `name` column is empty*
+   (`build_targets.py` does exactly this).
+2. **Table keys, not just string literals.** Ability names, quilt pieces and
+   status effects are bare Lua identifiers — invisible to string mining. Mine
+   `^\t+key\s*=` inside the relevant tables as well.
+
+`merge_matches.py` folds `matches.tsv` into the overlay, then re-run
+`list_game_bundles.py --only resources` (in `GauntletGameDigging/`) to refresh
+`03_bundle_resources.txt` + `04_bundle_resources.csv` with the new names.
+
+### What the Lua gave up
+
+| family | result |
+| --- | --- |
+| `lua` | every `*.lua` path minus the extension resolves the whole family |
+| `material` / `unit` | Lua string literals (paths referenced by tables) |
+| `animation` | edit-distance-1 from a unit's own clips (`_backward`, `_enter/_exit/_init`) + cross-unit clip transfer + ability-table keys |
+| leftovers | `texture`, `shader_library`, `particles`, `level` are not path-like; they need family-specific generators |
+
 ## Results
 
 All hits accumulate in **`matches.tsv`** (append + dedup). To fold them into the

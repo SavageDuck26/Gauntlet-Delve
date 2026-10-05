@@ -3742,3 +3742,55 @@ NEXT STEPS (untested):
 
 
 
+================================================================================
+17.15 THE LUA IS THE NAMING AUTHORITY (and why the sweeps looked slow)
+================================================================================
+  THE AUDIT THAT CHANGED THE METHOD: "unresolved" had been measured against
+  resource_name_overlay.json, but list_game_bundles.py resolves the catalogue's
+  `name` column from hash_database.json (142,060 entries) PLUS both overlays.
+  Regenerating the catalogue with the pre-session overlay reproduces 7,289
+  unnamed rows; with the session's overlay, 7,259.  Of the 1,628 hash->name
+  pairs added this session, 1,602 were already in hash_database.json with the
+  identical string, so only 26 pairs (~30 catalogue rows) were new to the
+  catalogue.  The overlay-based target lists had been overstating the unknown
+  set by thousands of entries - which is why sweeps "found nothing" while
+  burning tera-candidates.
+
+  => Targets must be *rows whose catalogue name column is empty*
+     (hashcracker/build_targets.py), never "hash absent from the overlay".
+
+  WHAT THE LUA GAVE UP (millions of candidates, seconds each):
+
+    lua            every `*.lua` path minus the extension == the resource name.
+                   927/927 rows.  (foundation/lua/component/component_manager)
+    material 399   Lua string literals, referenced verbatim
+    unit     326   (props/d01_caves/caves_cobweb_floor_01, lights/light,
+                    modules/d01_crypt/resources, decals/footstep_sand,
+                    resource_packages/d01_caves)
+    package   21
+    level/texture/shading_environment/mouse_cursor  12
+    animation  13   edit-distance-1 from the unit's OWN clips
+                    (dash_backward, move_backward, ability_floor_bash_{init,exit},
+                     ability_spawner_buff_{enter,exit}) + cross-unit transfer
+                    (dormant_underground x3) + ability_selection keys
+                    (ability_lay_eggs, fireball, idle)
+
+  THE ANIMATION SHAPE, CORRECTED: clips are up to 4-5 tokens
+  (axe_move_walk_left_back).  The earlier generators stopped at 3 tokens and the
+  `mutate` pattern REPLACES tokens but never INSERTS one, so every
+  `<a>_<b>_<c>_<d>` clip and every `x_<direction>` insertion was unreachable.
+  Edit-distance-1 (insert/replace/delete) over each unit's own clip set plus
+  cross-unit transfer covers them for ~3M candidates per pass.
+
+  WHERE THE 2,589 REMAINING UNIQUE UNNAMED HASHES LIVE (catalogue, 2026-10-05):
+      texture 732 | shader_library 538 | animation 415 | material 383 |
+      particles 335 | level 233 | unit 219 | shader 49 | timpani_bank 37
+  None of these are file-path shaped any more, so each needs its own generator:
+  `effects/<unit>_<verb>` for particles, `<dir>/<leaf>{,_locked,_norm,...}` for
+  textures, flat identifiers for shader_library (mine the shader bundles).
+
+  ARTEFACTS: bundle_manifest/03_bundle_resources.txt and
+  04_bundle_resources.csv regenerated with every name found so far
+  (12,741 / 20,000 rows named).
+
+
