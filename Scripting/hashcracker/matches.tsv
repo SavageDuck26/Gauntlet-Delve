@@ -1381,3 +1381,7 @@ f76990ad0cbf1ed9	blocks/d01_crypt/walls/cryptsmooth_wall_door_01_4c
 11a93cab529864d2	effects/wep_wizard_sinister_orb_trail
 7006ac8f61ba4227	effects/wep_wizard_sinister_orb_explode
 3ec16a2eb82bba55	modules/d01_caves/quilts/encounters/caves_quilt_largeroom__xox_xex_xix_xex__02
+d21a195b54cae282	gameobjects/keys/small_illum
+513fca2af9191fe6	equipment/elf/weapon01_illum
+d6d11264a10e8dbc	characters/gib_generic/eye_illum
+a24b06fa19132b5a	gameobjects/gold/chest_illum

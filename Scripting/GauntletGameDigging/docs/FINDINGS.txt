@@ -3550,4 +3550,47 @@ NEXT STEPS (untested):
   vocabulary (a bigger token corpus, a DCC export, a leaked asset list) can be
   tested with one `%d/%clip` sweep and would land ~1,200 names at once.
 
+================================================================================
+17.10 foundation/scripts/ — THE AUTHORITATIVE SOURCE-TYPE MAP
+================================================================================
+  Every resource family is produced by a build script that scans a SOURCE file
+  extension and writes the resource name as `clean_filepath(file, root)` (path
+  minus every trailing extension, `\`->`/`). Absolutes are built as
+  `root .. path .. "." .. type` (dependency_resource.lua), which is why the
+  hash never sees an extension.
+
+  Complete list of source extensions referenced by foundation/scripts:
+      .unit        units            (generate_unit_paths / unit_lookup / unit_data_lookup)
+      .level       levels           (generate_level_lookup / level_info / level_package)
+      .lua         lua + units      (dependency_parser)
+      .flow        flows            (dependency_parser)
+      .texture     textures         (texture_sanity_checks)
+      .material    materials        (validate_materials_texture_resources)
+      .state_machine  state machines + animation EVENTS
+                                      (generate_animation_events_lookup)
+      .physics     physics          (unit_sanity_checks, nav_grid)
+      .level_editor / .bsi / .package / .override_settings
+      .shader_source  shader libraries (generate_shader_libraries)
+      .wav -> .ugg  elias voice lines  (generate_elias)
+      .shading_environment
+
+  **THERE IS NO ANIMATION SOURCE EXTENSION.** The clip names live inside the
+  per-unit `.state_machine` (and `.unit`) SJSON sources:
+  generate_animation_events_lookup.lua reads `sjson.events` out of
+  `*.state_machine` files. Those sources are NOT shipped (only `.lua` is in
+  Gauntlet-Source-DO_NOT_EDIT), which is the definitive reason the animation
+  leaf names cannot be recovered from any shipped text — it confirms §17.9
+  empirically rather than by elimination.
+
+  Bonus vocabulary extracted here:
+      - validate_materials_texture_resources.lua holds the engine's 20 material
+        sampler/slot names (diffuse_map, normal_map, material_map, specular_map,
+        emissive_map, ambient_occlusion_map, subsurface_scattering_map,
+        detail_*, blend_*, outline_map, projection_map, ..., self_illum_map).
+        Turned into 146 extra texture-suffix candidates -> +4 names.
+      - nav-grid types (walkable, blocker, floor_border, sandpile, ...) and
+        generate_surface_effects/tracer_effects packages (which just collect
+        `effect.particle` strings already present in lua/settings).
+
+
 
