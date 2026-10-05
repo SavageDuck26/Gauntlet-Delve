@@ -1531,3 +1531,5 @@ ef9e7dd9f74c864f	effects/textures/alpha_key_small
 87b6038b368f8c04	menu/lobby/info_box_background
 683ecfd5704bf62a	blocks/d01_crypt/walls/crypt_wall_4c
 9a37cddba0589573	blocks/d01_lava/lavastruct_set_c
+f9dbe41e5ef20d06	flow/status_effect_poisoned
+05a4eb47947d4ef7	flow/status_effect_slowed
