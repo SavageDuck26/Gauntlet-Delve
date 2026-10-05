@@ -56,6 +56,7 @@ CRACK OPTIONS
   --exclude <file>    hashes to skip (e.g. already-solved), same format
   --list <X=file>     word list for slot letter X (repeatable), e.g. n=names.txt
   --pattern <pat>     template with %X slots (repeatable); %% = literal %
+  --candidates <file> extra plain candidate strings to test (one per line)
   --threads <n>       worker threads (default: all cores)
   --matches <file>    append matches as TSV here, live + de-duplicated across
                       runs (default: matches.tsv); format: <hash-hex><TAB><name>
@@ -222,8 +223,8 @@ fn crack(argv: &[String]) -> Result<()> {
     let args = Args::parse(argv)?;
     let targets_path = args.one("targets").ok_or_else(|| anyhow!("--targets required"))?;
     let patterns = args.all("pattern");
-    if patterns.is_empty() {
-        return Err(anyhow!("at least one --pattern required"));
+    if patterns.is_empty() && args.one("candidates").is_none() {
+        return Err(anyhow!("need at least one --pattern or --candidates"));
     }
     let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
     let limit: u64 = args.one_or("limit", "0").parse().unwrap_or(0);
@@ -274,6 +275,22 @@ fn crack(argv: &[String]) -> Result<()> {
             new_hits.fetch_add(1, Ordering::Relaxed);
         }
     };
+
+    // Optional: a plain list of candidate strings to test (no pattern needed).
+    if let Some(cf) = args.one("candidates") {
+        let cands = read_lines(&cf)?;
+        println!("candidates   : {} strings  ({cf})", cands.len());
+        let t0 = std::time::Instant::now();
+        pool.install(|| {
+            cands.par_iter().for_each(|c| {
+                let h = murmur::hash_bytes(c);
+                if tset.contains(h) {
+                    record(h, c);
+                }
+            });
+        });
+        println!("candidates   : done in {:.1}s", t0.elapsed().as_secs_f64());
+    }
 
     let mut grand: u64 = 0;
     for (pi, pat) in compiled.iter().enumerate() {
@@ -391,17 +408,25 @@ fn mutate(argv: &[String]) -> Result<()> {
                     record(h, cand);
                 }
             };
-            // 1. suffix swap / strip
-            if !suffixes.is_empty() {
-                let mut base = leaf.clone();
-                for sfx in &suffixes {
-                    if sfx.len() > 1 && base.ends_with(sfx.as_str()) {
-                        base.truncate(base.len() - sfx.len());
-                        break;
-                    }
+            // strip one known suffix -> stem
+            let mut base = leaf.clone();
+            for sfx in &suffixes {
+                if sfx.len() > 1 && base.ends_with(sfx.as_str()) {
+                    base.truncate(base.len() - sfx.len());
+                    break;
                 }
+            }
+            // 1. suffix swap (material parent -> its map variants, etc.)
+            for sfx in &suffixes {
+                emit(&format!("{dir}{base}{sfx}"));
+            }
+            // 3. append / prepend a token (+ optional suffix)
+            //    e.g. characters/x/x  ->  characters/x/x_diff, characters/x/x_heart_diff
+            for t in &tokens {
+                emit(&format!("{dir}{base}_{t}"));
+                emit(&format!("{dir}{t}_{base}"));
                 for sfx in &suffixes {
-                    emit(&format!("{dir}{base}{sfx}"));
+                    emit(&format!("{dir}{base}_{t}{sfx}"));
                 }
             }
             // 2. token edits
