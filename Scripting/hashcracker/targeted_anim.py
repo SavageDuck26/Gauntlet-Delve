@@ -58,6 +58,9 @@ def main():
             global_toks.update(n.rsplit("/", 1)[1].split("_"))
     vocab = [t for t, _ in global_toks.most_common()]
     free = vocab[: args.max_third]
+    # every clip leaf we already know anywhere (for cross-unit transfer)
+    all_leaves = sorted({n.rsplit("/", 1)[1] for n in ov.values()
+                         if "/animations/" in n or "/animation/" in n})
 
     # modifiers that appear all over the clip corpus
     MODS = ("left right back front up down in out forward backward start end begin stop "
@@ -105,6 +108,15 @@ def main():
                     emit([p, a])
                     for c in toks[:40]:
                         emit([p, a, c])
+
+        # cross-unit transfer: another unit's clip, optionally re-prefixed with
+        # one of this unit's own prefixes (warrior axe_move_* <-> wizard staff_*)
+        for leaf in all_leaves:
+            emit(leaf.split("_"))
+            tl = leaf.split("_")
+            if len(tl) > 1:
+                for p in prefixes[:6]:
+                    emit([p] + tl[1:])
         per_dir[unit_dir] = len(left)
 
     Path(args.out).write_text("\n".join(sorted(out)) + "\n")
