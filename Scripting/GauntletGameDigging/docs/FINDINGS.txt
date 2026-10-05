@@ -3658,6 +3658,49 @@ NEXT STEPS (untested):
   So the names contain a word that appears in NO shipped text (lua, bundle
   bodies, localization, exe/dll) — same class of blocker as animations.
 
+================================================================================
+17.13 AUDIO COMPLETELY SOLVED (ugg 144/144, xml themes 13/13)
+================================================================================
+  THE MISS THAT HID IT: scan_bundle_strings.py filtered candidates with
+  `^[a-z0-9][a-z0-9_./-]{3,110}$`, so every string starting with a quote was
+  dropped.  SJSON/XML files store paths QUOTED, so all of them were discarded —
+  bundle_strings.txt contains literally zero strings containing a `"`.
+  Re-scanning for `"([a-zA-Z0-9_][a-zA-Z0-9_/.-]{3,120})"` immediately exposed
+  the music data.
+
+  WHAT THE XML REVEALED: `elias_theme` resources are XML music definitions:
+
+      <theme mode="objective" tempo="150" bars="75" ...>
+        <audio_loop_track name="Loop Track 1" id="1">
+          <key name="C"><trigger value="1" filename="audio/1_0_1.wav"/></key>
+        </audio_loop_track>
+        <audio_stinger_track name="Game Over" id="2">
+          <key name="C"><stinger value="1" filename="audio/2_0_1.wav"/></key>
+        </audio_stinger_track>
+
+  i.e. the elias audio files are named with NUMERIC tuplets (`1_0_1`) or words
+  (`gameover`, `stinger`, `completed`, `intro`).
+
+  THE SCHEME (all three families):
+
+      ugg            <melody>/audio/<track>          e.g.
+                     elias/cave_adventure/audio/1_0_1
+                     elias/cave_boss/audio/completed
+                     elias/cave_boss/audio/cave_boss      (track == melody)
+      xml (theme)    <melody>/<melody>               e.g. elias/hubroom/hubroom
+      timpani_bank   audio/<bank>                    e.g. audio/enemy_gator,
+                     audio/heroes_wizard, audio/music
+      melody         one of the 13 `resource_packages/elias/<melody>` bundles:
+                     {cave,crypt,lava}_{adventure,arena,boss,labyrinth}+hubroom
+
+  RESULT: ugg 144/144 and the 13 elias themes 13/13.  Candidate generation was
+  pure enumeration (numeric tuplets 1-4 parts + word tracks + the melody name),
+  tested with `crack --candidates` — no guessing left once the shape was known.
+
+  Still open in audio: 37 timpani_bank (`audio/<enemy|heroes|x>_<something>`;
+  audio/enemy_gator was the one easy find).
+
+
 
 
 
