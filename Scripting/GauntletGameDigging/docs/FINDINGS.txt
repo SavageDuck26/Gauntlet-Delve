@@ -3351,3 +3351,122 @@ NEXT STEPS (untested):
   - Reusable build script: OBJ/GLB + PNG -> installed bundle in one command.
   - All-3-slot material remap (norm/spec custom textures) — single-slot proven.
   - Proper DXT encoder for production textures (hand-rolled one is blocky).
+
+================================================================================
+17. RESOURCE / BUNDLE NAME RECOVERY (MurmurHash64A)
+================================================================================
+
+17.1 THE HASH
+  - Every bundle filename, resource name and package path is
+    MurmurHash64A(path, seed = 0) over the ASCII bytes of the LOWERCASE path
+    (64-bit lanes, little-endian). Confirmed bit-for-bit against the game for
+    bundle names, resolved resources and texture references.
+  - Names carry NO extension: the build tool strips every trailing extension
+    (foundation/scripts/common.lua clean_filepath():
+    `filename,count = string_gsub(filename, "%.%w+$", "")` repeated until
+    count == 0) and normalises `\` -> `/`.
+  - The TOC only stores hashes, so a name is recovered either from a text
+    source (Lua / ini / embedded binary strings) or by brute force.
+
+17.2 NAME SOURCES - THE generate_*.lua SCRIPTS ARE THE MAP
+  foundation/scripts/generate_*.lua run at build time to auto-generate name
+  lists. Each one documents how a resource family is named:
+
+  generate_shader_libraries.lua
+      scans `<source>/**/*.shader_source`; name = clean_filepath(file, root);
+      sorts the list; rewrites the block between `// <SHADER_LIBRARIES>` and
+      `// </SHADER_LIBRARIES>` inside the *render_config* resource as
+      `shader_libraries = { ... }`.
+      => shader_library_group names are PATHS (`core/rendering/<group>`);
+         leaf shader_library names are BARE basenames (`fxaa`, `terrain`,
+         `debug_gbuffer`, `beckmann_distribution_lut`, `omni_light_debug_lights`).
+      => group basename == the matching leaf library name for many entries
+         (`core/rendering/fxaa` <-> `fxaa`).
+
+  generate_elias.lua
+      for every melody dir (`resource_packages/elias/<name>`) transcodes
+      `<melody>/audio/*.wav` -> `.ogg` -> renamed `.ugg`, then writes
+      `<melody>.package` (SJSON) listing every ugg path.
+      => ugg resource name = `<melody_dir>/audio/<source-wav-name>` (the `.ugg`
+         is stripped). The source .wav file names are NOT shipped and are not
+         referenced anywhere in Lua, which is why ugg (144) stays unresolved.
+      => confirms ugg = Ogg voice lines (`resource_packages/elias/*_adventure`,
+         `*_labyrinth`, `*_arena`).
+
+  Other generators (mine them as vocabulary, they are name tables):
+      generate_animation_events_lookup.lua (animation_event names),
+      generate_unit_paths / unit_lookup / unit_data_lookup /
+      unit_path_to_components (unit paths),
+      generate_short_file_paths_lookup / file_lookup / project_path,
+      generate_level_package / resource_package / slayer_resource_packages,
+      layout lookup (lua/dungeon/layouts/lookup.lua -> quilt/arena paths),
+      settings/vo_triggers.lua (voice-over trigger list).
+
+  The render_config resource itself (bundle 1a9c33dcd0301dfd, 27,412 B) embeds
+  the full `shader_libraries` array AND the shading-graph node names as plain
+  ASCII: a machine-readable vocabulary of render words.
+
+17.3 A NEW LEVER - SCAN RESOURCE BODIES FOR EMBEDDED STRINGS
+  scan_bundle_strings.py walks every bundle, parses the resource table, and
+  harvests printable ASCII runs from every resource body (173,664 distinct
+  plausible strings). Some bodies reference names in text.
+  - 42 strings were themselves unsolved resource names, e.g.
+      shader_library_group: core/rendering/{additive,base_dx11,base_voxelizer,
+        canvas,color_grading,debug_gbuffer,distort_access,fog,
+        framebuffer_distort,fxaa,light_bake,mixer,multilayer,player_marker,
+        terrain}
+      shader_library: fxaa, color_grading, linearize_depth, global_lighting,
+        ao_cone_trace, shadow_cutter, omni_light(_debug_lights),
+        gbuffer_debug, downscale_depth, ssao_upscale, dof_near_coc,
+        beckmann_distribution_lut, terrain_undergrowth, terrain_editor_brush,
+        framebuffer_distort, debug_render_voxels, debug_gbuffer, terrain
+      texture: core/rendering/nft, core/rendering/vo_rotation
+      unit:    blocks/d01_crypt/walls/crypt_wall_door_01_4c
+      material: characters/boss_mummy/boss_mummy_hole
+  - The dump also doubles as a ~109 k-word candidate/vocabulary list, which is
+    what finally pushed shader_library_group over the line (the group list in
+    render_config plus the basename rule).
+
+17.4 TOOLCHAIN - Scripting/hashcracker (Rust)
+  Multithreaded MurmurHash64A brute-forcer (rayon, offline cargo build,
+  -C target-cpu=native), ~200-260 M candidates/s on 12 cores.
+    prepare.py    -> data/{targets,dirs,names,prefixes,suffixes}.txt
+    crack         -> template expansion; `%X` slots bound with --list X=FILE.
+                     IMPORTANT: a slot letter is LOCKED, so `%a_%a` repeats one
+                     word; use `%a_%b` for a cross product.
+    --candidates  -> test a plain candidate list (used for the string dump)
+    --matches F   -> append-only, deduped TSV `<hash-hex><TAB><name>` (streamed)
+    --exclude F   -> skip solved hashes
+    mutate        -> byte-level mutation to fixpoint (~10x faster than v1)
+    mine          -> aho-corasick dictionary pruning
+  Results feed Scripting/GauntletGameDigging/resource_name_overlay.json via
+  merge_matches.py; list_game_bundles.py then regenerates bundle_manifest/*.
+
+17.5 COVERAGE (resource-name overlay)
+  1,509 names recovered. Unresolved: ~12,258 occurrences / ~4,470 unique hashes.
+    texture 1492/4771   material 1872/4050   particles 632/2476
+    animation 7/2276    unit 1458/1828       shader_library 104/1538
+    level 379/719       shader 42/237        flow 21/159   ugg 0/144
+  (lua 952/952 and bones 367/367 are 100 %; apb 98/98, state_machine 107/111.)
+
+17.6 WHY THE REMAINDER RESISTS
+  Every family we have checked derives its name from a SOURCE FILE that is not
+  shipped and is not referenced in any readable text:
+    - shader_library (leaf): the `.shader_source` filenames.
+    - ugg: the audio `.wav` filenames.
+    - animation (1,243 unique): the clip names come from the binary `.unit` /
+      animation blobs; the 217 `animation = "x"` Lua clip names give 0 hits in
+      every shape tried (`<dir>/<clip>`, `animations/<clip>`, bare `<clip>`).
+    - texture / material: names live in binary material/level payloads; the
+      material->texture graph, global dir x token x suffix sweeps and mutation
+      to fixpoint are exhausted.
+  Brute force only helps where a name is a *recombination* of words that DO
+  appear in text (which is what cracked the shader groups, quilts, levels,
+  equipment, decals, map suffixes, etc.).
+
+17.7 NEXT
+  - Per-unit clip tables (parse the .unit payload) for the animation family.
+  - `.shader_source` name inference from technique/pass names embedded in the
+    DXBC blobs (today only uniform names survive as text).
+  - Fold the harvested word lists back through `mutate` after every new source.
+
