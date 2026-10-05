@@ -69,9 +69,17 @@ git add -A && git commit -m "…"
 ```
 
 Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, the generated
-catalogue (`bundle_manifest/`), `reference/` downloads, `wwise-unpacker-revamped/`
-binaries, `.unit orig/`, and bulk extract output. The brute-forced
-`*_overlay.json` name databases ARE tracked.
+catalogue (`bundle_manifest/`), `reference/` downloads, and `wwise-unpacker-revamped/`
+binaries.
+
+**Game-derived exports/assets are NOT versioned** (copyright + repo size) — they
+stay on disk but are excluded from git: `assets/`, `Exports/`, `crane_mod/`,
+`example_mod/`, `test_mod/`, `decoded_materials/`, `database_extractor/`,
+`.unit orig/`, and the test/extract output dirs.
+
+Versioned here: all tooling (`*.py`, `resource_tools/`), `docs/` (findings),
+the name/hash databases (`hash_database.*`, `*_overlay.json`) and the game
+**Lua** source (`game-source/`).
 
 ## License
 
