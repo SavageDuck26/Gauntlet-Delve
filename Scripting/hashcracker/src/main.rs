@@ -352,6 +352,36 @@ fn crack(argv: &[String]) -> Result<()> {
     Ok(())
 }
 
+/// Write `toks` joined by `_` into `buf`, optionally swapping two positions
+/// and/or replacing one position with `repl`.
+#[inline]
+fn join(
+    buf: &mut Vec<u8>,
+    toks: &[Vec<u8>],
+    swap: Option<(usize, usize)>,
+    repl: Option<(usize, &[u8])>,
+) {
+    for (j, t) in toks.iter().enumerate() {
+        if j > 0 {
+            buf.push(b'_');
+        }
+        let mut s: &[u8] = t;
+        if let Some((a, b)) = swap {
+            if j == a {
+                s = &toks[b];
+            } else if j == b {
+                s = &toks[a];
+            }
+        }
+        if let Some((i, r)) = repl {
+            if j == i {
+                s = r;
+            }
+        }
+        buf.extend_from_slice(s);
+    }
+}
+
 /// Mutation cracker: derive candidates from *known* names by swapping suffixes,
 /// replacing/permuting `_`-separated tokens and substituting numbers. The
 /// pattern engine can't express these (they are edits *within* a leaf), and the
@@ -362,14 +392,27 @@ fn mutate(argv: &[String]) -> Result<()> {
     let targets_path = args.one("targets").ok_or_else(|| anyhow!("--targets required"))?;
     let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
 
-    let s = |f: &str| -> Result<Vec<String>> {
-        Ok(read_lines(f)?.into_iter().map(|b| String::from_utf8_lossy(&b).into_owned()).collect())
-    };
-    let names = s(&names_path)?;
-    let suffixes = match args.one("suffixes") { Some(f) => s(&f)?, None => Vec::new() };
-    let tokens = match args.one("tokens") { Some(f) => s(&f)?, None => Vec::new() };
-    let mut numbers: Vec<String> = (0..100).map(|i| format!("{i:02}")).collect();
-    numbers.extend((0..100).map(|i| i.to_string()));
+    let suffixes: Vec<Vec<u8>> = match args.one("suffixes") { Some(f) => read_lines(&f)?, None => Vec::new() };
+    let tokens: Vec<Vec<u8>> = match args.one("tokens") { Some(f) => read_lines(&f)?, None => Vec::new() };
+    let mut numbers: Vec<Vec<u8>> = Vec::with_capacity(200);
+    for i in 0..100 {
+        numbers.push(format!("{i:02}").into_bytes());
+    }
+    for i in 0..100 {
+        numbers.push(i.to_string().into_bytes());
+    }
+
+    // precompute (dir-with-slash, leaf tokens) per known name — all byte-based
+    // so the hot loop never allocates a String.
+    let mut ents: Vec<(Vec<u8>, Vec<Vec<u8>>)> = Vec::new();
+    for line in read_lines(&names_path)? {
+        let (dir, leaf) = match line.iter().rposition(|&b| b == b'/') {
+            Some(i) => (line[..=i].to_vec(), line[i + 1..].to_vec()),
+            None => (Vec::new(), line.clone()),
+        };
+        let toks: Vec<Vec<u8>> = leaf.split(|&b| b == b'_').map(|s| s.to_vec()).collect();
+        ents.push((dir, toks));
+    }
 
     let mut targets = read_targets(&targets_path)?;
     if let Some(ex) = args.one("exclude") {
@@ -383,78 +426,99 @@ fn mutate(argv: &[String]) -> Result<()> {
     let new_hits = AtomicU64::new(0);
     let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build()?;
 
-    println!("names        : {}", names.len());
+    println!("names        : {}", ents.len());
     println!("tokens       : {}", tokens.len());
     println!("suffixes     : {}", suffixes.len());
     println!("targets      : {}", targets.len());
 
-    let record = |h: u64, name: &str| {
-        if matches.lock().unwrap().add(h, name).unwrap_or(false) {
-            println!("  MATCH {h:016x}  {name}");
+    let record = |h: u64, name: &[u8]| {
+        let nm = String::from_utf8_lossy(name).into_owned();
+        if matches.lock().unwrap().add(h, &nm).unwrap_or(false) {
+            println!("  MATCH {h:016x}  {nm}");
             new_hits.fetch_add(1, Ordering::Relaxed);
         }
     };
 
     let t0 = std::time::Instant::now();
     pool.install(|| {
-        names.par_iter().for_each(|name| {
-            let (dir, leaf) = match name.rsplit_once('/') {
-                Some((d, l)) => (format!("{d}/"), l.to_string()),
-                None => (String::new(), name.clone()),
-            };
-            let emit = |cand: &str| {
-                let h = murmur::hash_str(cand);
-                if tset.contains(h) {
-                    record(h, cand);
-                }
-            };
-            // strip one known suffix -> stem
-            let mut base = leaf.clone();
-            for sfx in &suffixes {
-                if sfx.len() > 1 && base.ends_with(sfx.as_str()) {
-                    base.truncate(base.len() - sfx.len());
-                    break;
-                }
-            }
-            // 1. suffix swap (material parent -> its map variants, etc.)
-            for sfx in &suffixes {
-                emit(&format!("{dir}{base}{sfx}"));
-            }
-            // 3. append / prepend a token (+ optional suffix)
-            //    e.g. characters/x/x  ->  characters/x/x_diff, characters/x/x_heart_diff
-            for t in &tokens {
-                emit(&format!("{dir}{base}_{t}"));
-                emit(&format!("{dir}{t}_{base}"));
-                for sfx in &suffixes {
-                    emit(&format!("{dir}{base}_{t}{sfx}"));
-                }
-            }
-            // 2. token edits
-            let parts: Vec<&str> = leaf.split('_').collect();
-            if parts.len() > 1 {
-                for i in 0..parts.len() - 1 {
-                    let mut v = parts.clone();
-                    v.swap(i, i + 1);
-                    emit(&format!("{dir}{}", v.join("_")));
-                }
-                for i in 0..parts.len() {
-                    // 2a. replace a token with any token from the vocabulary
-                    for t in &tokens {
-                        let mut v = parts.clone();
-                        v[i] = t;
-                        emit(&format!("{dir}{}", v.join("_")));
-                    }
-                    // 2b. numeric substitution (any token containing a digit)
-                    if parts[i].chars().any(|c| c.is_ascii_digit()) {
-                        for num in &numbers {
-                            let mut v = parts.clone();
-                            v[i] = num;
-                            emit(&format!("{dir}{}", v.join("_")));
+        ents.par_iter().for_each_init(
+            || Vec::with_capacity(256),
+            |buf, (dir, toks)| {
+                // stem = leaf with one known suffix stripped
+                let mut stem: Vec<Vec<u8>> = toks.clone();
+                if let Some(last) = stem.last_mut() {
+                    for sfx in &suffixes {
+                        if sfx.len() > 1 && last.ends_with(sfx) {
+                            last.truncate(last.len() - sfx.len());
+                            break;
                         }
                     }
                 }
-            }
-        });
+                let check = |c: &[u8]| {
+                    let h = murmur::hash_bytes(c);
+                    if tset.contains(h) {
+                        record(h, c);
+                    }
+                };
+                // 1. suffix swap (material parent -> its map variants, etc.)
+                for sfx in &suffixes {
+                    buf.clear();
+                    buf.extend_from_slice(dir);
+                    join(buf, &stem, None, None);
+                    buf.extend_from_slice(sfx);
+                    check(buf);
+                }
+                // 2. append / prepend a token (+ optional suffix)
+                for t in &tokens {
+                    buf.clear();
+                    buf.extend_from_slice(dir);
+                    join(buf, &stem, None, None);
+                    buf.push(b'_');
+                    buf.extend_from_slice(t);
+                    check(buf);
+                    buf.clear();
+                    buf.extend_from_slice(dir);
+                    buf.extend_from_slice(t);
+                    buf.push(b'_');
+                    join(buf, &stem, None, None);
+                    check(buf);
+                    for sfx in &suffixes {
+                        buf.clear();
+                        buf.extend_from_slice(dir);
+                        join(buf, &stem, None, None);
+                        buf.push(b'_');
+                        buf.extend_from_slice(t);
+                        buf.extend_from_slice(sfx);
+                        check(buf);
+                    }
+                }
+                // 3. token edits
+                if stem.len() > 1 {
+                    for i in 0..stem.len() - 1 {
+                        buf.clear();
+                        buf.extend_from_slice(dir);
+                        join(buf, &stem, Some((i, i + 1)), None);
+                        check(buf);
+                    }
+                    for i in 0..stem.len() {
+                        for t in &tokens {
+                            buf.clear();
+                            buf.extend_from_slice(dir);
+                            join(buf, &stem, None, Some((i, t)));
+                            check(buf);
+                        }
+                        if stem[i].iter().any(|c| c.is_ascii_digit()) {
+                            for n in &numbers {
+                                buf.clear();
+                                buf.extend_from_slice(dir);
+                                join(buf, &stem, None, Some((i, n)));
+                                check(buf);
+                            }
+                        }
+                    }
+                }
+            },
+        );
     });
     let secs = t0.elapsed().as_secs_f64();
     println!(

@@ -83,6 +83,7 @@ def main():
 
     targets, dirs, names, prefixes = set(), set(), set(), set(ROOTS)
     resolved = set()
+    events = set()
 
     with open(args.csv, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -108,10 +109,36 @@ def main():
                 names.add(w)
             for m in re.findall(r"[a-z0-9_./-]{4,80}", t):
                 if "/" in m:
+                    # keep the FULL directory path (not just single segments),
+                    # e.g. "characters/skeleton_warrior" -> dirs
+                    if 2 <= len(m) <= 90:
+                        dirs.add(m.rsplit("/", 1)[0])
                     for seg in m.split("/"):
                         if 2 <= len(seg) <= 32:
                             names.add(seg)
                             dirs.add(seg)
+
+    # animation / flow event names (these double as animation clip names)
+    if args.lua:
+        gen = Path(args.lua) / "lua" / "generated"
+        for fn in ("animation_events.lua", "flow_events.lua"):
+            p = gen / fn
+            if p.exists():
+                txt = p.read_text(encoding="utf-8", errors="ignore")
+                for m in re.findall(r'"([a-z0-9_]+)"', txt):
+                    if 2 <= len(m) <= 48:
+                        events.add(m)
+
+    # quilt level pieces: names are literal keys in lua/dungeon/layouts/*.lua,
+    # e.g. lava_quilt_blackbox__x_x_x_x__01_rocks  (dirs come from the path mining)
+    quilts = set()
+    if args.lua:
+        lay = Path(args.lua) / "lua" / "dungeon" / "layouts"
+        if lay.is_dir():
+            for p in lay.rglob("*.lua"):
+                txt = p.read_text(encoding="utf-8", errors="ignore").lower()
+                for m in re.findall(r"[a-z0-9]+_quilt_[a-z0-9_]+", txt):
+                    quilts.add(m)
 
     # mine path-like strings from binaries
     if args.binaries:
@@ -142,6 +169,8 @@ def main():
     dump("envname.txt", ENVNAMES, filt=False)
     dump("kind.txt", KINDS, filt=False)
     dump("anim.txt", ANIM, filt=False)
+    dump("events.txt", events, filt=False)
+    dump("quilts.txt", quilts, filt=False)
     print(f"\nwritten to {out}/")
 
 
