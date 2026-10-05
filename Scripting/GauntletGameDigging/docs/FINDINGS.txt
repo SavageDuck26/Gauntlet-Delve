@@ -3794,3 +3794,41 @@ NEXT STEPS (untested):
   (12,741 / 20,000 rows named).
 
 
+================================================================================
+17.16 LEVELS - THE QUILT SCHEMA FROM quilt_builder.lua (+56)
+================================================================================
+  lua/dungeon/quilt_builder.lua decodes the level names:
+
+      name:match("^%w+_quilt_(%w+)__([^_]+)_([^_]+)_([^_]+)_([^_]+)__(.*)$")
+      local w = #u      -- quilt width  in cells
+      local h = #r      -- quilt height in cells
+
+  So a quilt name is <env>_quilt_<shape>__<up>_<right>_<down>_<left>__<variant>,
+  the four groups being the cell rows of the four SIDES of a quilt piece, each
+  cell one of  x (wall), e (through), i (entrance), o (exit).  The rule
+  len(up) == len(down) == w and len(right) == len(left) == h is what makes the
+  candidate space finite; observed side lengths are 1, 2, 3 and 5 (never 4).
+  Variants are NN, NN_<mod>, or start_NN (crypt entrances).
+
+  WHY THE EARLIER SWEEPS FOUND NOTHING: the vocabulary had been built from the
+  side groups that appear in RESOLVED names.  Several 1-cell sides ("o", "i")
+  never appear in any resolved piece, so codes such as o_e_i_e were unreachable.
+  Enumerating the alphabet under the width/height rule found them immediately:
+
+      crypt_quilt_smallroom__o_e_i_e__01
+      crypt_quilt_smallroom__o_e_i_e__01_skeleton
+      caves_quilt_smallroom__o_e_i_e__01
+
+  DEAD ENDS (checked, so nobody repeats them):
+    * level bodies are compiled modules - level_body_strings.py finds no
+      embedded names, only binary tables
+    * the module package blobs (resource_packages/boot) list dependency hashes
+      only; they are hash-sorted, not name-sorted (pkg_order_check.py), so an
+      unresolved hash is NOT bracketed by its alphabetical neighbours
+    * the dungeon layout Lua enumerates only the pieces actually used - all of
+      those were already resolved, so the stragglers are unreferenced content
+
+  METHODS THAT PAID: edit-distance-1 from a piece's own clips (+28), the
+  observed-shape x observed-edge cross product (+25), then the schema-correct
+  alphabet (+3 and counting).  Level family: 233 -> 177 unique unresolved.
+

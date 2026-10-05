@@ -152,6 +152,46 @@ paths, unit/material names referenced as Lua strings).
 | `animation` | edit-distance-1 from a unit's own clips (`_backward`, `_enter/_exit/_init`) + cross-unit clip transfer + ability-table keys |
 | leftovers | `texture`, `shader_library`, `particles`, `level` are not path-like; they need family-specific generators |
 
+### Levels: the quilt naming schema (`modules/<env>/…`)
+
+`lua/dungeon/quilt_builder.lua` decodes the level names:
+
+```lua
+name:match("^%w+_quilt_(%w+)__([^_]+)_([^_]+)_([^_]+)_([^_]+)__(.*)$")
+local w = #u    -- quilt width  in cells
+local h = #r    -- quilt height in cells
+```
+
+so a quilt name is `<env>_quilt_<shape>__<up>_<right>_<down>_<left>__<variant>`
+where the four groups are the **cell rows of the four sides**, each cell being
+`x` (wall), `e` (through), `i` (entrance) or `o` (exit), with
+`len(up) == len(down) == w` and `len(right) == len(left) == h`.  Observed side
+lengths are 1, 2, 3 and 5 cells (never 4).  The variant is `NN`, `NN_<mod>` or
+`start_NN` (crypt entrances).
+
+That rule is what makes the sweep work: enumerating the *observed groups* only
+(38 codes) finds nothing, because several 1-cell sides (`o`, `i`) never appear
+in the resolved corpus.  Enumerating the alphabet under the width/height rule
+(`make_level_vocab.py`) immediately produced new pieces such as
+`crypt_quilt_smallroom__o_e_i_e__01`.
+
+```bash
+python3 make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab files
+./target/release/hashcracker crack --gpu \
+  --targets data/vocab/targets_level.txt \
+  --list a=data/vocab/lvl_env.txt  --list b=data/vocab/lvl_sub.txt \
+  --list s=data/vocab/lvl_shape.txt --list e=data/vocab/lvl_edge.txt \
+  --list n=data/vocab/lvl_nn.txt   --list m=data/vocab/lvl_mod.txt \
+  --pattern 'modules/d01_%a/%b/%a_quilt_%s__%e__%n' \
+  --pattern 'modules/d01_%a/%b/%a_quilt_%s__%e__%n_%m' \
+  --matches matches.tsv
+```
+
+Level bodies are compiled modules with **no embedded names** (checked with
+`level_body_strings.py`), and the module `package` blobs list dependency
+**hashes only**, hash-sorted and not name-sorted (`pkg_order_check.py`), so they
+give no alphabetical bracketing either — the grammar is the only lever.
+
 ## Results
 
 All hits accumulate in **`matches.tsv`** (append + dedup). To fold them into the

@@ -43,6 +43,8 @@ def main():
     for r in rows:
         if r["name"]:
             continue                      # the catalogue already names this row
+        if r["name_hash"] in ov:
+            continue                      # our overlay names it (catalogue not yet refreshed)
         if args.strict and r["name"] in known_names:
             continue
         by[r["type"]].add(r["name_hash"])
