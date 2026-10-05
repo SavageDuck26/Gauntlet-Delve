@@ -8,6 +8,7 @@
 //!
 //! See README.md for usage.
 
+mod gpu;
 mod murmur;
 mod pattern;
 
@@ -61,6 +62,10 @@ CRACK OPTIONS
   --matches <file>    append matches as TSV here, live + de-duplicated across
                       runs (default: matches.tsv); format: <hash-hex><TAB><name>
   --limit <n>         stop each pattern after n candidates (testing)
+
+ GPU (Vulkan compute; used automatically when available)
+  --gpu               require the GPU (fail if unavailable)
+  --cpu               force the CPU path (also used automatically as fallback)
 "
     );
 }
@@ -77,9 +82,18 @@ impl Args {
         while i < a.len() {
             let k = &a[i];
             if let Some(name) = k.strip_prefix("--") {
-                let v = a.get(i + 1).ok_or_else(|| anyhow!("--{name} needs a value"))?;
-                flags.push((name.to_string(), v.clone()));
-                i += 2;
+                match a.get(i + 1) {
+                    // valued flag: --key value
+                    Some(v) if !v.starts_with("--") => {
+                        flags.push((name.to_string(), v.clone()));
+                        i += 2;
+                    }
+                    // boolean flag: --gpu / --cpu (no value follows)
+                    _ => {
+                        flags.push((name.to_string(), String::new()));
+                        i += 1;
+                    }
+                }
             } else {
                 i += 1;
             }
@@ -94,6 +108,9 @@ impl Args {
     }
     fn one_or(&self, key: &str, d: &str) -> String {
         self.one(key).unwrap_or_else(|| d.to_string())
+    }
+    fn has(&self, key: &str) -> bool {
+        self.flags.iter().any(|(k, _)| k == key)
     }
 }
 
@@ -267,6 +284,26 @@ fn crack(argv: &[String]) -> Result<()> {
         matches.lock().unwrap().len()
     );
 
+    // GPU is used automatically when a Vulkan adapter with 64-bit shader ints
+    // is present; --cpu disables it, --gpu makes its absence fatal.
+    let gpu = if args.has("cpu") {
+        None
+    } else {
+        match gpu::Gpu::new() {
+            Ok(g) => {
+                println!("gpu           : {}", g.info());
+                Some(g)
+            }
+            Err(e) => {
+                if args.has("gpu") {
+                    return Err(anyhow!("--gpu requested but unusable: {e}"));
+                }
+                println!("gpu           : unavailable ({e}) - using CPU");
+                None
+            }
+        }
+    };
+
     // record a hit: stream to file immediately, de-duplicated across runs
     let record = |h: u64, buf: &[u8]| {
         let name = String::from_utf8_lossy(buf);
@@ -301,6 +338,18 @@ fn crack(argv: &[String]) -> Result<()> {
         grand = grand.saturating_add(total);
         let nslots = pat.slots();
         let t0 = std::time::Instant::now();
+        // GPU first. It only ever reports candidate INDICES; every index is
+        // re-emitted and re-hashed on the host before a name is recorded, so a
+        // GPU arithmetic bug cannot write a wrong name.
+        let mut done = false;
+        if let Some(g) = &gpu {
+            let mut cb = |h: u64, name: &[u8]| record(h, name);
+            match g.eval_pattern(pat, &comp.lists, &targets, limit, &mut cb) {
+                Ok(_) => done = true,
+                Err(e) => eprintln!("  gpu: {e} - falling back to CPU for this pattern"),
+            }
+        }
+        if !done {
         pool.install(|| {
             // Split the flat index space into one contiguous chunk per thread.
             // Each thread decodes its start index ONCE (a few divisions) and
@@ -338,6 +387,7 @@ fn crack(argv: &[String]) -> Result<()> {
                 }
             });
         });
+        }
         let secs = t0.elapsed().as_secs_f64();
         let rate = if secs > 0.0 { total as f64 / secs / 1e6 } else { 0.0 };
         println!("pattern {pi:<4} : {:>34}  {total:>15} cands  ({rate:.1}M/s)", patterns[pi]);

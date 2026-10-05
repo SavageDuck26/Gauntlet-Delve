@@ -66,7 +66,40 @@ index space, decodes its start index once (mixed-radix), then walks it with an
 and the build uses `-C target-cpu=native` (see `.cargo/config.toml`). Throughput
 is typically **~150–200 M candidates/s** across ~12 cores.
 
-## mine (word-list pruning)
+## GPU acceleration (optional, automatic)
+
+When a Vulkan adapter with 64-bit shader integers is available the pattern
+evaluation runs on the **GPU** (wgpu + WGSL); otherwise it silently uses the
+CPU. Force it with `--gpu` (fail if unavailable) or `--cpu`.
+
+```bash
+./target/release/hashcracker crack --targets data/vocab/unresolved_targets.txt \
+  --list d=data/dirs.txt --list a=data/vocab/medium_dict.txt --list b=data/vocab/medium_dict.txt \
+  --pattern '%d/%a_%b' --matches matches.tsv      # picks GPU automatically
+```
+
+Measured on an AMD RX 6600 XT (RADV): **~1.24 G candidates/s**, versus
+~0.06–0.26 G/s on 12 CPU threads — i.e. roughly **5–12x** depending on how much
+string assembly a pattern needs. A 42-billion-candidate sweep takes ~34 s.
+
+Correctness: the kernel only ever reports candidate **indices**; the host
+re-emits each index with the CPU emitter and re-hashes it before recording, so a
+GPU arithmetic bug can never write a wrong name. `crack --gpu` output has been
+diffed against `crack --cpu` on a 48,000-candidate space with 900 planted
+targets and is byte-identical.
+
+Implementation notes (src/gpu.rs):
+
+* MurmurHash64A needs 64-bit multiplies -> the device must expose
+  `wgpu::Features::SHADER_INT64`.
+* Dispatches are sized to ~0.3 s of work because amdgpu's scheduler watchdog
+  kills long-running dispatches (same batching trick as Duckomp-v5).
+* WGSL gotchas worked around: `meta` is a reserved word; integer literals above
+  `i64::MAX` cannot be represented (the 64-bit constants are stored as negative
+  `i64` bit patterns and `bitcast` to `u64`); shift amounts must be `u32`;
+  mixed-width literals need explicit `u64(...)` conversions.
+* Patterns with more than 8 slots fall back to the CPU.
+
 
 Keep only dictionary words that actually occur in a corpus (aho-corasick):
 
