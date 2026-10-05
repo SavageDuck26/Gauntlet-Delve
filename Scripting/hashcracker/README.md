@@ -35,7 +35,16 @@ This writes `data/{targets,dirs,names,prefixes,suffixes}.txt`.
   --list d=data/dirs.txt --list n=data/names.txt \
   --list p=data/prefixes.txt --list s=data/suffixes.txt \
   --pattern '%d/%n' --pattern '%d/%n%s' --pattern '%p/%n%s' --pattern '%n%s' \
-  --out rust_matches.json --tsv rust_matches.tsv
+  --matches matches.tsv
+```
+
+Matches are **streamed to `--matches` (default `matches.tsv`) the moment they are
+found** — one TSV line each, `<hash-hex><TAB><name>`. The file is opened in
+append mode and its hashes are loaded at start-up, so **re-runs never write a
+duplicate**. Just sort it however you like:
+
+```bash
+sort -k2 matches.tsv
 ```
 
 ### Pattern language
@@ -47,7 +56,15 @@ A slot is **locked** within a pattern, so `characters/%n/%n_diff` expands to
 Common slots: `%d` dirs, `%n` names, `%p` prefixes, `%s` suffixes, `%k` numbers.
 
 ### Other options
-`--threads N`, `--show N`, `--limit N` (cap per pattern, for testing).
+`--threads N`, `--exclude F` (skip already-solved hashes), `--limit N` (cap per
+pattern, for testing).
+
+### Performance
+The hot loop is division-free: each thread is handed one contiguous slice of the
+index space, decodes its start index once (mixed-radix), then walks it with an
+**odometer**. Target lookup uses a small open-addressed `u64` set (no SipHash),
+and the build uses `-C target-cpu=native` (see `.cargo/config.toml`). Throughput
+is typically **~150–200 M candidates/s** across ~12 cores.
 
 ## mine (word-list pruning)
 
@@ -59,13 +76,25 @@ Keep only dictionary words that actually occur in a corpus (aho-corasick):
 
 ## Results
 
-Matches are written as `{"<hash-hex>": "<name>"}` (JSON) / TSV. Merge the TSV
-into `../GauntletGameDigging/resource_name_overlay.json`, which
-`list_game_bundles.py` loads automatically.
+All hits accumulate in **`matches.tsv`** (append + dedup). To fold them into the
+catalogue, merge that TSV into `../GauntletGameDigging/resource_name_overlay.json`
+(which `list_game_bundles.py` loads automatically):
 
-So far it has recovered **50+ resource names** the Python pass missed
-(e.g. `equipment/warrior/set_01..09`, `decals/sand_01`, `core/rendering/util`,
-`characters/gib_generic/gibs_diff`).
+```bash
+python3 - <<'EOF'
+import json, pathlib
+p = pathlib.Path('../GauntletGameDigging/resource_name_overlay.json')
+ov = json.loads(p.read_text())
+for line in pathlib.Path('matches.tsv').read_text().splitlines():
+    if '\t' in line:
+        h, n = line.split('\t', 1); ov[h] = n
+p.write_text(json.dumps(ov, indent=2, sort_keys=True))
+EOF
+```
+
+So far it has recovered **90 resource names** the Python pass missed
+(e.g. `equipment/warrior/set_01..09`, `decals/sand_0N`, `menu/shop/*`,
+`effects/hit_*`, `core/rendering/util`, `characters/gib_generic/gibs_diff`).
 
 ## License
 

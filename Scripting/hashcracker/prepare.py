@@ -82,6 +82,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     targets, dirs, names, prefixes = set(), set(), set(), set(ROOTS)
+    resolved = set()
 
     with open(args.csv, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -89,6 +90,7 @@ def main():
                 targets.add(r["name_hash"])
             else:
                 n = r["name"]
+                resolved.add(n)
                 names.add(n.rsplit("/", 1)[-1])
                 names.add(strip_suffix(n).rsplit("/", 1)[-1])
                 if "/" in n:
@@ -131,6 +133,7 @@ def main():
         print(f"{name:16s} {len(vals):>8} entries")
 
     dump("targets.txt", sorted(targets))
+    dump("known.txt", resolved, filt=False)
     dump("dirs.txt", dirs)
     dump("names.txt", names)
     dump("prefixes.txt", prefixes)

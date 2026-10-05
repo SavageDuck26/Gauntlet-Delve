@@ -31,16 +31,63 @@ impl Compiled {
         self.lens.iter().fold(1u64, |a, &b| a.saturating_mul(b))
     }
 
-    /// Write candidate #`idx` into `out` (cleared first).
+    /// Number of used slots (== `lens.len()`).
+    pub fn slots(&self) -> usize {
+        self.lens.len()
+    }
+
+    /// Decode a flat index into per-slot picks (mixed radix, slot 0 = least
+    /// significant). Called once per thread chunk, so the divisions here are
+    /// amortised over the whole chunk.
+    #[inline]
+    pub fn decode(&self, idx: u64, picks: &mut [usize]) {
+        let mut rem = idx;
+        for i in 0..self.lens.len() {
+            picks[i] = (rem % self.lens[i]) as usize;
+            rem /= self.lens[i];
+        }
+    }
+
+    /// Odometer-increment `picks` to the next candidate (slot 0 first).
+    /// Returns false when it wraps past the end.
+    #[inline]
+    pub fn bump(&self, picks: &mut [usize]) -> bool {
+        for i in 0..self.lens.len() {
+            picks[i] += 1;
+            if (picks[i] as u64) < self.lens[i] {
+                return true;
+            }
+            picks[i] = 0;
+        }
+        false
+    }
+
+    /// Emit the candidate for the given `picks` into `out` (no decoding).
+    #[inline]
+    pub fn emit(&self, lists: &[Vec<Vec<u8>>], picks: &[usize], out: &mut Vec<u8>) {
+        out.clear();
+        for part in &self.parts {
+            match part {
+                Part::Lit(b) => out.extend_from_slice(b),
+                Part::Slot(pos) => out.extend_from_slice(&lists[self.used[*pos]][picks[*pos]]),
+            }
+        }
+    }
+
+    /// Write candidate #`idx` into `out` (cleared first). (Test/reference path;
+    /// the hot loop uses `decode` + `emit` + `bump` instead.)
+    #[allow(dead_code)]
     #[inline]
     pub fn build(&self, lists: &[Vec<Vec<u8>>], idx: u64, out: &mut Vec<u8>) {
         out.clear();
-        // decode mixed-radix index -> a pick per used slot
-        let mut picks: Vec<usize> = Vec::with_capacity(self.lens.len());
+        // decode mixed-radix index -> a pick per used slot (stack array: no heap
+        // allocation in the hot loop; patterns use far fewer than 16 slots)
+        let mut picks = [0usize; 16];
+        let n = self.lens.len();
         let mut rem = idx;
-        for &len in &self.lens {
-            picks.push((rem % len) as usize);
-            rem /= len;
+        for i in 0..n {
+            picks[i] = (rem % self.lens[i]) as usize;
+            rem /= self.lens[i];
         }
         for part in &self.parts {
             match part {

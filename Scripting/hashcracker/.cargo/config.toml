@@ -1,0 +1,3 @@
+[build]
+# Optimise for the host CPU (the cracker is CPU-bound; run it on the build host).
+rustflags = ["-C", "target-cpu=native"]
