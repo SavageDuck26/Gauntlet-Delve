@@ -3874,3 +3874,36 @@ NEXT STEPS (untested):
 
   unit family: 219 -> 189 unique unresolved.
 
+================================================================================
+17.18 UNITS UNLOCK TEXTURES - THE COMPOUNDING RATIO (8 units -> 16 textures)
+================================================================================
+  Two namespaces, one leaf vocabulary:
+
+      unit      blocks/d01_caves/rocks/caverock_rock_01
+      texture   blocks/d01_caves/caverock_rock_01_diff
+      texture   blocks/d01_caves/caverock_rock_01_norm
+      material  blocks/d01_caves/caverock_set
+      material  props/d01_common/blackbox_2c_2c
+
+  So textures/materials are `<root>/<env>/<leaf><suffix>` while units are
+  `<root>/<env>/<cat>/<leaf>` - recovering a unit immediately yields its
+  _diff/_norm (+_spec/_mask/_high/_illum where they exist) texture candidates.
+
+  MEASURED: the last push found 8 units and exactly 16 textures - the
+  _diff/_norm pair of every recovered block (crypt_floor_01/02,
+  cryptsmooth_floor_01, crypt_border_01, ...).
+
+  WHAT PAID THIS ROUND (+24, overlay 5044 -> 5068):
+    * targeted_unit.py            edit-distance-1 inside a unit's own dir (+7)
+    * targeted_block_texture.py   unit leaves x block dirs x map suffixes (+8)
+    * make_tex_vocab.py           `%d/%l%s` dirs x leaves x suffixes on the GPU
+                                  (366M cands in ~1s) (+8)
+    * unit grammar (166 BILLION candidates through the GPU pattern engine) (+1)
+
+  LESSON: the *grammar* sweep is exhausted (166e9 cands -> 1 hit) while the
+  *derivation* from already-recovered names is not (19.5M cands -> 8 hits).
+  Prefer narrow, name-derived generators; keep the huge pattern sweeps for
+  cases where the schema itself is the unknown (as with quilts).
+
+  Unit family: 219 -> 181 unique unresolved.  overlay 5068, 2476 unique left.
+
