@@ -3592,5 +3592,72 @@ NEXT STEPS (untested):
         generate_surface_effects/tracer_effects packages (which just collect
         `effect.particle` strings already present in lua/settings).
 
+================================================================================
+17.11 THE LOCALIZATION BUNDLE — 6 LANGUAGES OF GAME TEXT AS A DICTIONARY
+================================================================================
+  `resource_packages/localization` (bundle dd5d5b00fde9b0fb) is a single banked
+  resource, 2.35 MB, holding the whole game's text:
+
+      0x010000  English          ("The password must contain at least one digit",
+                                  "Bucket of the Dragon Rider", ...)
+      0x040000  Polish
+      0x0b0000  Portuguese
+      0x0e0000  German
+      0x110000  French
+      0x140000  Spanish
+
+  WHY IT WAS MISSED: scan_bundle_strings.py DID pass over it (53,784 strings),
+  but its plausible-name filter rejects anything with a space, so prose never
+  became a candidate and words were never split out.
+
+  Tool: mine_localization.py
+      * 25,150 English words        -> data/vocab/loc_words.txt
+      * 25,810 phrase forms         -> data/vocab/loc_phrases.txt
+        (lowercased, spaces -> "_"  e.g. "Rude Interruption" ->
+         rude_interruption)
+      * 1,019,079 prefixed variants -> data/vocab/loc_candidates.txt
+        (each phrase x the icon/menu/hud/effects/... roots, plus _icon/_locked/
+         _01/_02)
+
+  YIELD: +12 names, all first-try via `crack --candidates`, e.g.
+      achievement_icons/{secrets_of_the_flame, mysteries_in_the_dark,
+        rude_interruption, we_need_to_go_deeper, blessed_by_the_gods,
+        riddles_of_the_grave, faithful_customer, generous, unruly, volatile,
+        heedless}
+      effects/gold_collected
+  i.e. the localised ACHIEVEMENT names are exactly the icon resource leaves
+  (11 of the 12), including the four hidden achievements (volatile, unruly,
+  heedless, generous) that no other source knows.
+
+  The word list was folded into the composition dictionary (big2_dict.txt =
+  big_dict + loc_words + loc_phrases = 173,483 entries) and re-run over the
+  global sweeps (`%a_%b`, dir x word, effects/menu/hud/... x word): no further
+  hits, so the value here is phrase->leaf for UI art, not new stem words.
+
+================================================================================
+17.12 FLOW FAMILY — 145/159 SOLVED, 2 LEAVES LEFT
+================================================================================
+  flow went 35 -> 115 (big run) -> 145 with the status list.
+  Resolved: flow/gib, flow/dropped_weapon, flow/weapon_{axe,spear,book} and
+  flow/status_effect_{burning,charmed,chilled,ethereal,frozen,haste,invincible,
+  invisible,rooted,poisoned,slowed}.
+  Source: lua/status_effects/status_effects.lua assigns each status as
+  `StatusEffects.<name> = <Name>` -> the exact vocabulary (17 statuses).
+
+  The last 2 have resisted everything:
+      flow/%a                          (173k dict)              0
+      flow/%a_%b                       (173k^2 = 30.1e9)        0
+      flow/status_effect_%a(_%b)       (all 17 statuses + words) 0
+      flow/<3 pieces: big2 x small^2>  (43e9)                   0
+      curated semantic sets (tint/glow/material/scalar/relic/...) 0
+  Their bodies show what they do, not what they are called:
+      <unresolved A> = FlowCallbacks { tint_material, color_rgb, unit }
+          (identical to flow/status_effect_slowed -> it IS another status tint)
+      <unresolved B> = FlowCallbacks { material_set_scalar_over_time,
+          variable = self_illumination_multiplier, start_value, stop_value }
+  So the names contain a word that appears in NO shipped text (lua, bundle
+  bodies, localization, exe/dll) — same class of blocker as animations.
+
+
 
 
