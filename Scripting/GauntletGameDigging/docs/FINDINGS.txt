@@ -3700,6 +3700,44 @@ NEXT STEPS (untested):
   Still open in audio: 37 timpani_bank (`audio/<enemy|heroes|x>_<something>`;
   audio/enemy_gator was the one easy find).
 
+================================================================================
+17.14 ANIMATION SOLVED — <unit_dir>/animations/<clip>
+================================================================================
+  After audio fell, the same trick broke animations: enumerate the CLIP slot per
+  owning unit directory instead of guessing whole global paths.
+
+      characters/<unit>/animations/<clip>       (plural dir, most units)
+      characters/<unit>/animation/<clip>        (singular dir - both exist!)
+
+      e.g. characters/avatar_elf/animations/carry_dropoff
+           characters/avatar_warrior/animations/leap_jump
+           characters/avatar_necromagus/animation/move_walk
+           characters/skeleton_warrior/animation/stagger_right_01
+
+  HOW THE UNIT LIST WAS BUILT: extract_anim_refs.py already gave, for every
+  unit, the exact set of animation hashes its state_machine plays (all 1,243
+  unresolved animations are attributed to 51 unit dirs). The clip slot is then
+  just a vocabulary sweep restricted to `%d/animations/<...>`.
+
+  SWEEPS THAT PAID (big2_dict = 173k words; small = 500; numbers):
+      %d/animations|animation/%a            (1 slot)        +330
+      %d/animations|animation/%a_%b and %b_%a (big2 x med)  +118
+      %d/animations|animation/%a_%n         (word + number) +52
+      %d/animations|animation/%a_%b_%c      (small^3)       +3
+  = animation 1,242 unresolved -> 595, overlay 2,402 -> 3,049.
+
+  The clip vocabulary is ordinary game words (carry_, die_, knockback_,
+  revive_, block_, offset_, stagger_, move_, dash_, conjuring_, eye_),
+  which is why the earlier global attempts failed: `<unit_dir>/<clip>` with a
+  single path segment was never the shape - there is always the extra
+  `animations/` component, and its singular/plural spelling varies by unit.
+
+  REMAINING: 595 clips, presumably longer compounds (4+ tokens) or per-unit
+  verbs outside the vocabularies; the parent-dir list is only 42, so the unit
+  coverage is the next thing to widen (extract state_machine refs for units
+  whose state machine wasn't scanned).
+
+
 
 
 
