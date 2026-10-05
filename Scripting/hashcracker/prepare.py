@@ -28,6 +28,15 @@ SUFFIXES = [
     "_glow", "_color", "_col", "_bump", "_height", "_overlay", "_blend",
     "_ao", "_det", "_detail", "_roughness", "_mat", "_material", "_specgloss",
     "_nrmgloss", "_diffgloss", "_glowmask", "_translucent", "_glowmaskcolor",
+    # extra Stingray material maps / variations
+    "_fresnel", "_displacement", "_parallax", "_translucency", "_scatter",
+    "_sss", "_cavity", "_curvature", "_roughnessmap", "_metalness",
+    "_reflection", "_occlusion", "_subsurface", "_anisotropy", "_clearcoat",
+    "_sheen", "_normals", "_albedo", "_basecolor", "_dirt", "_wear", "_rust",
+    "_paint", "_gradient", "_ramp", "_lut", "_pattern", "_noise", "_macro",
+    "_glowmap", "_emissivemap", "_emissivemask", "_lightmap", "_shadow",
+    "_shadowmask", "_fog", "_bumpmap", "_normalmap", "_specularmap",
+    "_detailmap", "_heightmap", "_opacitymap", "_maskmap", "_tint",
 ]
 # Targeted vocabularies observed in resolved names (levels / animations).
 ENVS = ["d01_crypt", "d01_caves", "d01_lava", "d01_hub_room", "d01_arcade",
@@ -104,6 +113,11 @@ def main():
     if args.lua:
         lua = Path(args.lua)
         for p in lua.rglob("*.lua"):
+            # the file *name* mirrors asset names (props/d01_crypt/sarcophagus.lua)
+            rel = str(p.relative_to(lua))[:-4].replace("\\", "/").lower()
+            if "/" in rel:
+                dirs.add(rel.rsplit("/", 1)[0])
+            names.add(rel.rsplit("/", 1)[-1])
             t = p.read_text(encoding="utf-8", errors="ignore").lower()
             for w in re.findall(r"[a-z][a-z0-9_]{2,31}", t):
                 names.add(w)
