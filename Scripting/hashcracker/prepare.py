@@ -129,6 +129,16 @@ def main():
                     if 2 <= len(m) <= 48:
                         events.add(m)
 
+    # every quoted string literal in the Lua (tested verbatim as resource names)
+    lua_strings = set()
+    if args.lua:
+        for p in Path(args.lua).rglob("*.lua"):
+            t = p.read_text(encoding="utf-8", errors="ignore").lower()
+            for m in re.findall(r'"([^"\n]{1,120})"', t):
+                lua_strings.add(m)
+            for m in re.findall(r"'([^'\n]{1,120})'", t):
+                lua_strings.add(m)
+
     # quilt level pieces: names are literal keys in lua/dungeon/layouts/*.lua,
     # e.g. lava_quilt_blackbox__x_x_x_x__01_rocks  (dirs come from the path mining)
     quilts = set()
@@ -171,6 +181,7 @@ def main():
     dump("anim.txt", ANIM, filt=False)
     dump("events.txt", events, filt=False)
     dump("quilts.txt", quilts, filt=False)
+    dump("lua_strings.txt", lua_strings, filt=False)
     print(f"\nwritten to {out}/")
 
 
