@@ -3905,5 +3905,13 @@ NEXT STEPS (untested):
   Prefer narrow, name-derived generators; keep the huge pattern sweeps for
   cases where the schema itself is the unknown (as with quilts).
 
+
+  NEGATIVE RESULTS (checked, do not retry):
+    * unit leaves and material leaves never coincide inside the same directory
+      (0/636), so materials do NOT predict missing units
+    * the REVERSE derivation (texture leaves pushed back through the block
+      unit directories, `--reverse`) found 0 - the two namespaces share leaves
+      only in the forward direction (unit -> its own map textures)
+
   Unit family: 219 -> 181 unique unresolved.  overlay 5068, 2476 unique left.
 

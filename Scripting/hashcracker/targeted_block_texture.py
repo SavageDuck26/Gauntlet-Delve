@@ -40,6 +40,8 @@ STEMS = ("_diff", "_norm", "_spec", "_specgloss", "_glowmask", "_nrmgloss",
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="/tmp/blocks_c.txt")
+    ap.add_argument("--reverse", action="store_true",
+                    help="also derive unit/material candidates FROM texture leaves")
     args = ap.parse_args()
 
     ov = json.loads(OVERLAY.read_text())
@@ -87,6 +89,25 @@ def main():
                 for i in range(1, 5):
                     out.add(f"{d}/{a}_{b}_{i:02d}")
     new = sorted(n for n in out if n not in known)
+
+    if args.reverse:
+        # The mirror image: `blocks/d01_crypt/crypt_wall_4c_diff` (texture)
+        # implies the unit `blocks/d01_crypt/walls/crypt_wall_4c`, so push every
+        # resolved texture/material leaf back through the unit directories.
+        cats = ["walls", "floors", "rocks", "ceilings", "borders", "props",
+                "pillars", "structures", "stairs", "doors", "tunnels", "rooms",
+                "decals", "lights", "traps", "fx"]
+        unit_dirs = sorted({d for d in dirs if d.startswith(("blocks/", "props/"))})
+        rev = set()
+        for d in unit_dirs:
+            for leaf in leaves:
+                for cat in cats:
+                    rev.add(f"{d}/{cat}/{leaf}")
+                rev.add(f"{d}/{leaf}")
+                for suf in SUFFIX[:12]:
+                    rev.add(f"{d}/{leaf}{suf}")
+        rev = {n for n in rev if n not in known}
+        new = sorted(set(new) | rev)
     Path(args.out).write_text("\n".join(new) + "\n")
     print(f"dirs {len(dirs)}  leaves {len(leaves)}  tokens {len(toks)}")
     print(f"candidates {len(new)} -> {args.out}")
