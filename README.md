@@ -72,3 +72,23 @@ Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, the generate
 catalogue (`bundle_manifest/`), `reference/` downloads, `wwise-unpacker-revamped/`
 binaries, `.unit orig/`, and bulk extract output. The brute-forced
 `*_overlay.json` name databases ARE tracked.
+
+## License
+
+Licensed under the **GNU General Public License v3.0** (GPL-3.0) — see
+[`LICENSE`](LICENSE).
+
+```
+Gauntlet-Reverse-Engineering — reverse-engineering & modding toolchain for
+Gauntlet: Slayer Edition.
+Copyright (C) 2026 SavageDuck26
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+```
+
+> Game assets, the game Lua source (`game-source/`), `reference/` projects and
+> `wwise-unpacker-revamped/` remain the property of their respective owners and
+> are **not** covered by this license.
