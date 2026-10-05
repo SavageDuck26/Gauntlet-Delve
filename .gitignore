@@ -1,0 +1,122 @@
+# ==========================================================================
+# Gauntlet-Reverse-Engineering — .gitignore
+# ==========================================================================
+
+# ---- Python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.ipynb_checkpoints/
+pytestdebug.log
+
+# ---- Virtualenvs ---------------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ---- OS / editor ---------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+*.orig
+*.rej
+*.tmp
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ---- Archives / crash dumps / logs --------------------------------------
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.log
+*.mdmp
+*.dmp
+
+# ---- Third-party downloads / reference repos -----------------------------
+# (reference projects are re-downloadable; kept on disk but not versioned)
+reference/
+Scripting/GauntletGameDigging/wwise-unpacker-revamped/
+Scripting/GauntletGameDigging/third_party/
+
+# ---- Compiled binaries ---------------------------------------------------
+*.dll
+*.dylib
+*.a
+*.o
+*.exe
+*.mod_bundle
+
+# ---- Generated catalogues (regenerable) ----------------------------------
+Scripting/GauntletGameDigging/bundle_manifest/
+
+# ---- Bulk extracted game data (regenerable from the bundles) -------------
+Scripting/GauntletGameDigging/.unit orig/
+Scripting/GauntletGameDigging/Exports/extracted_named/
+Scripting/GauntletGameDigging/Exports/exported_models/
+Scripting/GauntletGameDigging/Exports/glb/
+Scripting/GauntletGameDigging/Exports/samples/
+Scripting/GauntletGameDigging/my_textures/
+Scripting/GauntletGameDigging/test_textures/
+Scripting/GauntletGameDigging/test_bundle_output/
+Scripting/GauntletGameDigging/test_materials/
+Scripting/GauntletGameDigging/output_packages/
+Scripting/GauntletGameDigging/output_icons/
+Scripting/GauntletGameDigging/output_models/
+Scripting/GauntletGameDigging/small_test/
+Scripting/GauntletGameDigging/CONTEXT/
+
+# ---- Per-mod build output ------------------------------------------------
+Scripting/GauntletGameDigging/crane_mod/output/
+Scripting/GauntletGameDigging/test_mod/output/
+Scripting/GauntletGameDigging/example_mod/output/
+Scripting/GauntletGameDigging/**/build/
+Scripting/GauntletGameDigging/**/*.stream
+
+# ---- Scratch -------------------------------------------------------------
+*.tmp.*
+.DS_Store

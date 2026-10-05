@@ -1,0 +1,21 @@
+# Mark binary assets so git does not try to diff/merge them as text.
+*.dds   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.glb   binary
+*.fbx   binary
+*.ttf   binary
+*.otf   binary
+*.unit        binary
+*.material    binary
+*.bones       binary
+*.animation   binary
+*.level       binary
+*.physics     binary
+*.stream      binary
+*.mod_bundle  binary
+*.dll   binary
+*.exe   binary
+*.a     binary

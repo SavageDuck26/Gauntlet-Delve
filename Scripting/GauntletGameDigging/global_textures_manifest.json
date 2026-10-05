@@ -1,0 +1,295 @@
+{
+  "package_name": "global_textures",
+  "package_path": "resource_packages/custom/global_textures",
+  "package_hash": "0xD5EC4EB9FC5F3C88",
+  "bundle_name": "d5ec4eb9fc5f3c88",
+  "mode": "new_content",
+  "texture_count": 20,
+  "material_count": 20,
+  "textures": {
+    "custom/global_textures/0164ad48615ba9ed/2d31a495babe6201": {
+      "hash_hex": "0x26B935E0A05911CF",
+      "hash_dec": 2790320683011871183,
+      "dimensions": "512x512",
+      "format": "DXT1",
+      "original_file": "2d31a495babe6201.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/0164ad48615ba9ed/2d754be117b8d0df": {
+      "hash_hex": "0xC31D0B2B92709E44",
+      "hash_dec": 14059405893488909892,
+      "dimensions": "512x512",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "2d754be117b8d0df.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/0164ad48615ba9ed/7bf860899c392174": {
+      "hash_hex": "0x5EA479FAD8684C88",
+      "hash_dec": 6819709854025272456,
+      "dimensions": "512x512",
+      "format": "DXT5",
+      "original_file": "7bf860899c392174.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/0164ad48615ba9ed/fd2b5a6e838afe6a": {
+      "hash_hex": "0x2D5AF4ACC0F7D5D1",
+      "hash_dec": 3268193502419736017,
+      "dimensions": "512x512",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "fd2b5a6e838afe6a.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/07cdebae91f29fae/fda4d329f2f502e3": {
+      "hash_hex": "0xB4B784CB59C7E29B",
+      "hash_dec": 13022022856484577947,
+      "dimensions": "1918x1080",
+      "format": "DXT5",
+      "original_file": "fda4d329f2f502e3.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/3f4b8ddf8328978a": {
+      "hash_hex": "0xE214A10D848AC942",
+      "hash_dec": 16290822831536261442,
+      "dimensions": "512x512",
+      "format": "DXT1",
+      "original_file": "3f4b8ddf8328978a.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/93fd6865a4093d17": {
+      "hash_hex": "0x2F5C6FD2331936DD",
+      "hash_dec": 3412725566231099101,
+      "dimensions": "128x128",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "93fd6865a4093d17.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/ac62dce0c2998776": {
+      "hash_hex": "0xEB456DC018AAB7FD",
+      "hash_dec": 16953077044121090045,
+      "dimensions": "256x256",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "ac62dce0c2998776.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/b56f214b204e7821": {
+      "hash_hex": "0x12DCEF49B11AFDE6",
+      "hash_dec": 1359224287342034406,
+      "dimensions": "128x128",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "b56f214b204e7821.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/b7d309566b93616c": {
+      "hash_hex": "0xE38A20B8E541C7BA",
+      "hash_dec": 16395953371888076730,
+      "dimensions": "128x128",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "b7d309566b93616c.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/1bbcb9610a009446/d82a88b6d60661b3": {
+      "hash_hex": "0x396CFD9C7FFE278D",
+      "hash_dec": 4137961006250731405,
+      "dimensions": "128x128",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "d82a88b6d60661b3.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/Background": {
+      "hash_hex": "0x07CC41CB8201B035",
+      "hash_dec": 561896395829784629,
+      "dimensions": "1918x1080",
+      "format": "DXT5",
+      "original_file": "Background.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/63dd7df7af318da4": {
+      "hash_hex": "0xB5F190E45FD5A35E",
+      "hash_dec": 13110419300787004254,
+      "dimensions": "1918x5055",
+      "format": "DXT5",
+      "original_file": "63dd7df7af318da4.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/7b095681bc52e08b": {
+      "hash_hex": "0x487078D56E8EA7E0",
+      "hash_dec": 5219804826200614880,
+      "dimensions": "1920x1080",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "7b095681bc52e08b.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/a4e19f95599adfcb": {
+      "hash_hex": "0x2B04309A82FAF7BA",
+      "hash_dec": 3099655883718326202,
+      "dimensions": "1920x1060",
+      "format": "DXT1",
+      "original_file": "a4e19f95599adfcb.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/a55080aad80f291a": {
+      "hash_hex": "0xFDC00ACFB1648C09",
+      "hash_dec": 18284626374274878473,
+      "dimensions": "1920x1080",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "a55080aad80f291a.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/b7aae02758f94869": {
+      "hash_hex": "0x699CAB56FD4DB225",
+      "hash_dec": 7610145860454560293,
+      "dimensions": "1920x1080",
+      "format": "DXT1",
+      "original_file": "b7aae02758f94869.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/bed0b7e319b0fc6f": {
+      "hash_hex": "0x603C9D56CDAADCCE",
+      "hash_dec": 6934590522386996430,
+      "dimensions": "720x180",
+      "format": "DXT5",
+      "original_file": "bed0b7e319b0fc6f.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/ec181385e7000cf1/f894d27d8bd648da": {
+      "hash_hex": "0xB18CFA55E99D0621",
+      "hash_dec": 12793875888351282721,
+      "dimensions": "1920x1080",
+      "format": "\u0000\u0000\u0000\u0000",
+      "original_file": "f894d27d8bd648da.dds",
+      "is_replacement": false
+    },
+    "custom/global_textures/GauntletCampainBG": {
+      "hash_hex": "0xFDE0BE2A3CAEDF35",
+      "hash_dec": 18293830774994951989,
+      "dimensions": "1918x5055",
+      "format": "DXT5",
+      "original_file": "GauntletCampainBG.dds",
+      "is_replacement": false
+    }
+  },
+  "materials": {
+    "2d31a495babe6201": {
+      "hash_hex": "0x11937D6EDE985872",
+      "hash_dec": 1266493835355641970,
+      "texture_hash": "0x26B935E0A05911CF",
+      "gui_usage": "bg_img = \"2d31a495babe6201\""
+    },
+    "2d754be117b8d0df": {
+      "hash_hex": "0xABEA5A32F28AF4E5",
+      "hash_dec": 12387812899900028133,
+      "texture_hash": "0xC31D0B2B92709E44",
+      "gui_usage": "bg_img = \"2d754be117b8d0df\""
+    },
+    "7bf860899c392174": {
+      "hash_hex": "0xD6F81B2B37E2AD1B",
+      "hash_dec": 15490160790775967003,
+      "texture_hash": "0x5EA479FAD8684C88",
+      "gui_usage": "bg_img = \"7bf860899c392174\""
+    },
+    "fd2b5a6e838afe6a": {
+      "hash_hex": "0xDC389BCB1870561A",
+      "hash_dec": 15868604583630624282,
+      "texture_hash": "0x2D5AF4ACC0F7D5D1",
+      "gui_usage": "bg_img = \"fd2b5a6e838afe6a\""
+    },
+    "fda4d329f2f502e3": {
+      "hash_hex": "0xC9DC6D878978A8A6",
+      "hash_dec": 14545621325394258086,
+      "texture_hash": "0xB4B784CB59C7E29B",
+      "gui_usage": "bg_img = \"fda4d329f2f502e3\""
+    },
+    "3f4b8ddf8328978a": {
+      "hash_hex": "0x128788147650CE02",
+      "hash_dec": 1335185436004371970,
+      "texture_hash": "0xE214A10D848AC942",
+      "gui_usage": "bg_img = \"3f4b8ddf8328978a\""
+    },
+    "93fd6865a4093d17": {
+      "hash_hex": "0x50D93D814D8CE336",
+      "hash_dec": 5825755218541601590,
+      "texture_hash": "0x2F5C6FD2331936DD",
+      "gui_usage": "bg_img = \"93fd6865a4093d17\""
+    },
+    "ac62dce0c2998776": {
+      "hash_hex": "0xA0196E30DF299468",
+      "hash_dec": 11536373076667765864,
+      "texture_hash": "0xEB456DC018AAB7FD",
+      "gui_usage": "bg_img = \"ac62dce0c2998776\""
+    },
+    "b56f214b204e7821": {
+      "hash_hex": "0xA39436F105914229",
+      "hash_dec": 11787106533543854633,
+      "texture_hash": "0x12DCEF49B11AFDE6",
+      "gui_usage": "bg_img = \"b56f214b204e7821\""
+    },
+    "b7d309566b93616c": {
+      "hash_hex": "0xF82F91797CE29261",
+      "hash_dec": 17883672596283822689,
+      "texture_hash": "0xE38A20B8E541C7BA",
+      "gui_usage": "bg_img = \"b7d309566b93616c\""
+    },
+    "d82a88b6d60661b3": {
+      "hash_hex": "0xDC0B24BE81265E82",
+      "hash_dec": 15855807313717124738,
+      "texture_hash": "0x396CFD9C7FFE278D",
+      "gui_usage": "bg_img = \"d82a88b6d60661b3\""
+    },
+    "Background": {
+      "hash_hex": "0xDD19EE0A2566173D",
+      "hash_dec": 15932026884144371517,
+      "texture_hash": "0x07CC41CB8201B035",
+      "gui_usage": "bg_img = \"Background\""
+    },
+    "63dd7df7af318da4": {
+      "hash_hex": "0xD5812F8A81FB7E1B",
+      "hash_dec": 15384630074007059995,
+      "texture_hash": "0xB5F190E45FD5A35E",
+      "gui_usage": "bg_img = \"63dd7df7af318da4\""
+    },
+    "7b095681bc52e08b": {
+      "hash_hex": "0xEEA5F7A22363EAEA",
+      "hash_dec": 17196423027934620394,
+      "texture_hash": "0x487078D56E8EA7E0",
+      "gui_usage": "bg_img = \"7b095681bc52e08b\""
+    },
+    "a4e19f95599adfcb": {
+      "hash_hex": "0x31A58C691B819A50",
+      "hash_dec": 3577419862076660304,
+      "texture_hash": "0x2B04309A82FAF7BA",
+      "gui_usage": "bg_img = \"a4e19f95599adfcb\""
+    },
+    "a55080aad80f291a": {
+      "hash_hex": "0x180C989002A052F0",
+      "hash_dec": 1732927700917572336,
+      "texture_hash": "0xFDC00ACFB1648C09",
+      "gui_usage": "bg_img = \"a55080aad80f291a\""
+    },
+    "b7aae02758f94869": {
+      "hash_hex": "0xD95A627B9ACD8577",
+      "hash_dec": 15661938937151980919,
+      "texture_hash": "0x699CAB56FD4DB225",
+      "gui_usage": "bg_img = \"b7aae02758f94869\""
+    },
+    "bed0b7e319b0fc6f": {
+      "hash_hex": "0x1490D4C90F7BF3A2",
+      "hash_dec": 1481918237418189730,
+      "texture_hash": "0x603C9D56CDAADCCE",
+      "gui_usage": "bg_img = \"bed0b7e319b0fc6f\""
+    },
+    "f894d27d8bd648da": {
+      "hash_hex": "0xD9BBC0B3071AA390",
+      "hash_dec": 15689345602026120080,
+      "texture_hash": "0xB18CFA55E99D0621",
+      "gui_usage": "bg_img = \"f894d27d8bd648da\""
+    },
+    "GauntletCampainBG": {
+      "hash_hex": "0x86A0B3D72E828FBC",
+      "hash_dec": 9700951334135697340,
+      "texture_hash": "0xFDE0BE2A3CAEDF35",
+      "gui_usage": "bg_img = \"GauntletCampainBG\""
+    }
+  },
+  "lua_load_code": "Game:load_package(\"resource_packages/custom/global_textures\", true)",
+  "install_path": "Gauntlet/contents/d5ec4eb9fc5f3c88"
+}
