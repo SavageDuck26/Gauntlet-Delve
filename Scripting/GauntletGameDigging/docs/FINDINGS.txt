@@ -3915,3 +3915,47 @@ NEXT STEPS (untested):
 
   Unit family: 219 -> 181 unique unresolved.  overlay 5068, 2476 unique left.
 
+================================================================================
+17.19 PARTICLES, AND WHERE THE REMAINING FAMILIES LIVE (+13 particles)
+================================================================================
+  PARTICLES have the shape effects/<prefix>_<subject>_<verb>[_<mod>]:
+  cha_beast_charge_step, cha_boss_mummy_heart_burst,
+  cha_beast_fallingrock_marker, gam_spawner_aura_floor.  prefixes are
+  cha/wep/gam/env/hud (character / weapon / gameobject / environment / hud) and
+  the verb set is shared across the family.  A pattern sweep over
+  `%d/%p_%s_%v[_%m]` (dirs effects|effects_ui x prefix x subject x verb x mod)
+  produced 13 straight away, e.g.
+
+      effects/cha_mummy_blood_trail
+      effects/cha_spider_queen_charge_trail
+      effects/gam_spawner_aura_floor
+      effects/gam_spawner_crypt_spawn_glow
+      effects/wep_warrior_axe_throw_trail
+
+  IMORTANT TRAP: within `resource_packages/all_effects` the material and
+  particle namespaces MIRROR each other (`effects/boss_circle_complete` is both
+a material and a particle - same string, same hash).  A hash resolved once
+  clears both rows, so never count them as two targets.
+
+  WHERE THE REST IS (unresolved rows by bundle):
+      texture          resource_packages/menu 334 | modules/d01_caves 281 |
+                       d01_crypt 272 | d01_lava 249 | modules/menu 193 |
+                       hub_room 128 | all_effects 101 ...
+      material         resource_packages/all_effects 296 (twins of particles)
+      shader_library   ALL 538 in core/rendering/renderer
+
+  NEGATIVE RESULTS this round (checked, do not retry):
+    * bundle_strings.txt and bin_strings.txt contain ZERO strings matching an
+      unresolved shader_library - the shader names are not in any shipped
+      string corpus we have
+    * gui/*.lua keys x menu/hud dirs x UI suffixes (1.4M cands) -> 0
+    * animation_events.lua + flow_events.lua strings x the 47 clip directories
+      (72k cands) -> 0
+    * shaders/<leaf> from all resolved leaves -> 0
+    * bundle-scoped dir/leaf/suffix sweep -> 0 (the top-600 leaves were already
+      covered)
+
+  overlay 5068 -> 5081; 2463 unique unresolved.  Auto driver (auto_run.sh)
+  reaches a fixpoint after one cycle, i.e. new generators are needed, not more
+  repetitions of the old ones.
+
