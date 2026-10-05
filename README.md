@@ -68,6 +68,7 @@ git status            # tracked files (venv/outputs/downloads are ignored)
 git add -A && git commit -m "…"
 ```
 
-Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, generated
-catalogues/overlays, `reference/` downloads, `wwise-unpacker-revamped/` binaries,
-and bulk extract output.
+Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, the generated
+catalogue (`bundle_manifest/`), `reference/` downloads, `wwise-unpacker-revamped/`
+binaries, `.unit orig/`, and bulk extract output. The brute-forced
+`*_overlay.json` name databases ARE tracked.
