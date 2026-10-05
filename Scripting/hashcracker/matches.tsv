@@ -2718,3 +2718,7 @@ a933024427d9b005	effects/env_lock_wall_glow
 7d0c7e745b817e7b	effects/env_embers_large_01
 dc06218030b59356	effects/wep_wizard_void_burst_fire
 41171635596c83d6	rendering/ss_dust
+24d3380eaab10d6e	characters/lich/animations/spell_raise_dead
+601c90f46291edb7	characters/lich/animations/spell_shadowdive_init
+f9fa9236c5e71bec	characters/grunt_shaman/animations/ability_spawner_buff
+bcb4f7676ca7f035	characters/boss_mummy/animations/ability_floor_bash
