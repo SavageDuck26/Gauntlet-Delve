@@ -3832,3 +3832,45 @@ NEXT STEPS (untested):
   observed-shape x observed-edge cross product (+25), then the schema-correct
   alphabet (+3 and counting).  Level family: 233 -> 177 unique unresolved.
 
+================================================================================
+17.17 CORRIDORS / HALLWAYS - THE BLOCK PIECES (+30 units)
+================================================================================
+  The dungeon generator (lua/dungeon/corridor_segment.lua,
+  corridor_collection.lua) is pure geometry - corridors are QUILT pieces, and
+  the level layouts group them as straight_vert_long / straight_horiz_short /
+  turn_* (those are already covered by the quilt sweep).
+
+  The art side of corridors/hallways is the `unit` family: block pieces stored
+  in the same module bundles as the levels.  Their habit:
+
+      <root>/d01_<env>/<category>/<style>_<part>[_<orient>][_<width>c][_<var>]
+
+      blocks/d01_crypt/walls/crypt_wall_4c_var01
+      blocks/d01_crypt/walls/cryptsmooth_wall_door_01_4c
+      blocks/d01_lava/floors/lavastruct_floor_drain_turn_left_lavaflow
+      blocks/d01_caves/rocks/caverock_stalagmites_01
+      blocks/d01_crypt/borders/crypt_border_straight_2c
+      blocks/d01_lava/pillars/lavastruct_column_01
+      blocks/d01_caves/stairs/cavestruct_stairs_4c
+
+  lua/generated/unit_paths.lua is the *script-referenced* unit list (239
+  entries) and is already exhausted; the stragglers are unreferenced art, so
+  the habit is the only lever.  Two generators paid:
+
+    targeted_unit.py   edit-distance-1 inside a unit's own directory +
+                       cross-dir re-pointing, using a token vocabulary from the
+                       whole family (+6)
+    make_unit_vocab.py the <root>/d01_<env>/<cat>/<style>_<part>[_<orient>]
+                       [_<width>c][_<var>] cross product driven through the GPU
+                       pattern engine (+23 then +4)
+
+  Recovered pieces include walls (caverock_wall_2c/4c, lavarock_wall_2c/4c,
+  lavastruct_wall_2c/4c), stairs (cavestruct_stairs_2c/4c, stairs_2c/4c,
+  lavastruct_stairs_2c/4c), pillars (crypt_pillar_01, cryptsmooth_pillar_01,
+  cavestruct_pillar_01, lavastruct_pillar_01, lavastruct_column_01), borders
+  (crypt_border_corner, crypt_border_straight_2c/4c, lavastruct_border_2c/4c),
+  rocks (crypt_rock_01, lavarock_rock_01/02), doorarch/pillars/walls, and the
+  passage floors lavastruct_floor_drain_{end,straight_2c,straight_4c}.
+
+  unit family: 219 -> 189 unique unresolved.
+
