@@ -41,6 +41,7 @@ USAGE
 
 CRACK OPTIONS
   --targets <file>    file of target hashes (hex, one per line; # comments ok)
+  --exclude <file>    hashes to skip (e.g. already-solved), same format
   --list <X=file>     word list for slot letter X (repeatable), e.g. n=names.txt
   --pattern <pat>     template with %X slots (repeatable); %% = literal %
   --threads <n>       worker threads (default: all cores)
@@ -137,7 +138,13 @@ fn crack(argv: &[String]) -> Result<()> {
     let show: usize = args.one_or("show", "40").parse().unwrap_or(40);
     let limit: u64 = args.one_or("limit", "0").parse().unwrap_or(0);
 
-    let targets = read_targets(&targets_path)?;
+    let mut targets = read_targets(&targets_path)?;
+    if let Some(ex) = args.one("exclude") {
+        let drop = read_targets(&ex)?;
+        let before = targets.len();
+        targets.retain(|h| !drop.contains(h));
+        println!("excluded     : {} already-solved", before - targets.len());
+    }
     println!("targets      : {} hashes", targets.len());
 
     // build compiler + load word lists (must exist before compiling patterns)

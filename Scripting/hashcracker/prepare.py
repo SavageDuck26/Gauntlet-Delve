@@ -29,6 +29,23 @@ SUFFIXES = [
     "_ao", "_det", "_detail", "_roughness", "_mat", "_material", "_specgloss",
     "_nrmgloss", "_diffgloss", "_glowmask", "_translucent", "_glowmaskcolor",
 ]
+# Targeted vocabularies observed in resolved names (levels / animations).
+ENVS = ["d01_crypt", "d01_caves", "d01_lava", "d01_hub_room", "d01_arcade",
+        "d01_crypt_boss", "d01_caves_boss", "d01_lava_boss"]
+ENVNAMES = ["crypt", "caves", "lava", "hub_room", "hubroom", "arcade",
+            "crypt_boss", "caves_boss", "lava_boss", "tutorial"]
+KINDS = ["adventure", "boss", "arena", "colosseum", "labyrinth", "endless",
+         "procedural", "dummy", "tutorial", "survival", "wave", "gauntlet",
+         "room", "trap", "puzzle", "treasure", "shop", "hub", "safe", "saferoom",
+         "start", "end", "intro", "outro", "transition", "corridor", "secret"]
+ANIM = ["idle", "run", "walk", "sprint", "attack", "death", "die", "hit", "cast",
+        "reload", "jump", "land", "taunt", "dodge", "block", "stagger", "stun",
+        "knockdown", "revive", "celebrate", "victory", "intro", "outro", "spawn",
+        "special", "dormant", "execute", "entrance", "exit", "start", "end",
+        "loop", "turn", "strafe", "aim", "shoot", "swing", "charge", "leap",
+        "slam", "stomp", "roar", "spit", "summon", "teleport", "morph", "laugh",
+        "cheer", "panic", "flee", "guard", "parry", "throw", "pickup", "point",
+        "wave", "gesture", "emote", "spawn_special", "hit_react", "death_react"]
 ROOTS = [
     "resource_packages", "modules", "characters", "props", "gameobjects",
     "equipment", "effects", "decals", "gui", "hud", "lua", "foundation",
@@ -118,6 +135,10 @@ def main():
     dump("names.txt", names)
     dump("prefixes.txt", prefixes)
     dump("suffixes.txt", SUFFIXES, filt=False)
+    dump("env.txt", ENVS, filt=False)
+    dump("envname.txt", ENVNAMES, filt=False)
+    dump("kind.txt", KINDS, filt=False)
+    dump("anim.txt", ANIM, filt=False)
     print(f"\nwritten to {out}/")
 
 
