@@ -1,0 +1,22 @@
+[package]
+name = "hashcracker"
+version = "0.1.0"
+edition = "2021"
+description = "Multithreaded MurmurHash64A brute-forcer for Gauntlet resource/bundle names"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+# Pinned to versions present in the local cargo cache (offline build).
+rayon = "=1.12.0"          # data-parallel candidate evaluation
+aho-corasick = "=1.1.4"    # fast multi-pattern scan for the `mine` subcommand
+anyhow = "=1.0.102"        # ergonomic errors
+
+[[bin]]
+name = "hashcracker"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

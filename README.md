@@ -35,6 +35,8 @@ Gauntlet-Reverse-Engineering/
 │   ├── example_mod/ test_mod/ crane_mod/   ← mod projects (referenced by the loader)
 │   └── wwise-unpacker-revamped/     ← bundled audio unpacker tool
 │
+├── Scripting/hashcracker/           ← Rust MurmurHash64A name brute-forcer (billions of candidates/s)
+│
 ├── game-source/Gauntlet-SourceCode-LUA/   ← game Lua source (927 files)
 ├── reference/                             ← reference projects (downloads)
 │   ├── Loremasters-Armoury-main/
