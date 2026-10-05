@@ -31,6 +31,50 @@ PREFIXES = ["", "menu/", "achievement_icons/", "equippables_icons/", "hud/",
             "effects_ui/", "props/", "decals/", "gameobjects/", "characters/",
             "equipment/", "textures/"]
 
+# the resource is a banked blob: (u32 index, u64 size) pairs, then the blocks.
+# Only ONE block is English - the rest are localisations (pl, pt, de, fr, es,
+# es-LA, it, cs, ...) plus platform strings. Those are worthless for us: the
+# game was never hashed with non-English text, and they only pollute the word
+# list with foreign words.
+ENGLISH_HINTS = (" the ", " you ", " and ", " of ", " to ", " is ", " for ",
+                 " with ", " your ", " a ")
+
+
+def blocks(body):
+    """Split the banked body into its sub-blocks."""
+    pairs, off = [], 0
+    while off + 12 <= len(body):
+        size = int.from_bytes(body[off + 4:off + 12], "little")
+        if size == 0 or off + 12 + size > len(body) + 64:
+            break
+        pairs.append((int.from_bytes(body[off:off + 4], "little"), size))
+        off += 12
+    if not pairs:
+        return [(0, body)]
+    out, pos = [], off
+    for tag, size in pairs:
+        out.append((tag, body[pos:pos + size]))
+        pos += size
+    return out
+
+
+def english_block(body):
+    """Pick the block that reads as English.
+
+    Scoring purely on English function words is decisive here (the English
+    block scores ~3900 hits, every localisation <520) and avoids being fooled
+    by accented-text heuristics - the English block even begins with a binary
+    index, so a "fewest non-ASCII bytes" rule picks German.
+    """
+    best, best_score = None, -1
+    for tag, blk in blocks(body):
+        txt = blk.decode("latin-1", "ignore").lower()
+        score = sum(txt.count(h) for h in ENGLISH_HINTS)
+        if score > best_score:
+            best, best_score = (tag, blk), score
+    return best
+
+
 
 def main():
     here = Path(__file__).resolve().parent
@@ -56,24 +100,25 @@ def main():
     _, _, data = L.decompress_bundle((contents / bundle).read_bytes())
     _, toc = L.parse_toc(data)
     entries, _, _ = L.parse_resources(data, toc)
+    e = entries[0]
+    body = data[e["body_start"]:e["body_start"] + (e["body_size"] or 0)]
+    tag, eng = english_block(body)
 
     words, phrases = set(), set()
     strings = 0
-    for e in entries:
-        body = data[e["body_start"]:e["body_start"] + (e["body_size"] or 0)]
-        for m in re.finditer(rb"[ -~]{4,140}", body):
-            strings += 1
-            t = m.group().decode("ascii", "ignore").strip()
-            for w in re.findall(r"[A-Za-z][A-Za-z0-9]*", t):
-                if len(w) > 2:
-                    words.add(w.lower())
-            if " " in t and re.match(r"^[A-Za-z][A-Za-z0-9 ,'\-!?.]*$", t):
-                c = t.lower()
-                for ch in "!,?.'":
-                    c = c.replace(ch, "")
-                c = re.sub(r"\s+", "_", c.strip())
-                if 3 <= len(c) <= 80:
-                    phrases.add(c)
+    for m in re.finditer(rb"[ -~]{4,140}", eng):
+        strings += 1
+        t = m.group().decode("ascii", "ignore").strip()
+        for w in re.findall(r"[A-Za-z][A-Za-z0-9]*", t):
+            if len(w) > 2:
+                words.add(w.lower())
+        if " " in t and re.match(r"^[A-Za-z][A-Za-z0-9 ,'\-!?.]*$", t):
+            c = t.lower()
+            for ch in "!,?.'":
+                c = c.replace(ch, "")
+            c = re.sub(r"\s+", "_", c.strip())
+            if 3 <= len(c) <= 80:
+                phrases.add(c)
 
     out = Path(args.vocab_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -88,7 +133,7 @@ def main():
             cands.add(c + s)
     (out / "loc_candidates.txt").write_text("\n".join(sorted(cands)) + "\n")
 
-    print(f"bundle    : {bundle}")
+    print(f"bundle    : {bundle}  (block tag={tag}, {len(eng)} bytes, English only)")
     print(f"strings   : {strings}")
     print(f"words     : {len(words)}")
     print(f"phrases   : {len(phrases)}")
