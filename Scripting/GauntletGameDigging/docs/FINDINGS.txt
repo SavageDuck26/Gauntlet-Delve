@@ -3470,3 +3470,84 @@ NEXT STEPS (untested):
     DXBC blobs (today only uniform names survive as text).
   - Fold the harvested word lists back through `mutate` after every new source.
 
+================================================================================
+17.8 TIER-1 RETEST PASS (extension semantics, binaries, graph, mutation)
+================================================================================
+  Re-ran the whole pipeline against the now-1,900-name overlay and fixed three
+  blind spots in our own tooling.
+
+  (a) clean_filepath() re-test  -> +2.
+      The bundle-body string dump (scan_bundle_strings.py) had only ever tested
+      strings VERBATIM. The engine strips every trailing extension before
+      hashing, so any `.../foo.norm.dds`-style string could never match. Re-ran
+      the dump through clean_filepath semantics (strip `.ext` repeatedly, `\`->`/`,
+      drop a leading dir component): 174,722 variants -> recovered
+      `characters/boss_mummy/boss_mummy_hole` and
+      `blocks/d01_crypt/walls/crypt_wall_door_01_4c`, which the original scan had
+      PRINTED as hits but never written to matches.tsv. New tool:
+      scan_binaries.py (binaries), plus the variant list is now fed through
+      `crack --candidates` so hits are always recorded.
+
+  (b) game binaries -> 0.
+      prepare.py only kept the LAST `/`-segment of a path-like string from
+      gauntlet.exe/*.dll. scan_binaries.py keeps whole strings and expands them
+      (ext-strip, every known root prefix): 855,744 candidates from 13 binaries
+      -> 0 hits. The exe/DLLs carry IDENTIFIERS (`render_config`,
+      `shader_library`, `elias_theme_*`), not resource paths. elias.dll (the
+      dialogue system) contains no .wav/.ugg names either.
+      .stream files are simply `<bundle-hash>.stream` -> no name material.
+
+  (c) material -> texture graph -> +1.
+      derive_textures.py re-run with the current overlay: only 1 new name. The
+      reason is structural, not a bug: materials_database.json holds just 1,657
+      decoded material records (a subset), of which 1,099 now have known names;
+      most unknown materials reference textures that are themselves unknown, so
+      the graph has no anchor to walk from.
+
+  (d) mutate to fixpoint -> +106.
+      84 + 18 + 4, then 0. Mutation is the single best value-per-second tool we
+      have: it found e.g. `props/d01_common/fog_volume_swamp_01` and, notably, a
+      NEW quilt field pattern `ox_ex_ix_ex` that the hand-written quilt grammar
+      enumeration had missed. Lesson: prefer mutate over hand-built grammars.
+
+  Net: 1,877 -> 1,986 names (+109).
+
+================================================================================
+17.9 ANIMATION — SOLVED THE STRUCTURE, NOT THE NAMES
+================================================================================
+  The single biggest remaining pool (1,243 unresolved) now has a real handle.
+
+  DISCOVERY: every unit ships a `state_machine` sub-resource
+  (type murmur64("state_machine") = 0xA486D4045106165C) that shares the unit's
+  name. Its body contains the 8-byte little-endian Murmur hashes of every
+  animation it plays (records look like [u32 flag][u64 hash]..., unaligned).
+  Proof: the body of `characters/necromancer/necromancer` contains both
+  `characters/necromancer/spawn_special_dormant` and
+  `characters/necromancer/spawn_special_execute`.
+
+  EXTRACTION (extract_anim_refs.py): 111 state machines, 51 unit dirs,
+  1,246 animation hashes referenced — i.e. ALL 1,243 unresolved animations are
+  accounted for, each attributed to the unit that owns it (e.g. skeleton_warrior
+  44, mummy_risen 34, boss_mummy 31). Writes anim_dirs.txt / anim_targets.txt /
+  anim_map.json, turning a hopeless global search into 51 tiny per-unit ones.
+
+  WHY IT STILL DID NOT CRACK: the clip is the last path segment of
+  `<unit_dir>/<clip>`, but that leaf is not present in ANY shipped text:
+      <unit_dir>/<108k-token vocab> ........................ 0
+      <unit_dir>/<2 tokens from that vocab> (11.9e9) ....... 0
+      <unit_dir>/<3 tokens> ................................ 0
+      <unit_dir>/<3 token vocab> + <token>_<number> ........ 0
+      <any known dir>/<217 lua `animation=` clips> ......... 0
+      <any dir under any lua path>/<217 clips> ............. 0
+      <unit_dir>/<482 animation_events> .................... 0
+  Only 3 animation names are known at all (all `<unit_dir>/<clip>`), so the
+  namespace is barely sampled. e.g. necromancer.lua declares the logical clip
+  `death_default`, but no `<dir>/death_default` resource exists — the lua name
+  is a LOGICAL alias resolved through the (binary) animation set, and the real
+  resource leaf comes from a source animation file name that is not shipped.
+
+  NEXT for animations: we now know unit->animation-hash sets, so any future clip
+  vocabulary (a bigger token corpus, a DCC export, a leaked asset list) can be
+  tested with one `%d/%clip` sweep and would land ~1,200 names at once.
+
+
