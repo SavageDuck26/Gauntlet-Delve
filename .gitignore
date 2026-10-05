@@ -94,12 +94,17 @@ Scripting/GauntletGameDigging/third_party/
 # ---- Generated catalogues (regenerable) ----------------------------------
 Scripting/GauntletGameDigging/bundle_manifest/
 
-# ---- Bulk extracted game data (regenerable from the bundles) -------------
+# ---- Game-derived exports / assets --------------------------------------
+# NOT redistributed: extracted game content + derived data dumps (copyright +
+# size). Only our own code, docs and the game LUA source are versioned here.
+assets/
+Scripting/GauntletGameDigging/Exports/
+Scripting/GauntletGameDigging/crane_mod/
+Scripting/GauntletGameDigging/example_mod/
+Scripting/GauntletGameDigging/test_mod/
+Scripting/GauntletGameDigging/decoded_materials/
+Scripting/GauntletGameDigging/database_extractor/
 Scripting/GauntletGameDigging/.unit orig/
-Scripting/GauntletGameDigging/Exports/extracted_named/
-Scripting/GauntletGameDigging/Exports/exported_models/
-Scripting/GauntletGameDigging/Exports/glb/
-Scripting/GauntletGameDigging/Exports/samples/
 Scripting/GauntletGameDigging/my_textures/
 Scripting/GauntletGameDigging/test_textures/
 Scripting/GauntletGameDigging/test_bundle_output/
