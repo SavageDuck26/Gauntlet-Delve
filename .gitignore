@@ -93,6 +93,8 @@ Scripting/GauntletGameDigging/third_party/
 
 # ---- Generated catalogues (regenerable) ----------------------------------
 Scripting/GauntletGameDigging/bundle_manifest/
+# raw string dump harvested from bundle resource bodies (scan_bundle_strings.py)
+Scripting/GauntletGameDigging/bundle_strings.txt
 
 # ---- Game-derived exports / assets --------------------------------------
 # NOT redistributed: extracted game content + derived data dumps (copyright +
