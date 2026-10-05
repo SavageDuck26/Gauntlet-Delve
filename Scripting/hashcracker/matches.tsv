@@ -902,3 +902,5 @@ fa2b7999e6300f1a	core/rendering/base_dx11
 a62616b8da86f15e	core/rendering/player_marker
 c01f6971e184bb29	core/rendering/debug_gbuffer
 0a8cff74bc6bd0cd	core/rendering/light_bake
+3d11b9d56a5a3093	core/rendering/color_grading_identity
+30016d5d2c1789ff	core/rendering/nft
