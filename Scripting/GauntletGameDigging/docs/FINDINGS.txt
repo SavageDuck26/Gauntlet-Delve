@@ -4785,3 +4785,50 @@ a material and a particle - same string, same hash).  A hash resolved once
   (sweeps/auto_run.sh phase 6), so names recovered by one cycle become seeds for
   the next.
 
+================================================================================
+34. THE BIG RUN - WIDE-VOCABULARY BATTERY (+49 NAMES, 82.5% NAMED)
+================================================================================
+  BUILT FOR IT: tools/make_tokens_big.py -> data/vocab/tokens_big.txt
+      sources: the recovered names, data/names.txt, data/lua_strings.txt,
+               data/events.txt, data/vocab/bundle_words.txt and the 447
+               Stingray documentation pages
+      129,010 distinct candidates -> kept the 80,000 most frequent
+  DRIVER: sweeps/big_run.sh [rounds] - each round runs
+      a. shader_chains.py --global-flags 2 --composite-depth 2      (grammar)
+      b. hashcracker mutate against the 80k token list
+      c. sweeps/auto_run.sh 3   (particles/scoped/luakeys/blocks/textures/mutate)
+      d. specialists: blocks_pipeline, tex_pipeline, unit_medium, level_phase2,
+         context_sweep
+  Each stage is measured by how many rows matches.tsv gained, and the loop runs
+  until a whole round gains nothing.
+
+  RESULT
+      matches.tsv       5,338 -> 5,387      (+49)
+      overlay           5,941 -> 5,990
+      catalogue         16,371 -> 16,507 of 20,000 named  (81.9% -> 82.5%)
+      unique unresolved 1,603 -> 1,554
+  Where the 49 came from: the shader grammar re-run +2 (it now knows the
+  techniques and flags the previous round taught it - worth re-running after
+  any vocabulary gain) and the 80k-token mutate +47.  Every other stage - the
+  family pipeline and all five specialists - returned 0.  With the wider
+  vocabulary the families are genuinely flat.
+
+  THE RUN ALSO FOUND A VOCABULARY RUNAWAY (now guarded)
+     sweeps/level_phase2.sh reads data/vocab/lvl_edge.txt, which has grown to
+     790,326 entries.  One of its patterns expands to
+         3 envs x 5 subs x 20 shapes x 790,326 edges x 12 nn  ~= 2.8e12 candidates
+     about an hour of GPU for a single pattern, for a family with 109 unresolved
+     hashes.  The earlier session ran this sweep when the edge list was small;
+     nothing warns you when a vocabulary grows into an un-runnable sweep.
+     FIX: big_run.sh wraps every specialist stage in `timeout`
+     (420/420/420/240/300 s), so no stage can eat the whole run again.  If the
+     level family is worth another attempt, prune lvl_edge.txt first (dedupe and
+     drop shapes that cannot co-occur) instead of throwing GPU at 2.8e12.
+
+  REMAINING - unique unresolved 1,554
+     texture 537 | animation 353 | shader_library 249 | material 165 |
+     particles 131 | level 109 | unit 68 | shader 47 | timpani_bank 37
+  The vocabulary is now as wide as our own data can make it.  The levers left
+  are NEW SOURCE MATERIAL (art/prop production lists, engine shader source)
+  rather than more mutation of what we already hold.
+
