@@ -2,7 +2,8 @@
 # Gauntlet-Reverse-Engineering — .gitignore
 # ==========================================================================
 
-Gauntlet-PreSlayer/
+# Old depot snapshots, one folder per build (date suffix = SteamDB "seen" date)
+Gauntlet-PreSlayer-*/
 
 # ---- Python --------------------------------------------------------------
 __pycache__/

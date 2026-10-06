@@ -4061,8 +4061,9 @@ a material and a particle - same string, same hash).  A hash resolved once
 ================================================================================
 19. PRE-SLAYER DEPOT - 549 MORE NAMES, AND WHY WE MISSED THEM (+22%)
 ================================================================================
-  WHAT IT IS: Gauntlet-PreSlayer/ is a Steam depot snapshot of the older
-  (pre-Slayer) build - depot_258971/binaries (older gauntlet.exe 3.5MB + 10
+  WHAT IT IS: Gauntlet-PreSlayer-2015-01-21/ is a Steam depot snapshot of the
+  older (pre-Slayer) build (manifest 2950106636512614349, SteamDB seen date
+  2015-01-21) - depot_258971/binaries (older gauntlet.exe 3.5MB + 10
   DLLs) and depot_258972/contents (55 bundles + .stream + bundle_database.data
   + settings.ini).  50 of the 55 bundle IDs are shared with the Slayer install.
 
@@ -4118,8 +4119,8 @@ a material and a particle - same string, same hash).  A hash resolved once
 
   REPRODUCE:
       python3 generators/scan_depot_names.py \
-          --contents <Gauntlet-PreSlayer>/depot_258972/contents \
-          --binaries <Gauntlet-PreSlayer>/depot_258971/binaries \
+          --contents <Gauntlet-PreSlayer-2015-01-21>/depot_258972/contents \
+          --binaries <Gauntlet-PreSlayer-2015-01-21>/depot_258971/binaries \
           --out /tmp/depot_names.txt
       ./target/release/hashcracker crack --gpu \
           --targets data/vocab/unresolved_targets.txt \
@@ -4543,3 +4544,53 @@ a material and a particle - same string, same hash).  A hash resolved once
   each) - the older gauntlet.exe is the single best source of editor/config/
   lua strings, and every era's exe is cheap to grab:
      https://steamdb.info/depot/258971/manifests/
+================================================================================
+30. OLD-BUILD SNAPSHOTS: FOLDER LAYOUT + THE 2014-10-10 BUILD (0 new names)
+================================================================================
+  LAYOUT: every pulled build now lives in the repo root as
+      Gauntlet-PreSlayer-<date>/     (date = SteamDB "seen" date of the manifest)
+      Gauntlet-PreSlayer-2015-01-21/   manifest 2950106636512614349  (+258971 2110979887084049898)
+      Gauntlet-PreSlayer-2014-10-10/   manifest 4682021344849985257  (contents only)
+  both gitignored (`.gitignore`: `Gauntlet-PreSlayer-*/`).
+
+  PULLING THEM - TWO GOTCHAS WE HIT:
+   1. the manifest id must be copied EXACTLY.  468202134484985257 (18 digits)
+      -> "Depot download failed : Failed downloading 1 manifests (No connection)"
+      because the CM refused a manifest request code (content_log says
+      "Failed to get manifest request code, 'Access Denied'").  The real id is
+      4682021344849985257 (19 digits, SteamDB "Copy format: Steam console").
+   2. `download_depot` writes EVERY build of a depot into the SAME folder
+      (steamapps/content/app_258970/depot_258972) - rename it after each pull
+      (state_258970_258972.patch comes with it and identifies the build).
+
+  RESULT FOR 2014-10-10 - A CLEAN NEGATIVE, AND A VALIDATED HARVESTER:
+      python3 generators/scan_depot_names.py \
+          --contents Gauntlet-PreSlayer-2014-10-10/depot_258972/contents \
+          --out /tmp/depot_names_2014.txt
+      -> raw strings 1,739,762  -> 18,993,566 candidates
+      ./target/release/hashcracker crack --gpu \
+          --targets data/vocab/unresolved_targets.txt \
+          --candidates /tmp/depot_names_2014.txt --matches matches.tsv
+      -> 0 new matches ("total cands : 0" is only the PATTERN counter - the
+         --candidates file was processed; it printed the 18,993,566 load line).
+
+  CONTROL PROVING THE HARVEST IS NOT AT FAULT: of the 549 names recovered from
+  the 2015-01-21 build, **548/549 are also present** in the 2014-10-10 strings
+  (only `modules/menu/hero_portrait_lights` is missing).  So the harvester reads
+  this build correctly - the build simply PREDATES the content behind our
+  outstanding 1,718 hashes.  Those names entered the game between Jan 2015 and
+  the Sep 2015 final build, i.e. in the SLAYER era.
+
+  => the useful pulls are the builds BETWEEN 2015-01-21 and the final one:
+        2015-08-11  7179921349315804859   (Slayer content roll)
+        2015-08-17  6592885311492992946
+        2015-09-09  3787990936101424752
+     plus depot 258971 (binaries, 6-38 MB) for the same dates - the older exe
+     keeps editor/config/Lua strings.  Older builds are NOT wanted: the
+     2014-10/11/12 ones sit on the wrong side of the content window.
+
+  (Housekeeping: the Steam-side copy of the 2015-01-21 depot under
+   ubuntu12_32/steamapps/content/Gauntlet-PreSlayer/ is a byte-identical
+   duplicate of the repo folder - state files md5-equal, every file name+size
+   equal; it can be deleted to reclaim ~1.6 GB.)
+
