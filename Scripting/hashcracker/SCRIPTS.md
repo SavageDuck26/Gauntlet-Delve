@@ -22,6 +22,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | --- | --- |
 | `targeted_unit.py` | Edit-distance-1 inside a unit's own directory + cross-dir re-pointing. |
 | `targeted_block_texture.py` | Unit leaves → block dirs × map suffixes (the compounding lever), `--reverse` pushes texture leaves back at unit dirs. |
+| `tex_bundle_deep.py` | Per-bundle texture deepening: each bundle's OWN leaves/dirs/tokens rather than global top-N (`FINDINGS.txt` §24). |
 | `targeted_tex_edit.py` | Edit-distance-1 of texture leaves, scoped to the bundle that owns them. |
 | `targeted_level.py` | Quilt cross-env transfer + NN×modifier expansion + hazard/arena/room completion. |
 | `targeted_anim.py` | Edit-distance-1 of each unit's own clips (insert/replace/delete) + cross-unit transfer. |

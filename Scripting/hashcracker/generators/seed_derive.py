@@ -164,7 +164,16 @@ def derive_anims_medium(names):
     return out
 
 
-def derive_shaders(names, max_len=3):
+def shader_bases():
+    """Every shader_library name we know - a base may not carry a colon yet."""
+    out = set()
+    for r in csv.DictReader(CATALOGUE.open()):
+        if r["type"] == "shader_library" and r["name"]:
+            out.add(r["name"].split(":")[0])
+    return out
+
+
+def derive_shaders(names, max_len=12, cap=4_000_000):
     """
     `<base>:<flag>[:<flag>...]` permutations.
 
@@ -174,11 +183,13 @@ def derive_shaders(names, max_len=3):
     `max_len` are enumerated for every known base.
     """
     flags, order, bases = collections.Counter(), {}, set()
+    base_freq = collections.Counter()
     for n in names:
         if ":" not in n:
             continue
         parts = n.split(":")
         bases.add(parts[0])
+        base_freq[parts[0]] += 1
         for i, f in enumerate(parts[1:]):
             flags[f] += 1
             order.setdefault(f, i)
@@ -189,12 +200,17 @@ def derive_shaders(names, max_len=3):
             continue
         parts = n.split(":")
         per_base.setdefault(parts[0], set()).update(parts[1:])
+    bases |= shader_bases()
     out = set()
-    for b in sorted(bases):
-        own = sorted(per_base.get(b, ()), key=lambda f: (order.get(f, 99), f))[:24]
-        for L in range(1, min(9, len(own) + 1)):
+    for b in sorted(bases, key=lambda x: -base_freq.get(x, 0)):
+        own = sorted(per_base.get(b, ()), key=lambda f: (order.get(f, 99), f))
+        extra = [f for f in seq if f not in own][:max(0, 18 - len(own))]
+        own = (own + extra)[:18]
+        for L in range(1, min(max_len, len(own)) + 1):
             for combo in itertools.combinations(own, L):
                 out.add(f"{b}:" + ":".join(combo))
+                if len(out) > cap:
+                    return out
     for b in sorted(bases):
         for L in range(1, max_len + 1):
             for combo in itertools.combinations(seq, L):

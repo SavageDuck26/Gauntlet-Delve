@@ -4262,3 +4262,43 @@ a material and a particle - same string, same hash).  A hash resolved once
   STATE: overlay 5,730 -> 5,812; unique unresolved 1,814 -> 1,732
   (shader_library 341 -> 272, texture 592 -> 586, animation 385 -> 381).
 
+================================================================================
+24. PER-BUNDLE DEEPENING (+13) AND WHERE EACH FAMILY REALLY SATURATES
+================================================================================
+  Two more pushes, both suggested by the previous round:
+
+  shader_library  chains pushed PER BASE up to 12 flags and the base set widened
+                  to every known shader_library name (not just colon-bearing ones),
+                  with the most-used bases enumerated first and a 4M cap:
+                  4,000,001 candidates -> 0 new.  The chain space is EXHAUSTED for
+                  the flag vocabulary we have (+37 last round, 0 now); the 271
+                  left need flags that exist only in the unshipped shader source.
+
+  texture         NEW generators/tex_bundle_deep.py: instead of the GLOBAL top-N
+                  leaves/dirs that targeted_tex_edit.py uses, each bundle is
+                  deepened from its OWN vocabulary (its resolved leaves, its own
+                  dirs, tokens from those leaves), edit-1 plus map-suffix/`_NN`
+                  siblings, capped per bundle so no huge bundle starves the rest.
+                  6.2M candidates -> +3.
+
+  animation       the wide edit-1 (400 tokens x 200 heads) paid best: +8, all
+                  double-direction clips
+                     characters/avatar_elf/animations/bow_move_run_backwards_left
+                     characters/avatar_elf/animations/bow_move_walk_forward_right
+                  i.e. <prefix>_<verb>_<speed>_<direction>_<direction2>.
+
+  ROUNDS: seed +0  texbundle +1  texedit +0  unit +0  anim +8   => +9
+          seed +1  ...                                          => +1
+          seed +0  ...                                          => +0   (fixpoint)
+
+  STATE: overlay 5,812 -> 5,825; unique unresolved 1,732 -> 1,719
+  (animation 381 -> 373, texture 586 -> 582, shader_library 272 -> 271,
+   material 226, particles 190, level 113, unit 79, shader 49, timpani_bank 37).
+
+  WHICH LEVERS ARE STILL LIVE (ranked by last-two-round yields)
+    animation        +9  (wide edit-1)      - keep; more per-unit verbs
+    shader chains    +37 then +0            - exhausted (needs shader source)
+    texture          +9 then +4 then +3     - slowly saturating; per-bundle helped
+    unit/particles/  +4 / +0                - vocabulary-limited (prop nouns)
+    material/level   +0                     - need new sources
+
