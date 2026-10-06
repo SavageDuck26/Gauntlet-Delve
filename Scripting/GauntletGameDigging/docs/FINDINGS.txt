@@ -3959,3 +3959,50 @@ a material and a particle - same string, same hash).  A hash resolved once
   reaches a fixpoint after one cycle, i.e. new generators are needed, not more
   repetitions of the old ones.
 
+================================================================================
+17.20 THE PLATEAU AUDIT - THREE AVENUES TRIED, ALL EMPTY
+================================================================================
+  All three leads from the last report were chased to the end.  None paid, and
+  the reasons are structural (recording so they are not repeated).
+
+  1. SHADER_LIBRARY (538, all in core/rendering/renderer [1a9c33dcd0301dfd])
+     * the bodies are compiled DXBC blobs ("Microsoft (R) HLSL Shader Compiler
+       9.27.952.3022"); they contain shader variables (world, view_proj,
+       sun_direction), not the library's own resource name
+     * ONE body (index 113, 27412B) is the rendering-settings manifest and does
+       list shader paths (core/rendering/base, .../color_grading, .../noise,
+       51 of them) - but every one of those is already resolved
+     * scanning all 75 bundles' bodies for embedded paths: 4,597 path strings,
+       0 hits on any unresolved target
+     * platform permutations of the known 51 leaves x 40 platform words, both
+       orders, 142,537 candidates (base_mobile vs mobile_blend both exist): 0
+     * bundle_strings.txt / bin_strings.txt: 0 matches
+     CONLUSION: the unresolved 538 are unreferenced platform/debug library
+     variants whose names exist only in the (unshipped) engine shader source.
+
+  2. MENU UI TEXTURES (~527 unresolved rows in the menu bundles)
+     * the UI style sheets DO name textures by leaf:
+         gui/friendslist_css.lua -> bg_img = "button_friendslist"
+         (= the resolved resource menu/buttons/button_friendslist)
+       so all image-ish properties + every quoted identifier from gui,
+       lua/menu, lua/states, lua/managers (2,401 values) were pushed at 19 UI
+       directories x 20 state suffixes: 910,727 candidates -> 0
+     CONLUSION: shipped UI is already named; the rest is unreferenced/shelf UI.
+
+  3. ANIMATION (415)
+     * attribution is complete - all 415 have an owning unit via the state
+       machines (0 unattributed)
+     * widening the edit-distance-1 vocabulary to 400 tokens x 200 heads gave
+       4,170,270 candidates -> 0
+     * the 41 owning units' own clips were already used as the token source
+
+  ALSO EMPTY THIS ROUND:
+     * every string from every bundle body (349,136 strings, loose filter) -> 0
+     * animation_events/flow_events x clip dirs -> 0 (already recorded)
+
+  STATE: overlay 5,087 / 2,457 unique unresolved.  Catalogue 20,000 rows,
+  6,930 unresolved.  Every family now needs a *new data source* rather than a
+  new generator: the shipped Lua / bundles / binaries contain no further name
+  material for texture, shader_library, animation, particles or the module
+  units.
+
