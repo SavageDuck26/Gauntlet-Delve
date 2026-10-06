@@ -32,12 +32,12 @@ See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 
 ## Current state (2026-10-05)
 
-* overlay: **5,826** names · **1,718** unique unresolved hashes
-* catalogue: 20,000 resources, **15,890 named** (79.5%), 4,110 unresolved rows
+* overlay: **5,827** names · **1,717** unique unresolved hashes
+* catalogue: 20,000 resources, **15,891 named** (79.5%), 4,109 unresolved rows
 * GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
 
 Remaining by family: `texture 582 · animation 372 · shader_library 271 ·
-material 226 · particles 190 · level 113 · unit 79 · shader 49 · timpani_bank 37`.
+material 225 · particles 189 · level 113 · unit 79 · shader 49 · timpani_bank 37`.
 
 That set is now limited by **missing source data**, not by generation strategy —
 the shipped Lua, bundle bodies and binaries contain no further name material.

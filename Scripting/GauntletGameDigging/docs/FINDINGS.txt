@@ -4594,3 +4594,54 @@ a material and a particle - same string, same hash).  A hash resolved once
    duplicate of the repo folder - state files md5-equal, every file name+size
    equal; it can be deleted to reclaim ~1.6 GB.)
 
+================================================================================
+31. UNIFORM PER-SNAPSHOT ARTEFACT SET - AND WHAT IT PROVES (2026-10-06)
+================================================================================
+  The 2015-01-21 snapshot had accumulated ad-hoc files (_harvest_candidates.py,
+  _preslayer_matches.tsv, _slayer_all_hashes.txt, _slayer_unresolved_hashes.txt,
+  _seed_candidates.txt).  Nothing generated them, so the other builds had none.
+  NEW TOOL: `hashcracker/generators/snapshot_gather.py --root <snapshot> [--crack]`
+  writes, per snapshot:
+      _names.txt              candidates from bundle bodies + its own binaries +
+                              its *.ini configs (colon-tolerant, +map suffixes)
+      _all_hashes.txt         every resource name_hash the build stores (from TOCs)
+      _unresolved_hashes.txt  of those, the ones still unnamed today
+      _matches.tsv            (--crack) hash<TAB>name this build resolves itself
+      _gather.log             one summary line per run
+
+  IT ALSO CLOSED A REAL GAP: scan_depot_names.py skips `.ini`/`.data`, so the
+  Slayer-era configs were never read.  The 2015-08-11 build ships FIVE extra
+  ones the older builds do not - settings_scea.ini, settings_scea_latam.ini,
+  settings_sceasia.ini, settings_scee.ini and test.ini (PS4/regional build
+  configs: title_id "CUSA00701_00", ps4 service labels, languages) - all now
+  swept into _names.txt.
+
+  RESULTS (each build cracked against BOTH the global 1,718 and its own subset):
+      snapshot            candidates    build hashes   our targets present  new names
+      2014-10-10          18,290,818         5,489              804              0
+      2015-01-21          20,052,112         6,224              967              0 *
+      2015-08-11          20,095,020         7,804            1,718 (all)        1
+      * its 549 names were already applied in section 19, so they are no longer
+        in the target set - hence 0.
+      the single new name: effects_ui/level_select_node_hover (f5b4bd327707ac16)
+
+  WHAT THE NUMBERS MEAN - THE CEILING IS EXPLAINED, NOT JUST HIT:
+    * 2015-08-11 holds EVERY one of our 1,718 outstanding resources (7,804
+      hashes total, same set as the installed build) yet its 20M strings name
+      only ONE of them.
+    * the 2014-10-10 build already contains 804 of them and names none.
+    * breakdown of those 804 (by catalogue type): texture 208, shader_library
+      185, animation 156, level 106, material 59, timpani_bank 36, unit 29,
+      shader 24, rest <=20 each.
+    => the resources ship in every build; their NAME STRINGS are stripped when
+       the game data is authored/packed (the engine converts paths to hashes at
+       build time), they are not deleted from a later revision.  So no depot of
+       any era can name them: older builds are a dead end for these families,
+       and the remaining material has to come from outside the shipped game data
+       (engine shader source, art/prop lists, a UI manifest/dev dump).
+
+  STATE AFTER: overlay 5826 -> 5827; catalogue 15,891/20,000 rows named;
+  unresolved rows 4,110 -> 4,109; unique unresolved 1,718 -> 1,717.
+  Remaining by family: texture 582 | animation 372 | shader_library 271 |
+  material 225 | particles 189 | level 113 | unit 79 | shader 49 | timpani 37.
+

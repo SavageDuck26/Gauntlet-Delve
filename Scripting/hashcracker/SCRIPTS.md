@@ -36,6 +36,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | `scan_bundle_paths.py` | Harvests path-like strings from bundle **bodies** (shader/settings manifests embed them). |
 | `seed_derive.py` | Derives new candidates from names we already hold: dungeon tiles, unit<->map textures, per-unit clip variants, `<base>:<flag>` shader chains (see `FINDINGS.txt` §21). |
 | `scan_depot_names.py` | Full name harvest from a game install/depot (bundles + binaries), **colon-tolerant**; work the Pre-Slayer depot this way (`FINDINGS.txt` §19). |
+| `snapshot_gather.py` | Per-snapshot artefact set for a pulled depot folder (`--root Gauntlet-PreSlayer-<date>`): writes `_names.txt` (bundles + binaries + the **`.ini` configs scan_depot_names skips**), `_all_hashes.txt`, `_unresolved_hashes.txt`, and with `--crack` a `_matches.tsv` (`FINDINGS.txt` §31). |
 | `level_body_strings.py` | Dumps printable strings from a bundle's bodies (inspection). |
 | `pkg_order_check.py` | Checks whether a package blob lists dependencies in name order (it does not). |
 

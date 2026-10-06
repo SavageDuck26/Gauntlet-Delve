@@ -5601,6 +5601,7 @@
   "f5a09169bd83f3a9": "blocks/d01_lava/walls/lavastruct_wall_2c",
   "f5a58b3c2a4a1442": "gameobjects/traps/lavacolumn",
   "f5af86b3b09b9aea": "effects/cha_knockback_trail",
+  "f5b4bd327707ac16": "effects_ui/level_select_node_hover",
   "f5b64e0c0e15706e": "characters/avatar_elf/elf",
   "f5d41ce305829ae1": "hud/boss",
   "f5e0674b0007eda3": "elias/crypt_adventure/audio/9_0_1",
