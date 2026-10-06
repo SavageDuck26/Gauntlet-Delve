@@ -133,3 +133,6 @@ Scripting/GauntletGameDigging/**/*.stream
 
 # Video-mining scratch (captions, OCR dumps, downloads, venv)
 Stingray-Video-Mine/
+
+# Web-mining scratch (article markdown, downloaded screenshots, OCR dumps)
+Stingray-Web-Mine/

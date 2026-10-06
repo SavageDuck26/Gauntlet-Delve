@@ -4832,3 +4832,58 @@ a material and a particle - same string, same hash).  A hash resolved once
   are NEW SOURCE MATERIAL (art/prop production lists, engine shader source)
   rather than more mutation of what we already hold.
 
+================================================================================
+35. VIDEO + WEB MINING OF ENGINE MATERIAL - 0 NAMES, BUT REAL VOCABULARY
+================================================================================
+  SOURCES the project had not touched (all engine-side, none of it Gauntlet's):
+     Autodesk Stingray Learning Channel  @autodeskgameshowtos   94 videos
+     Bitsquid                            @bitsquid1225          12 videos
+     gamefromscratch "A Closer Look at The Stingray Engine"   1 article,
+                                                                  32 screenshots
+  TOOLING (all in gitignored scratch folders, each with its own README):
+     Stingray-Video-Mine/  lists/ subs/ ocr/ frames/ vids/ scripts/ venv/
+        scripts/get_subs.sh      yt-dlp captions for all 106 videos
+        scripts/ocr_run.sh       download <=720p -> 1 frame / 5 s (max 200)
+                                 -> RapidOCR (scripts/ocr_frames.py)
+        scripts/mine_captions.py / mine_video_ocr.py  -> candidate lists
+     Stingray-Web-Mine/    article/ images/ images_up/ images_ocr*/ scripts/
+        WebAudit config (Coding/Python/WebAudit/dist/configs/
+        crawler_config_gamefromscratch_stingray.toml) -> 25 pages of markdown
+        scripts/pull_images.py + ocr_images.py + mine_web.py
+  Everything ran on a folder-local venv (yt-dlp + rapidocr-onnxruntime) because
+  the system yt-dlp (2024.04.09) is dead against YouTube and its user config uses
+  newer options.
+
+  RESULTS - EVERY CORPUS IS A CLEAN ZERO
+     captions        106 videos -> 126,752 lines ->   5,916 candidates -> 0
+     frame OCR       engine tutorials ->  5,211 lines -> 3,695 candidates -> 0
+     article + 32 screenshot OCRs (3x upscaled) -> 37,611 candidates     -> 0
+     mutate seeded with the 682 path-like engine names + 80k tokens      -> 0
+  (The 3x upscale was the difference between unreadable and clean UI text - the
+  review's screenshots are only 600-900 px wide.)
+
+  WHY ZERO: the tutorials walk through the ENGINE's sample project and its
+  editor; Gauntlet's 1,554 unresolved are Gauntlet's own content paths.  This is
+  the same wall as sections 31 and 32 - the names simply are not in engine
+  material either.
+
+  WHAT IT DID GIVE US (engine vocabulary, now wired into the sweeps):
+     engine resource paths   core/rendering/advanced_renderer
+                             core/appkit/units/camera/camera (+ cameramesh)
+                             core/stingray_renderer/environments/midday/midday
+                             core/editor_slave/human_interface (OCRd partially)
+     sample-project content  content/models/{character,props,floor}
+     editor panels           Asset Browser, Asset Preview, Explorer, Level View,
+                             Level Flow, Property Editor, Shader Graph Editor,
+                             Story Editor, Log Console, Deployer, Bake Lightmaps
+     Bitsquid demo content   chr_cult_leader, chr_egy_boulder, jun_tile_start,
+                             jungle_moss, terrain tool / unit flow terminology
+     Lua API surface         spawn_unit, unit_by_name, set_shading_environment,
+                             set_local_position, render_world, release_world
+  tools/make_tokens_big.py now folds the three mined candidate lists in as
+  OPTIONAL_CORPORA (skipped when the scratch folders are missing), so the wide
+  mutate runs with this vocabulary too.
+
+  STATE: unchanged - overlay 5,990 | 16,507/20,000 named | 1,554 unique
+  unresolved.  The mining added vocabulary, not names.
+

@@ -38,6 +38,14 @@ DEFAULT_CORPORA = [
     HC / "data" / "events.txt",
     VOCAB / "bundle_words.txt",
 ]
+# Engine vocabulary mined from the Stingray/Bitsquid video tutorials and from
+# gamefromscratch's Stingray review (captions, frame OCR, screenshot OCR).  These
+# live in gitignored scratch folders; skipped when absent.  FINDINGS.txt §35.
+OPTIONAL_CORPORA = [
+    REPO / "Stingray-Video-Mine" / "video_ocr_candidates.txt",
+    REPO / "Stingray-Video-Mine" / "caption_candidates.txt",
+    REPO / "Stingray-Web-Mine" / "web_candidates.txt",
+]
 DOC_DIR = REPO / "reference" / "Stingray-Docs-md"
 
 WORD = re.compile(r"[a-z0-9]{2,}")
@@ -70,7 +78,8 @@ def main() -> None:
             counts.update(t for t in leaf.split("_") if len(t) > 1)
             counts.update(c for c in directory.split("/") if len(c) > 1)
 
-    for p in [*DEFAULT_CORPORA, *(pathlib.Path(c) for c in args.corpus)]:
+    for p in [*DEFAULT_CORPORA, *OPTIONAL_CORPORA,
+              *(pathlib.Path(c) for c in args.corpus)]:
         p = pathlib.Path(p)
         if p.is_file():
             add_text(p.read_text(errors="replace"), counts)
