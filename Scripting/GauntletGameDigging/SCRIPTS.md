@@ -75,8 +75,8 @@ python3 list_game_bundles.py --only resources      # overlay -> 03_txt + 04_csv
 python3 ../hashcracker/tools/build_targets.py      # catalogue -> targets_*.txt
 ```
 
-Current state: overlay **5,847** names · catalogue **15,929/20,000 rows named**
-· **1,697** unique unresolved hashes (see `docs/FINDINGS.txt` §18–32).
+Current state: overlay **5,940** names · catalogue **16,371/20,000 rows named**
+· **1,604** unique unresolved hashes (see `docs/FINDINGS.txt` §18–33).
 
 Note: `list_game_bundles.decompress_bundle` now tolerates the **Pre-Slayer
 packing** (raw 64 KiB chunks mixed with zlib chunks), so the older depot's art
