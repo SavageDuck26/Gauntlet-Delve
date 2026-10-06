@@ -4006,3 +4006,55 @@ a material and a particle - same string, same hash).  A hash resolved once
   material for texture, shader_library, animation, particles or the module
   units.
 
+================================================================================
+18. STATE OF PLAY  (2026-10-05, end of the recovery session)
+================================================================================
+  NUMBERS
+    overlay (resource_name_overlay.json) : 5,087 names
+    catalogue (04_bundle_resources.csv)  : 20,000 resources, 13,070 named (65.4%),
+                                           6,930 unresolved rows
+    unique unresolved hashes             : 2,457
+    per family: texture 709 | shader_library 538 | animation 415 | material 370 |
+                particles 322 | unit 181 | level 175 | shader 49 |
+                timpani_bank 37 | flow/render_config/package 5
+    solved families: lua 952/952, bones 367/367, state_machine 111/111,
+                     ugg 144/144, xml 13/13, shader_library_group 57/57,
+                     apb 98/98, font 7/7, mouse_cursor 4/4, gley 1/1
+
+  WHERE NAMES COME FROM (the naming authorities, in order of usefulness)
+    1. Lua FILE PATHS minus .lua  ==  the `lua` resource family (exact)
+    2. Lua STRING LITERALS       -> unit / material / prop / decal / level names
+       (they are referenced verbatim; dirs come from resolved names)
+    3. Lua BARE TABLE KEYS       -> ability names, quilt pieces, perk/achievement
+       ids, gui widget ids (invisible to string mining)
+    4. ENGINE SCHEMAS IN THE LUA -> the quilt name grammar (quilt_builder.lua),
+       the block-piece grammar, the particle grammar
+    5. RESOLVED-NAME COMPOUNDING -> units imply their map textures
+       (8 units => 16 textures), particles <-> materials share strings
+
+  HOW TO CONTINUE (mechanics)
+    python3 ../hashcracker/tools/merge_matches.py ..      # hits -> overlay
+    python3 list_game_bundles.py --only resources         # overlay -> txt+csv
+    python3 ../hashcracker/tools/build_targets.py         # catalogue -> targets
+    ../hashcracker/sweeps/auto_run.sh 3                   # cycle all families
+    See ../hashcracker/SCRIPTS.md for the full script index.
+    TARGETS COME FROM THE CATALOGUE'S BLANK `name` COLUMN - measuring
+    "unresolved" against the overlay alone overstates the set by thousands and
+    silently wastes sweeps (section 17.15).
+
+  DEAD ENDS - do not repeat (details in the sections named)
+    17.15 overlay-vs-catalogue target counting
+    17.18 unit grammar 166e9 cands -> +1
+    17.19 bundle_strings/bin_strings -> 0 for shader_library; gui keys -> 0;
+           animation_events x clip dirs -> 0; bundle-scoped sweep -> 0
+    17.20 shader bodies are DXBC (no names); body-embedded paths -> 0; platform
+           permutations -> 0; gui css texture values -> 0; wide anim edit -> 0;
+           every string of every bundle body (349k) -> 0
+    17.16 level phase 2 (226e9 cands) -> 0
+
+  WHAT WOULD ACTUALLY UNBLOCK THE REST (new input, not a new generator)
+    * the engine SHADER SOURCE (shader_library 538 + shader 49)
+    * a UI ATLAS / manifest or dev-build gui dump (~527 menu textures)
+    * the ART SOURCE scene names for the module units/quilts
+    * a newer game build whose bundles reference more resources
+

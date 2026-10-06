@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "GauntletGameDigging"))
+sys.path.insert(0, str(HERE.parent.parent / "GauntletGameDigging"))
 from list_game_bundles import (decompress_bundle, parse_toc, parse_resources,  # noqa
                                find_install_root)
 
@@ -45,7 +45,7 @@ def main():
     if args.bundle:
         bundles = [args.bundle]
     else:
-        csv_path = HERE.parent / "GauntletGameDigging/bundle_manifest/04_bundle_resources.csv"
+        csv_path = HERE.parent.parent / "GauntletGameDigging/bundle_manifest/04_bundle_resources.csv"
         import csv as _csv
         bundles = sorted({r["bundle"] for r in _csv.DictReader(csv_path.open())})
 

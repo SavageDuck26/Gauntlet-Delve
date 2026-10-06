@@ -26,7 +26,7 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parent.parent.parent
 DIG = REPO / "Scripting/GauntletGameDigging"
 CATALOGUE = DIG / "bundle_manifest/04_bundle_resources.csv"
 OVERLAY = DIG / "resource_name_overlay.json"

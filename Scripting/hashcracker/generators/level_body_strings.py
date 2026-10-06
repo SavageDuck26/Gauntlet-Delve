@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "GauntletGameDigging"))
+sys.path.insert(0, str(HERE.parent.parent / "GauntletGameDigging"))
 from list_game_bundles import (decompress_bundle, parse_toc, parse_resources,  # noqa
                                find_install_root)
 

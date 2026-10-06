@@ -26,14 +26,14 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GD = HERE.parent / "GauntletGameDigging"
+GD = HERE.parent.parent / "GauntletGameDigging"
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--overlay", default=str(GD / "resource_name_overlay.json"))
     ap.add_argument("--csv", default=str(GD / "bundle_manifest" / "04_bundle_resources.csv"))
-    ap.add_argument("--map", default=str(HERE / "data" / "vocab" / "anim_map.json"))
+    ap.add_argument("--map", default=str(HERE.parent / "data" / "vocab" / "anim_map.json"))
     ap.add_argument("--out", default="/tmp/anim_cands.txt")
     ap.add_argument("--max-third", type=int, default=4000,
                     help="how many third tokens to try after a known prefix")

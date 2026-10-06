@@ -9,6 +9,41 @@ It is the fast complement to the Python toolchain
 (`../GauntletGameDigging/crack_*_names.py`): where Python handles a few million
 candidates, this handles **billions** in seconds.
 
+## Layout
+
+```
+hashcracker/
+├── src/                  Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
+├── tools/                target + vocabulary builders (the maintainer entry points)
+│   ├── build_targets.py      catalogue -> data/vocab/targets_<type>.txt
+│   ├── merge_matches.py      matches.tsv -> resource_name_overlay.json
+│   └── make_*_vocab.py       one word-list builder per family (tex/lvl/par/unit)
+├── generators/           candidate generators (name-derived, context constrained)
+│   ├── targeted_*.py         per-family generators (anim, unit, level, tex, gui…)
+│   └── *_cands.py, *_check.py, scan_bundle_paths.py   supporting miners
+├── sweeps/               driver scripts (loop a family set to a fixpoint)
+├── legacy/               superseded scripts, kept for reference (see legacy/README.md)
+├── data/vocab/           vocabularies + targets (see data/README.md)
+├── matches.tsv           append-only hit log, `<hash>\t<name>` (tracked)
+└── README.md, SCRIPTS.md
+```
+
+See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
+
+## Current state (2026-10-05)
+
+* overlay: **5,087** names · **2,457** unique unresolved hashes
+* catalogue: 20,000 resources, **13,070 named** (65.4%), 6,930 unresolved rows
+* GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
+
+Remaining by family: `texture 709 · shader_library 538 · animation 415 ·
+material 370 · particles 322 · unit 181 · level 175 · shader 49 · timpani_bank 37`.
+
+That set is now limited by **missing source data**, not by generation strategy —
+the shipped Lua, bundle bodies and binaries contain no further name material.
+The audit of everything tried (and why it failed) is in
+`../GauntletGameDigging/docs/FINDINGS.txt` §17.18–17.20 and §18.
+
 ## Build
 
 ```bash
@@ -17,15 +52,26 @@ cargo build --release            # (offline: cargo build --release --offline)
 
 ## Prepare inputs
 
+Legacy (superseded by `tools/build_targets.py` + the `tools/make_*_vocab.py`
+builders — kept in `legacy/` for reference):
+
 ```bash
-python3 prepare.py \
+python3 legacy/prepare.py \
   --csv  ../GauntletGameDigging/bundle_manifest/04_bundle_resources.csv \
   --lua  ~/.local/share/Steam/steamapps/common/Gauntlet/Gauntlet-Source-DO_NOT_EDIT \
   --binaries ~/.local/share/Steam/steamapps/common/Gauntlet/binaries \
   --out data
 ```
 
-This writes `data/{targets,dirs,names,prefixes,suffixes}.txt`.
+Current workflow — see [SCRIPTS.md](SCRIPTS.md) for the full index and
+[`data/README.md`](data/README.md) for the vocabulary files:
+
+```bash
+python3 tools/build_targets.py          # targets_<type>.txt from the catalogue
+python3 tools/make_tex_vocab.py         # one vocabulary per family (tex_*, lvl_*, …)
+python3 generators/targeted_unit.py     # name-derived candidates
+./sweeps/auto_run.sh 3                  # cycle every family to a fixpoint
+```
 
 ## Crack
 
@@ -116,15 +162,15 @@ entirely (4-token clips like `axe_move_walk_left_back`, extension-less Lua
 paths, unit/material names referenced as Lua strings).
 
 ```bash
-./context_sweep.sh 4            # merge -> rebuild targets -> regenerate -> crack
+./sweeps/context_sweep.sh 4     # merge -> rebuild targets -> regenerate -> crack
 ```
 
 | tool | what it generates |
 | --- | --- |
-| `build_targets.py` | `data/vocab/targets_<type>.txt` + `unresolved_targets.txt` |
-| `derive_cands.py` | Lua file paths, all Lua string literals, known dir x Lua leaf |
-| `lua_ability_cands.py` | `ability_selection` keys (bare Lua identifiers) x anim shapes |
-| `targeted_anim.py` | edit-distance-1 of each unit's own clips + cross-unit transfer |
+| `tools/build_targets.py` | `data/vocab/targets_<type>.txt` + `unresolved_targets.txt` |
+| `generators/derive_cands.py` | Lua file paths, all Lua string literals, known dir x Lua leaf |
+| `generators/lua_ability_cands.py` | `ability_selection` keys (bare Lua identifiers) x anim shapes |
+| `generators/targeted_anim.py` | edit-distance-1 of each unit's own clips + cross-unit transfer |
 
 ### Two traps this tooling exists to avoid
 
@@ -134,12 +180,12 @@ paths, unit/material names referenced as Lua strings).
    as "hash absent from `resource_name_overlay.json`" overstates the unknown set
    by thousands of entries, and a stale target file silently reports
    `new matches: 0`. Targets = *rows whose catalogue `name` column is empty*
-   (`build_targets.py` does exactly this).
+   (`tools/build_targets.py` does exactly this).
 2. **Table keys, not just string literals.** Ability names, quilt pieces and
    status effects are bare Lua identifiers — invisible to string mining. Mine
    `^\t+key\s*=` inside the relevant tables as well.
 
-`merge_matches.py` folds `matches.tsv` into the overlay, then re-run
+`tools/merge_matches.py` folds `matches.tsv` into the overlay, then re-run
 `list_game_bundles.py --only resources` (in `GauntletGameDigging/`) to refresh
 `03_bundle_resources.txt` + `04_bundle_resources.csv` with the new names.
 
@@ -172,11 +218,11 @@ lengths are 1, 2, 3 and 5 cells (never 4).  The variant is `NN`, `NN_<mod>` or
 That rule is what makes the sweep work: enumerating the *observed groups* only
 (38 codes) finds nothing, because several 1-cell sides (`o`, `i`) never appear
 in the resolved corpus.  Enumerating the alphabet under the width/height rule
-(`make_level_vocab.py`) immediately produced new pieces such as
+(`tools/make_level_vocab.py`) immediately produced new pieces such as
 `crypt_quilt_smallroom__o_e_i_e__01`.
 
 ```bash
-python3 make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab files
+python3 tools/make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab files
 ./target/release/hashcracker crack --gpu \
   --targets data/vocab/targets_level.txt \
   --list a=data/vocab/lvl_env.txt  --list b=data/vocab/lvl_sub.txt \
@@ -188,8 +234,8 @@ python3 make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab files
 ```
 
 Level bodies are compiled modules with **no embedded names** (checked with
-`level_body_strings.py`), and the module `package` blobs list dependency
-**hashes only**, hash-sorted and not name-sorted (`pkg_order_check.py`), so they
+`generators/level_body_strings.py`), and the module `package` blobs list dependency
+**hashes only**, hash-sorted and not name-sorted (`generators/pkg_order_check.py`), so they
 give no alphabetical bracketing either — the grammar is the only lever.
 
 ## Results

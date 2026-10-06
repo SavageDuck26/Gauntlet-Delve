@@ -24,7 +24,7 @@ Gauntlet-Reverse-Engineering/
 │   │   ├── Hash Dictionary.txt
 │   │   ├── DEP/                         ← dependency/guide docs (+ verify_bundle.py)
 │   │   └── Stingray_Documentation/      ← reference images
-│   ├── *.py                         ← ~80 tools (flat dir, imported as modules)
+│   ├── *.py, SCRIPTS.md             ← ~80 tools (flat module dir) + script index
 │   ├── resource_tools/              ← 16-type resource r/w suite
 │   ├── database_extractor/          ← bundle_database.data extraction
 │   ├── decoded_materials/           ← decoded material JSON
@@ -36,6 +36,14 @@ Gauntlet-Reverse-Engineering/
 │   └── wwise-unpacker-revamped/     ← bundled audio unpacker tool
 │
 ├── Scripting/hashcracker/           ← Rust MurmurHash64A name brute-forcer (billions of candidates/s)
+│   ├── src/                             ← Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
+│   ├── tools/                           ← build_targets.py, make_*_vocab.py, merge_matches.py
+│   ├── generators/                      ← targeted_*.py (per-family candidate generators)
+│   ├── sweeps/                          ← auto_run.sh + per-family pipelines
+│   ├── legacy/                          ← superseded cartesian scripts
+│   ├── data/vocab/                      ← vocabularies + targets (see data/README.md)
+│   ├── matches.tsv                      ← append-only hit log (tracked)
+│   └── README.md, SCRIPTS.md
 │
 ├── game-source/Gauntlet-SourceCode-LUA/   ← game Lua source (927 files)
 ├── reference/                             ← reference projects (downloads)
@@ -49,9 +57,15 @@ Gauntlet-Reverse-Engineering/
 
 - **Catalogue everything**: `cd Scripting/GauntletGameDigging && python3 list_game_bundles.py`
   (writes `bundle_manifest/00…05`).
-- **Brute-force names**: `python3 crack_bundle_names.py` /
-  `python3 crack_resource_names.py` (write `*_overlay.json`, auto-merged by the catalogue).
-- **Findings**: `Scripting/GauntletGameDigging/docs/FINDINGS.txt`.
+- **Recover names (current workflow)**: build targets →
+  `Scripting/hashcracker/tools/build_targets.py`; generate candidates →
+  `Scripting/hashcracker/generators/targeted_*.py`; run the GPU sweeps →
+  `Scripting/hashcracker/sweeps/auto_run.sh`; fold hits back with
+  `tools/merge_matches.py` then re-run `list_game_bundles.py --only resources`.
+- **Script indexes**: `Scripting/hashcracker/SCRIPTS.md` and
+  `Scripting/GauntletGameDigging/SCRIPTS.md` (every tool, grouped by purpose).
+- **Findings / current state**: `Scripting/GauntletGameDigging/docs/FINDINGS.txt`
+  (§17 history, **§18 = state of play, remaining work and what would unblock it**).
 
 ## Notes
 

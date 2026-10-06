@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parent.parent.parent
 OVERLAY = REPO / "Scripting/GauntletGameDigging/resource_name_overlay.json"
 LUA = (Path.home() / ".local/share/Steam/steamapps/common/Gauntlet"
        / "Gauntlet-Source-DO_NOT_EDIT/lua")

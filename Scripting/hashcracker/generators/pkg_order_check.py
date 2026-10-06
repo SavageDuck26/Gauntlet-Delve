@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parent.parent.parent
 DIG = REPO / "Scripting/GauntletGameDigging"
 sys.path.insert(0, str(DIG))
 from list_game_bundles import (decompress_bundle, parse_toc, parse_resources,  # noqa

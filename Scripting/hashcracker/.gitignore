@@ -1,4 +1,7 @@
 /target/
-/data/
+# vocabularies + targets are regenerable by tools/make_*_vocab.py and
+# tools/build_targets.py - keep the documentation, ignore the data
+/data/*
+!/data/README.md
 /rust_matches*.json
 /rust_matches*.tsv

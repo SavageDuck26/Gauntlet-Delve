@@ -22,10 +22,10 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parent.parent.parent
 CATALOGUE = REPO / "Scripting/GauntletGameDigging/bundle_manifest/04_bundle_resources.csv"
 OVERLAY = REPO / "Scripting/GauntletGameDigging/resource_name_overlay.json"
-OUT = HERE / "data/vocab"
+OUT = HERE.parent / "data/vocab"
 
 ROOTS = ["blocks", "props", "gameobjects", "effects", "modules", "hud", "equipment"]
 ENVS = ["crypt", "caves", "lava", "arcade", "hub_room", "menu", "common", "debug",
