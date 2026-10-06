@@ -32,6 +32,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | `lua_ability_cands.py` | `ability_selection` bare keys × animation shapes. |
 | `level_lua_cands.py` | Dungeon layout keys/strings × level directories. |
 | `scan_bundle_paths.py` | Harvests path-like strings from bundle **bodies** (shader/settings manifests embed them). |
+| `seed_derive.py` | Derives new candidates from names we already hold: dungeon tiles, unit<->map textures, per-unit clip variants, `<base>:<flag>` shader chains (see `FINDINGS.txt` §21). |
 | `scan_depot_names.py` | Full name harvest from a game install/depot (bundles + binaries), **colon-tolerant**; work the Pre-Slayer depot this way (`FINDINGS.txt` §19). |
 | `level_body_strings.py` | Dumps printable strings from a bundle's bodies (inspection). |
 | `pkg_order_check.py` | Checks whether a package blob lists dependencies in name order (it does not). |

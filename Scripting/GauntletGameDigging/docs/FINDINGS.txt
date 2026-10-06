@@ -4163,3 +4163,36 @@ a material and a particle - same string, same hash).  A hash resolved once
   => the Pre-Slayer depot is now FULLY covered; its value was the 549 names
   harvested from the main bundle bodies + binaries (section 19), not the streams.
 
+================================================================================
+21. SEED-AND-EXPAND FROM NEW NAMES (+58: shader_library 52, level 4, anim 2)
+================================================================================
+  Once the Pre-Slayer harvest landed (section 19), the 549 names became SEEDS:
+  generators/seed_derive.py derives four bounded families from every name we
+  hold (catalogue + overlay + an optional --seeds TSV):
+
+  tiles    modules/d01_<env>/dungeon_tiles/<style>_<W>c_<H>c_<a>_<b>_<c>_<d>_NN
+           - cell alphabet, style/size set and indices mined from the tile
+           names, then every 4-cell combination enumerated per style/size.
+           This namespace was invisible before the depot harvest; +4 levels,
+           e.g. modules/d01_lava/dungeon_tiles/lavarock_8c_8c_g_g_g_g_01
+  maps     units <-> their map textures both ways, plus _diff/_norm/_spec/
+           _mask/_high swaps and _NN sibling indices
+  anims    per unit: numbers 1..4, direction words, speed words substituted
+           into that unit's own clips
+  shaders  <base>:<flag>[:<flag>...] chains.  The flag list is ORDERED in this
+           engine (billboard:blend_additive:diffuse_map:soft_particles:
+           vertex_color), so the canonical order is learned from the corpus and
+           ordered subsets are enumerated PER BASE from that base's own flags.
+           +52 shader_library, e.g.
+           base:deferred_decals_group_prop:diffuse_map:normal_map:static_lighting
+
+  ITERATING PAYS: the derivations fed themselves for two more rounds
+  (+32, then +15, +6) before the fixpoint.  Iterate to zero, not once.
+
+  MEMORY LESSON: global combinations of the top-40 flags at length 4
+  (bases x C(40,4)) OOM'd at 14.8 GB.  Bound the alphabet PER BASE and cap the
+  chain length; the per-base version is ~300k candidates and finds MORE.
+
+  STATE: overlay 5,668 -> 5,726; unique unresolved 1,876 -> 1,818
+  (shader_library 393 -> 341, level 117 -> 113, animation 387 -> 385).
+
