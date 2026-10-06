@@ -4302,3 +4302,41 @@ a material and a particle - same string, same hash).  A hash resolved once
     unit/particles/  +4 / +0                - vocabulary-limited (prop nouns)
     material/level   +0                     - need new sources
 
+================================================================================
+25. ANIMATION AND SHADER DEEPENING BOTH SATURATE (new generators, 0 new)
+================================================================================
+  Two purpose-built generators were written for the "next widening" I proposed in
+  section 24.  Both are correct, both were run at scale, and BOTH FOUND ZERO:
+
+  generators/anim_deep.py
+    (a) per-unit grammar rebuild: for every unit that owns unresolved clips
+        (focus list from data/vocab/anim_map.json), rebuild clips from THAT unit's
+        own prefixes + tokens crossed with verbs x modifiers x speeds
+        x directions x direction-pairs, budgeted per unit:
+            20,486,274 candidates -> 0 new
+    (b) --two-token: insert TWO tokens (direction/number/speed) into every one of
+        the unit's own clips at every position pair - the shape the wide edit-1
+        sweep kept finding one token at a time:
+            15,628,656 candidates -> 0 new
+
+  generators/tex_bundle_deep.py (from section 24, kept)
+    per-bundle texture deepening from each bundle's OWN vocabulary: +3.
+
+  WHAT THIS MEANS: the animation grammar is fully enumerated for the vocabulary
+  we can see.  The +8/+9 rounds were the last of it.  The remaining 373 clips
+  use verbs/prefixes that appear nowhere in the shipped data (unshipped unit
+  animation source), exactly like the 271 shader_library chains that need flags
+  from the unshipped shader source and the prop-noun limited units/textures.
+
+  THE GENERAL RULE AFTER THIS SESSION: a family is DONE - not when a sweep finds
+  nothing, but when BOTH of these are true:
+    * the derivation space built from the observed vocabulary is exhausted
+      (0 hits at increasing depth: chains to 12 flags, 2-token edits, per-unit
+      grammar rebuilds, per-bundle deepening), AND
+    * no string corpus in any shipped artefact contains the names
+    The remaining families (texture 582, animation 373, shader_library 271,
+    material 226, particles 190, level 113, unit 79, shader 49, timpani 37) all
+    fail at least one of those - they are SOURCE-limited, not strategy-limited.
+
+  STATE unchanged this round: overlay 5,825; unique unresolved 1,719.
+
