@@ -57,11 +57,11 @@ def derive_tiles(names):
         env, style, w, h, a, b, c, d, _i = m.groups()
         styles[(env, style, w, h)] += 1
         cells.update([a, b, c, d])
-    alpha = "".join(sorted(set(cells) | {"g", "u", "x", "e", "i", "o"}))
+    alpha = "".join(sorted(set(cells) | {"g", "u", "x", "e", "i", "o", "w"}))
     out = set()
     for (env, style, w, h), _n in styles.items():
         for combo in itertools.product(alpha, repeat=4):
-            for i in range(1, 5):
+            for i in range(1, 9):
                 out.add(f"modules/{env}/dungeon_tiles/"
                         f"{style}_{w}_{h}_{'_'.join(combo)}_{i:02d}")
     return out
@@ -123,6 +123,47 @@ def derive_anims(names):
     return out
 
 
+ANIM_VERB = ("attack move idle hit die death carry walk run legs turn jump "
+             "land spawn taunt block dodge cast shoot aim draw sheathe reload "
+             "special ability ultimate heavy light fast slow charge windup "
+             "winddown dash blink kick punch stomp slam throw pickup drop enter "
+             "exit start end loop react offset look back backwards forward left "
+             "right strafe ready hold release fire barrage beam bolt orb explosion "
+             "summon revive celebrate victory stagger stun knockback slide smash "
+             "whirlwind chop stab swing thrust parry guard").split()
+ANIM_MOD = ("01 02 03 04 fast1 fast2 fast3 fast4 slow1 slow2 light1 light2 light3 "
+            "heavy1 heavy2 heavy3 forward backwards backward left right in out "
+            "up down 30 -30 45 -45 60 -60 90 -90 180 default default1 offset "
+            "offset1 windup winddown loop start end").split()
+
+
+def derive_anims_medium(names):
+    """Per-unit clips from that unit's own prefix vocabulary.
+
+    New clips look like bow_attack_fast1, legs_turn_left-60,
+    axe_attack_heavy3_chop, die_default1, move_jog: a per-unit weapon/limb
+    prefix, a verb and a modifier (number / direction / angle / light|heavy).
+    Mined prefixes are crossed with the shared verb and modifier lists.
+    """
+    by_unit = collections.defaultdict(list)
+    for n in names:
+        if "/animations/" not in n and "/animation/" not in n:
+            continue
+        d, _, leaf = n.rpartition("/")
+        by_unit[d].append(leaf)
+    out = set()
+    for d, clips in by_unit.items():
+        prefixes = collections.Counter(c.split("_")[0] for c in clips)
+        for p, _ in prefixes.most_common(4):
+            for v in ANIM_VERB:
+                out.add(f"{d}/{p}_{v}")
+                for m in ANIM_MOD:
+                    out.add(f"{d}/{p}_{v}_{m}")
+                    for m2 in DIRS:
+                        out.add(f"{d}/{p}_{v}_{m}_{m2}")
+    return out
+
+
 def derive_shaders(names, max_len=3):
     """
     `<base>:<flag>[:<flag>...]` permutations.
@@ -150,8 +191,8 @@ def derive_shaders(names, max_len=3):
         per_base.setdefault(parts[0], set()).update(parts[1:])
     out = set()
     for b in sorted(bases):
-        own = sorted(per_base.get(b, ()), key=lambda f: (order.get(f, 99), f))[:30]
-        for L in range(1, min(5, len(own) + 1)):
+        own = sorted(per_base.get(b, ()), key=lambda f: (order.get(f, 99), f))[:24]
+        for L in range(1, min(9, len(own) + 1)):
             for combo in itertools.combinations(own, L):
                 out.add(f"{b}:" + ":".join(combo))
     for b in sorted(bases):
@@ -173,6 +214,7 @@ def main():
         "tiles": derive_tiles(names),
         "maps": derive_maps(names),
         "anims": derive_anims(names),
+        "anims2": derive_anims_medium(names),
         "shaders": derive_shaders(names),
     }
     out = set()

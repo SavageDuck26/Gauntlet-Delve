@@ -4237,3 +4237,28 @@ a material and a particle - same string, same hash).  A hash resolved once
   STATE: overlay 5,726 -> 5,730; unique unresolved 1,818 -> 1,814
   (unit 83 -> 79).
 
+================================================================================
+23. DEEPENING THE DERIVATIONS (+47: shader_library 37, texture 6, particles 3, anim 1)
+================================================================================
+  Round two of seed-and-expand (section 21) went DEEPER on the two families
+  whose rules are understood, plus a wider tile alphabet:
+
+  shaders  `<base>:<flag>[:<flag>...]` chains are now enumerated PER BASE up to
+           8 flags (from that base's own flag set, in the canonical order mined
+           from the corpus).  The billboard base alone gave 32 more:
+             billboard:blend_additive:diffuse_map:pivot:rotation:soft_particles:uv_animation:vertex_color
+             billboard:diffuse_map:disable_lighting:external_rotation:rotation:soft_particles:vertex_color
+             base:deferred_decals_group_floor:deferred_decals_group_level:deferred_decals_group_prop:diffuse_map:normal_map
+  anims    per-unit clips now allow TWO modifiers (walk_strafe_left/right) and
+           numbers/angles/light|heavy (spear_attack_heavy1)
+  tiles    alphabet widened (w appears in lavarock tiles), indices 01-08
+  texture  edit-distance-1 of texture leaves in their own bundle (+9), still the
+           most productive texture generator we have
+
+  Loop to a fixpoint, always: this round went +35, +24, +14, +0 in the seed
+  loop and +9, +0 in the texture polish loop.  Fixpoint runs are cheap
+  (~5.6M candidates a pass) and the vocabulary grows each time names land.
+
+  STATE: overlay 5,730 -> 5,812; unique unresolved 1,814 -> 1,732
+  (shader_library 341 -> 272, texture 592 -> 586, animation 385 -> 381).
+
