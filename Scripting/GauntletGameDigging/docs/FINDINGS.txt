@@ -4425,3 +4425,75 @@ a material and a particle - same string, same hash).  A hash resolved once
 
   STATE unchanged: overlay 5,826; unique unresolved 1,718.
 
+================================================================================
+28. HOW TO GET MORE BUILDS - VERIFIED FACTS AND THE EXACT PLACES TO LOOK
+================================================================================
+  WHERE THE BUILD IDS LIVE (all verified on this machine, not guessed):
+
+  * appmanifest_258970.acf says the CURRENT install is:
+        depot 258971 (binaries, 12 files, 38.5 MB) -> manifest 9171805109637972219
+        depot 258972 (contents, 94 files, 1.53 GB) -> manifest 7771727643982441048
+        depot 298987 (comic, 5.2 MB, DLC)          -> manifest 8802751682679187505
+  * Steam/depotcache/ holds those same three manifests as
+        <depotid>_<manifestid>.manifest
+    (the 35 x 258970_<gid>.manifest files there are the *shader pre-cache*
+     manifests - fozpipelinesv6/... only, no resource names)
+  * state_258970_258971.patch / state_258970_258972.patch (shipped inside the
+    Pre-Slayer folder) are MO42 files whose u64 at offset 4 IS the manifest id:
+        depot 258971 -> 2110979887084049898
+        depot 258972 -> 2950106636512614349
+    PROOF: logs/content_log.txt and logs/console_log.previous.txt both contain
+        .../depot/258971/manifest/2110979887084049898/5/5288527790994210972
+        .../depot/258972/manifest/2950106636512614349/5/5920250823081063200
+      and console_log.previous.txt records the pull we did on 2026-10-05:
+        "Downloading depot 258971 (11 files, 6 MB) ...
+         Depot download complete ... (manifest 2110979887084049898)"
+        "Downloading depot 258972 (64 files, 1603 MB) ...
+         Depot download complete ... (manifest 2950106636512614349)"
+      So the Pre-Slayer snapshot IS depot 258972 @ 2950106636512614349.
+      (64 files / 1603 MB vs today 94 files / 1535 MB - the old build is
+       bigger and less split, which is exactly why it held 1.8M name strings.)
+
+  WHAT DOES **NOT** EXIST (checked, so we never look again):
+    * no beta / previous_build / dev branch - appinfo for 258970 has exactly
+      one branch: public, buildid 792295 (checked via api.steamcmd.net)
+    * no second app: store search returns only 258970 (+ DLC 335510)
+    * DLC content has no depots of its own (335510 "Lilith the Necromancer"
+      is type DLC with dlcforappid 258970 and NO depots) - the characters ship
+      inside depot 258972 and are entitlement-gated; only the comics are real
+      depots (298987 EN installed, 298988 FR not installed, both PDFs)
+    * 298980 / 324040 etc. resolve to empty {} appinfo - delisted placeholders
+    * SteamTracking (SteamDB's public appinfo history repo) does NOT track
+      258970 - last change predates their tracking, dir 404
+    * SteamDB itself answers 403 ("ASN flagged, sign-in required") to this
+      machine, and there is no Wayback snapshot of the depot manifest pages
+    * DuckDuckGo/html search also 403 from here
+
+  THUS: other builds exist only as HISTORICAL PUBLIC MANIFESTS of depots
+  258971 / 258972, and their ids are listed in exactly one public place:
+
+    1. https://steamdb.info/depot/258972/manifests/   <- the big one
+    2. https://steamdb.info/depot/258971/manifests/
+    3. https://steamdb.info/depot/298987/manifests/   (comic, useless)
+    4. https://steamdb.info/app/258970/depots/        + ../history/ for dates
+    (open in a browser; a Steam sign-in may be required)
+
+  HOW TO PULL ONE (either tool, both fine):
+    A) Steam client console (what we used last time):
+         steam://open/console   then
+         download_depot 258970 258972 <manifestid>
+       -> lands in steamapps/content/app_258970/depot_258972/
+    B) DepotDownloader 3.4.0 (self-contained, no dotnet needed):
+         https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip
+         unzip -j DepotDownloader-linux-x64.zip -d ~/depotdl
+         chmod +x ~/depotdl/DepotDownloader
+         ~/depotdl/DepotDownloader -app 258970 -depot 258972 \
+              -manifest <manifestid> -dir ~/Gauntlet-build-YYYY-MM -username <steamuser>
+       (anonymous works only for free apps; Gauntlet needs -username)
+
+  PRIORITY: oldest manifests first. Gauntlet shipped 2014-09 and got the Slayer
+  Edition update 2015-08; the earliest 2014 builds should have the MOST dead
+  names (the 2015 pre-Slayer build alone gave +549). Grab one manifest per era:
+  earliest available, mid-2015, and one from just after the Slayer update.
+  Then point me at the folders - scan_depot_names.py harvests each in ~25 s.
+
