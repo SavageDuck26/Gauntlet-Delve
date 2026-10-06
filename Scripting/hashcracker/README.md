@@ -33,7 +33,7 @@ See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 ## Current state (2026-10-05)
 
 * overlay: **5,812** names · **1,732** unique unresolved hashes
-* catalogue: 20,000 resources, **15,523 named** (77.6%), 4,477 unresolved rows
+* catalogue: 20,000 resources, **15,842 named** (79.2%), 4,158 unresolved rows
 * GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
 
 Remaining by family: `texture 586 · animation 381 · shader_library 272 ·
