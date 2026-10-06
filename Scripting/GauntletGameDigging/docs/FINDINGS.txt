@@ -4708,6 +4708,15 @@ a material and a particle - same string, same hash).  A hash resolved once
      techniques we already knew - exactly the composite shapes the generator
      encodes (mobile_*, psvita_*, *_debug_lights).
 
+  D2. WHAT ELSE WAS TRIED ON THIS FAMILY (all zero, so the grammar is used up)
+     --global-flags 4, one pass per technique (75 x 2.8M)  -> 0
+     --flag-variants: numbered/paired siblings of every known flag
+         (step0-9, iter0-9, octave_0-9, _x/_y, _hq/_lq, _far/_near ...),
+         looped per technique at global-flags 3 and composite-depth 2
+         (77 techniques, ~130M candidates)                 -> 0
+     Bitsquid blog (119 posts, 1.7 MB feed, 100,730 candidates) -> 0
+     Stingray help docs (447 files, 147,278 candidates)          -> 0
+
   E. WHY THE REMAINING 251 RESIST
      All 687 unresolved shader_library rows sit in the three renderer packages:
      core/rendering/renderer (271 rows), core/rendering/mobile_renderer (216),
