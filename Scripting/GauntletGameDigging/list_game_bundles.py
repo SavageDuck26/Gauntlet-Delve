@@ -491,7 +491,7 @@ def write_bundle_files(bundles, out_dir: Path):
             human(total + total_stream)))
 
 
-def write_database_report(bundles, db_version, db_entries, out_dir: Path):
+def write_database_report(bundles, db_version, db_entries, out_dir: Path, hash_db=None):
     txt = out_dir / "02_bundle_database.txt"
     present = {b["name"]: b for b in bundles}
     with open(txt, "w", encoding="utf-8") as f:
@@ -516,13 +516,24 @@ def write_database_report(bundles, db_version, db_entries, out_dir: Path):
         f.write("%5s %-18s %-9s %-9s %s\n" % (
             "idx", "bundle", "stream", "on-disk", "package_path"))
         f.write("-" * 100 + "\n")
+        f.write("# a bundle id IS murmur64A(package_path, seed=0).  A path marked '*'\n"
+                "# is not in bundle_database.data (that bundle is absent from this\n"
+                "# install) and was recovered by hashing the id against the name\n"
+                "# database - e.g. the two debug bundles:\n"
+                "#   361ea22c921e9f87 -> resource_packages/debug\n"
+                "#   8ad87c351f91fb47 -> modules/debug/resources\n")
         for name in order:
             b = present.get(name)
+            path = (b or {}).get("package_path") or ""
+            if not path and hash_db is not None:
+                recovered = resolve(hash_db, int(name, 16))
+                if recovered:
+                    path = recovered + " *"
             f.write("%5d %-18s %-9s %-9s %s\n" % (
                 first_idx[name], name,
                 "yes" if has_stream.get(name) else "no",
                 "yes" if b else "MISSING",
-                (b or {}).get("package_path") or ""))
+                path))
         f.write("\n")
 
         # --- full per-entry dump ------------------------------------------
@@ -664,7 +675,7 @@ def main():
         print("   wrote 01_bundle_files.txt")
 
     if args.only in ("database", "all"):
-        write_database_report(bundles, db_version, db_entries, out_dir)
+        write_database_report(bundles, db_version, db_entries, out_dir, hash_db)
         print("   wrote 02_bundle_database.txt")
 
     grand = unresolved = 0

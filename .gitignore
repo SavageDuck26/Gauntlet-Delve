@@ -136,3 +136,6 @@ Stingray-Video-Mine/
 
 # Web-mining scratch (article markdown, downloaded screenshots, OCR dumps)
 Stingray-Web-Mine/
+
+# Big-run scratch (mutate seeds/tokens/logs - regenerated constantly)
+Scripting/hashcracker/work/
