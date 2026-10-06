@@ -4899,3 +4899,69 @@ a material and a particle - same string, same hash).  A hash resolved once
   STATE: unchanged - overlay 5,990 | 16,507/20,000 named | 1,554 unique
   unresolved.  The mining added vocabulary, not names.
 
+================================================================================
+36. HYPER-TARGETED PACK HUNT - THE AUDIO BANKS (37 targets, 0 named)
+================================================================================
+  THE TARGET: every hero/module pack ships audio banks of type `timpani_bank`.
+  `resource_packages/heroes/valkyrie_banks` (bundle f3830d1c26ef30ee) has exactly
+  two, and only one is named:
+      2bbc167722286772  audio/heroes_valkyrie      12,347,945 B
+      a9b565b6f2212265  <unresolved>               28,288,342 B
+  murmur64A('audio/heroes_valkyrie') == 2bbc167722286772, so the rule holds on
+  this family too - the sibling is simply another `audio/...` path we have to
+  find.  37 such banks are unresolved (5 hero banks, 1 base, 10 crypt, 10 lava,
+  10 caves, 1 hub room).
+
+  WHAT THE PACKS LOOK LIKE (learned from the catalogue):
+     level WRAPPER packs  resource_packages/d01_* / cave_boss / morak / arcade
+        carry the NAMED enemy banks: audio/enemy_{death,ghost,lich,mummy,
+        necromancer,skeleton,spawner,grunt,orc,spider,cultist,demon,gator,morak}
+     MODULE packs         modules/d01_{crypt,lava,caves}/resources each hold 10
+        UNRESOLVED banks; heroes/<hero>_banks each hold exactly ONE unresolved
+        bank next to `audio/heroes_<hero>`.
+     Their hashes differ from the named enemy banks, so they are genuinely other
+     resources (not duplicates of the wrapper's banks).
+
+  CONFIG -> RESOURCE LINK FOUND (a keeper):
+     every settings*.ini in the install and in every snapshot carries
+         timpani = "audio/slayer"
+     and `audio/slayer` IS the timpani_master resource (dcb37be45f1596e3) in
+     resource_packages/boot.  So the engine config names audio resources
+     directly - worth remembering for other subsystems.
+
+  AUDIO VOCABULARY MINED FROM THE OLD BUILDS (pre-Slayer depots):
+     3,171 distinct `audio/...` names, a whole event namespace we never had:
+         audio/originals/narrator_valkyrie, audio/originals/retro_valkyrie_die,
+         audio/originals/hit_character_other0, audio/originals/40mm_shell02,
+         audio/misc, audio/1_0_1 ... audio/10_0_14, audio/slayer
+     None of them hash to any current unresolved target (they are the removed
+     2014/2015 event set), but they gave a 460-word audio-namespace token list.
+
+  EVERYTHING TRIED - ALL ZERO (~1.5e12 candidates)
+     audio/%a over 165,331 tokens
+     audio/%a_%b over 165,331^2                     (~2.7e10)
+     audio/heroes_%a[_%b], audio/enemy_%a[_%b]      (~5.4e10)
+     audio/%a_%b_%c over 3k and over 7,774 tokens
+     audio/%a_%b_%c_%d over the 460 audio words
+     siblings: <known>_%a, %a_<known>, audio/<known leaf>_%a, %a_<known leaf>
+     pack-derived: audio/<packbase>[_%a], audio/%a_<packbase> (466k)
+     namespaces: audio/{originals,heroes,enemies,music,banks,streamed,...}/...
+     variants: _psvita/_vita/_mobile/_emulate/_hq/_lq/... and 36 language tags
+     numeric: audio/<a>_<b>, audio/<a>_<b>_<c>, audio/<base>_<n> (0-999),
+              audio/<0-99999>, audio/<n>_<n>_<n> for the old short-name shape
+     content: the bank BODIES are Ogg-Vorbis containers (OggS at 2644 / 4588,
+              no BKHD/DIDX/HIRC/STID, no readable names); the PACKAGE bodies
+              carry only name_hash values (we found both banks' hashes in the
+              valkyrie package's 61-byte name table)
+
+  CONCLUSION: the Slayer-era bank names come from Arrowhead's own audio project
+  and are not derivable from any vocabulary the shipped game or the old builds
+  expose.  The definitive source would be the game's Wwise metadata
+  (SoundbanksInfo.xml / the .wwu project) - we verified the install and every
+  snapshot ship none.  The other families (menu 340, all_effects 279, renderer
+  249 shader_library, ...) are still open to the same treatment; the tooling is
+  ready: tools/make_pack_vocab.py + sweeps/pack_sweep.sh per pack, and
+  sweeps/audio_hunt.sh for this family.  Work products live in
+  Scripting/hashcracker/work/audio/ (tokens, extracted bank bodies, per-batch
+  candidate lists and logs).
+
