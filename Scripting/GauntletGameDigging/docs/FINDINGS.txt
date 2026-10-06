@@ -4376,3 +4376,52 @@ a material and a particle - same string, same hash).  A hash resolved once
 
   STATE: overlay 5,825 -> 5,826; unique unresolved 1,719 -> 1,718.
 
+================================================================================
+27. SOURCE HUNT ROUND - NINE MORE PLACES CHECKED, ZERO NAMES, ONE REAL LEAD
+================================================================================
+  Spent a round looking for name material OUTSIDE the bundles/Lua, since every
+  remaining family is source-limited.  Everything below was mined and hash-tested
+  against the 1,718 outstanding targets:
+
+  NEGATIVE (nothing there):
+   * contents/dlc/                       - empty
+   * Proton prefix crash logs (40 files) - 135 resource paths, all lua or already
+                                           resolved (relic_gargoyle, freeze_ring,
+                                           equipment/wizard/weapon02 ...)
+   * binaries/*.mdmp (2015 minidump)     - 102 strings, no resource paths
+   * mod loader logs + mod tree          - load_bitesquid_x86.log (614 KB),
+       (AppData/Local/BITESQUID)           hook.log, modUI.log, lua.log + all mod
+       files: 252 files -> 1,897 paths -> 0
+   * repo exports & samples              - Exports/ (texture_database,
+       extracted_materials), decoded_materials/, assets/*.glb,
+       reference/ (Vermintide mod framework etc.): 15,631 strings -> 0
+   * docs/Hash Dictionary.txt            - 42 TYPE hashes only, no names
+   * shader caches (51 MB)               - DXVK_state_cache, fozpipelinesv6,
+       mesa_shader_cache_sf, radv_builtin_shaders: pure hashes, no names
+   * other installs/libraries            - one Steam library only, no second copy
+   * Other/ModLinuxBackup                - our own loader backup
+
+  THE LEAD that came out of it - MORE DEPOTS ARE REACHABLE:
+   * appmanifest_258970.acf lists THREE installed depots: 258971 (binaries),
+     258972 (contents) and 298987 (a 5.2 MB DLC).  The DLC is just the digital
+     comic (comic/WBIE_Gauntlet_Darkness_Calls_ENG.pdf, 5.0 MB) - no names.
+   * appinfo lists 13 DLC appids for Gauntlet:
+       298980-298986, 298987, 302280-302282, 324040, 335510
+     ONLY 298987 has a DecryptionKey in config.vdf (i.e. owned); the other TWELVE
+     are not owned.  Each unowned DLC is a separate depot of new content
+     (characters/weapons) - i.e. exactly the kind of source that produced the
+     +549 names when the older Pre-Slayer depot turned up.
+   * the Pre-Slayer folder proves historical snapshots are reachable: Steam's
+     console `download_depot 258970 <depotid> <manifestid>` fetches ANY historical
+     manifest of a depot, and appid 258970 has many build states (SteamDB lists
+     them).  Every extra manifest = another name harvest like section 19.
+
+  ACTIONABLE NEXT STEPS (all outside our tooling):
+    1. acquire any of the 12 unowned DLCs -> new depot -> scan_depot_names.py
+    2. fetch an older/newer manifest of depot 258972 (SteamDB manifest id) and
+       harvest it the same way
+    3. the shader source or art/prop lists remain the only way to finish
+       shader_library / texture / unit
+
+  STATE unchanged: overlay 5,826; unique unresolved 1,718.
+
