@@ -130,3 +130,6 @@ Scripting/GauntletGameDigging/**/*.stream
 # ---- Scratch -------------------------------------------------------------
 *.tmp.*
 .DS_Store
+
+# Video-mining scratch (captions, OCR dumps, downloads, venv)
+Stingray-Video-Mine/
