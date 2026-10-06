@@ -4133,3 +4133,33 @@ a material and a particle - same string, same hash).  A hash resolved once
   shader 49 | timpani_bank 37.  Not yet scanned: the depot's 9 .stream files,
   and the older build's Lua/config bodies for further colon-bearing tables.
 
+================================================================================
+20. THE DEPOT'S .stream FILES - CHECKED PROPERLY, NO NAMES (negative result)
+================================================================================
+  The .stream companions were the last un-scanned part of the depot (9 files in
+  Pre-Slayer, 11 in Slayer, 1-36 MB each).  They are RAW BULK DATA (textured/
+  mesh payload), not another name source:
+
+  * no header/TOC: the file starts with high-entropy bytes; the Pre-Slayer and
+    Slayer copies of the SAME stream even begin byte-identical (same content)
+  * the ~2,400 `78 9c` byte pairs per depot are COINCIDENTAL, not zlib streams
+    (chance rate for 150 MB is ~2,300).  Inflating at every candidate offset
+    yields 0 blobs, so there is no compression layer to unwind
+  * only ~0.7% of the bytes are printable; the min-3/colon-tolerant token
+    harvest gives 950,733 unique strings (7.6 M with suffix/extension variants)
+    and the Rust/GPU cracker reports 0 matches against the remaining targets
+  * no UTF-16 strings either
+  * every stream has a companion MAIN bundle, and all of those are already in
+    the catalogue (Slayer 75/75, Pre-Slayer 49/52) - so their TOC and inline
+    bodies were parsed long ago
+  * the 3 Pre-Slayer-only main files are covered too: `429c1a93aa4ec544` (1611
+    resources, harvested with the rest) and `3ef5a29b60d0d2e7` /
+    `b4c0860f59abd24a`, which are 260-BYTE EMPTY STUBS (byte-identical to each
+    other, count=0) - nothing to mine
+  * also checked: `settings.ini` (plain text; paths already known),
+    `bundle_database.data` (id -> stream-name map only) and the two Steam
+    `state_*.patch` manifests (depot bookkeeping, no resource names)
+
+  => the Pre-Slayer depot is now FULLY covered; its value was the 549 names
+  harvested from the main bundle bodies + binaries (section 19), not the streams.
+
