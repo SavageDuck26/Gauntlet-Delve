@@ -4058,3 +4058,78 @@ a material and a particle - same string, same hash).  A hash resolved once
     * the ART SOURCE scene names for the module units/quilts
     * a newer game build whose bundles reference more resources
 
+================================================================================
+19. PRE-SLAYER DEPOT - 549 MORE NAMES, AND WHY WE MISSED THEM (+22%)
+================================================================================
+  WHAT IT IS: Gauntlet-PreSlayer/ is a Steam depot snapshot of the older
+  (pre-Slayer) build - depot_258971/binaries (older gauntlet.exe 3.5MB + 10
+  DLLs) and depot_258972/contents (55 bundles + .stream + bundle_database.data
+  + settings.ini).  50 of the 55 bundle IDs are shared with the Slayer install.
+
+  FORMAT: identical header/TOC (0xF0000004) but the older module bundles MIX
+  RAW 64 KiB CHUNKS with zlib chunks.  Fix (now in list_game_bundles.py): if a
+  chunk does not start with a zlib magic byte, use it raw.  Renderer bundles
+  are all-zlib in both builds, which is why only the big art bundles looked
+  broken.
+
+  CONTENT DIFFS (same bundle ID, different contents):
+      d01_crypt 1284 -> 1629 (shared 1188, -96, +441)
+      d01_caves  939 -> 1341 (shared  845, -94, +496)
+      d01_lava   949 -> 1290 (shared  877, -72, +413)
+      modules/menu 286 -> 592 (shared 212, -74, +380)
+      pkg/menu  1044 -> 1058 (shared  732, -312, +326)
+      all_effects 1468 -> 1963 (shared 1329, -139, +634)
+  Depot-wide: 6224 distinct resource hashes; 5348 still ship, 876 were removed;
+  1654 of our unresolved targets exist in both builds.
+
+  THE DISCOVERY: the OLD build keeps ~1.8M name-bearing strings (Lua, config,
+  editor references); the NEW build STRIPPED them - the same scan over the
+  Slayer bundles returns ZERO.  And many of those names contain a COLON
+  (shader/material permutation syntax), which every earlier corpus filter
+  dropped: `^[a-z0-9][a-z0-9_./-]{3,110}$` has no `:`.  Two bugs in one.
+
+  RESULT - 549 previously-unreachable names, recovered in ~25 s:
+      shader_library 145 | particles 120 | texture 117 | unit 77 | level 58 |
+      animation 26 | material 2 | render_config 2 | flow 1 | package 1
+  Examples:
+      blocks/d01_caves/borders/caverock_border_low_2c / _4c / _low_concave_4c
+      characters/avatar_elf/animations/bow_move_run_backwards / _forward
+      effects/cha_boss_vulnerable_enter, effects/cha_drakh_spit_blast
+      decals/countinglines_01, decals/paper_01..04
+      additive:diffuse_map, ao_integrator:sun_occlusion, global_lighting:skin
+      modules/d01_caves/dungeon_tiles/caverock_8c_8c_g_g_g_u_01   (new dir,
+          and the tile naming uses g/u cell letters)
+      core/editor_slave/level_editor/baked_lighting
+
+  VALIDATION (all three independent):
+    * the cracker was run against the SLAYER hash set: 2410 matches, of which
+      1861 are resources Slayer ALREADY names - and our name equalled the
+      Slayer name for 1861/1861 = 100.00% (zero disagreements).  That is a
+      labelled test set proving the harvested strings name Slayer resources
+      exactly.
+    * the remaining 549 land on real shipped Slayer resources (spot-checked
+      one per type straight out of the installed bundles: type+index+hash all
+      match).
+    * 545/549 also exist in the old build's TOC, and the Rust/GPU cracker and
+      an independent Python murmur implementation agree exactly.
+
+  STATE AFTER APPLYING: overlay 5087 -> 5636; catalogue unresolved rows 6930
+  -> 4712; unique unresolved hashes 2457 -> 1908.
+
+  REPRODUCE:
+      python3 generators/scan_depot_names.py \
+          --contents <Gauntlet-PreSlayer>/depot_258972/contents \
+          --binaries <Gauntlet-PreSlayer>/depot_258971/binaries \
+          --out /tmp/depot_names.txt
+      ./target/release/hashcracker crack --gpu \
+          --targets data/vocab/unresolved_targets.txt \
+          --candidates /tmp/depot_names.txt --matches matches.tsv
+      python3 tools/merge_matches.py ..
+      (cd ../GauntletGameDigging && python3 list_game_bundles.py --only resources)
+  Re-running it now finds 0 (the names are already applied).
+
+  STILL TO DO: 1908 unique unresolved - texture 592 | shader_library 393 |
+  animation 389 | material 238 | particles 202 | level 117 | unit 104 |
+  shader 49 | timpani_bank 37.  Not yet scanned: the depot's 9 .stream files,
+  and the older build's Lua/config bodies for further colon-bearing tables.
+

@@ -11,7 +11,8 @@ import sys
 
 base = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "..").resolve()
 overlay = base / "GauntletGameDigging" / "resource_name_overlay.json"
-matches = pathlib.Path(__file__).resolve().parent / "matches.tsv"
+# matches.tsv lives in the hashcracker root (this script is in tools/)
+matches = pathlib.Path(__file__).resolve().parent.parent / "matches.tsv"
 
 ov = json.loads(overlay.read_text()) if overlay.exists() else {}
 before = len(ov)

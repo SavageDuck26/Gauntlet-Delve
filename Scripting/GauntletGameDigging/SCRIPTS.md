@@ -75,5 +75,11 @@ python3 list_game_bundles.py --only resources      # overlay -> 03_txt + 04_csv
 python3 ../hashcracker/tools/build_targets.py      # catalogue -> targets_*.txt
 ```
 
-Current state: overlay **5,087** names · catalogue **13,070/20,000 rows named**
-· **2,457** unique unresolved hashes (see `docs/FINDINGS.txt` §18).
+Current state: overlay **5,636** names · catalogue **15,288/20,000 rows named**
+· **1,908** unique unresolved hashes (see `docs/FINDINGS.txt` §18–19).
+
+Note: `list_game_bundles.decompress_bundle` now tolerates the **Pre-Slayer
+packing** (raw 64 KiB chunks mixed with zlib chunks), so the older depot's art
+bundles can be parsed too. `hashcracker/generators/scan_depot_names.py` harvests
+names from any install/depot with a colon-tolerant filter — that is how 549 more
+names were recovered from `Gauntlet-PreSlayer/`.

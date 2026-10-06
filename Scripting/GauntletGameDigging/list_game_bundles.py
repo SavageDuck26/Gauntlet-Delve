@@ -71,6 +71,8 @@ BUNDLE_SIG_OLD = 0xF0000004
 BUNDLE_SIG_NEW = 0xF0000005
 KNOWN_SIGS = (BUNDLE_SIG_OLD, BUNDLE_SIG_NEW)
 ZLIB_CHUNK = 0x10000  # 64 KiB uncompressed block size
+# first two bytes of a zlib stream; a chunk without one is stored RAW (Pre-Slayer)
+ZLIB_MAGIC = (b"\x78\x9c", b"\x78\xda", b"\x78\x01", b"\x78\x5e")
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +163,11 @@ def decompress_bundle(packed: bytes, limit: int = None):
         pos += 4
         if chunk_size == 0 or pos + chunk_size > len(packed):
             break
-        result.extend(zlib.decompress(packed[pos:pos + chunk_size]))
+        blk = packed[pos:pos + chunk_size]
+        # Pre-Slayer era bundles mix RAW 64 KiB chunks in with the zlib ones
+        # (the block simply does not start with a zlib magic byte). Same header,
+        # same TOC - only the compression of individual chunks differs.
+        result.extend(zlib.decompress(blk) if blk[:2] in ZLIB_MAGIC else blk)
         pos += chunk_size
         if limit is not None and len(result) >= limit:
             break
