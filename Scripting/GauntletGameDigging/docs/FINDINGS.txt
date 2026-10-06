@@ -4497,3 +4497,49 @@ a material and a particle - same string, same hash).  A hash resolved once
   earliest available, mid-2015, and one from just after the Slayer update.
   Then point me at the folders - scan_depot_names.py harvests each in ~25 s.
 
+================================================================================
+29. STEAMDB MANIFEST LIST FOR DEPOT 258972 - THE WHOLE PUBLIC HISTORY
+================================================================================
+  (from the login-gated SteamDB depot page; "sign in via Steam to view more"
+   means there may be a few even older rows - the game went on sale 2014-09-23,
+   so 2014-10-10 is essentially the launch-era build)
+
+  SEEN DATE (UTC)          MANIFESTID              OUR STATUS
+  2015-09-30 07:42:55  - 7771727643982441048  = INSTALLED / final public build
+  2015-09-09 17:58:12  - 3787990936101424752  - new
+  2015-08-17 17:00:20  - 6592885311492992946  - new
+  2015-08-11 11:32:05  - 7179921349315804859  - new  (Slayer-era roll)
+  2015-01-21 18:04:05  - 2950106636512614349  = HAVE (the "Pre-Slayer" folder)
+  2014-12-16 19:08:06  - 8065199330556049517  - new
+  2014-12-10 18:33:15  - 1932130102770294483  - new (same-day follow-up)
+  2014-12-10 17:58:24  - 8045879979106416340  - new
+  2014-11-19 18:28:24  - 3539662551088103218  - new
+  2014-10-10 19:05:33  -  468202134484985257  - new  <- OLDEST VISIBLE
+
+  KEY FACTS:
+   * the public branch has NOT moved since 2015-09-30 -> there are NO newer
+     builds, only older ones.  Our install IS the final build.
+   * the game released 2014-09-23; so the 2014 rows are launch-era.  Older
+     builds = more dead/unrenamed name strings (the 2015-01-21 build alone
+     gave +549 names), so PRIORITY IS OLDEST FIRST.
+   * the Slayer Edition content roll appears as the 2015-08-11 / 08-17 rows,
+     so those two bracket the Slayer switchover.
+
+  PULL LIST (oldest first, Steam console form):
+     download_depot 258970 258972 468202134484985257     <- do this one first
+     download_depot 258970 258972 3539662551088103218
+     download_depot 258970 258972 8045879979106416340
+     download_depot 258970 258972 1932130102770294483
+     download_depot 258970 258972 8065199330556049517
+     download_depot 258970 258972 7179921349315804859
+     download_depot 258970 258972 6592885311492992946
+     download_depot 258970 258972 3787990936101424752
+  WARNING: download_depot writes every build of the same depot into the SAME
+  folder (steamapps/content/app_258970/depot_258972), so it must be renamed
+  after each pull, e.g.  mv depot_258972 depot_258972_2014-10-10
+  (DepotDownloader avoids this with per-build -dir.)
+
+  ALSO WANTED: the same page for depot 258971 (the binaries, only 6-38 MB
+  each) - the older gauntlet.exe is the single best source of editor/config/
+  lua strings, and every era's exe is cheap to grab:
+     https://steamdb.info/depot/258971/manifests/
