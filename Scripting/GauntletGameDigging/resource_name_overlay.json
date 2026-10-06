@@ -2725,6 +2725,7 @@
   "78fba10c0a6160c4": "effects/meshes/demon_heavy_confuse_cone_full",
   "7929386d7e9324e4": "effects/cha_use_potion",
   "792a1e7ff0b784ad": "menu/menu_standard_background_overlay",
+  "792ddaa45eaa412e": "characters/illusion_wizard/animations/chainlightning",
   "7947cffba6419e69": "equipment/warrior/set01_spec",
   "7957e29ad0f672d5": "lua/dungeon/layouts/lava_endless_01_temple",
   "795829f5655d461a": "effects/gib_crushed_yellow",

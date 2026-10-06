@@ -4340,3 +4340,39 @@ a material and a particle - same string, same hash).  A hash resolved once
 
   STATE unchanged this round: overlay 5,825; unique unresolved 1,719.
 
+================================================================================
+26. KITCHEN-SINK MEGA VOCABULARY - 88 BILLION CANDIDATES, +1
+================================================================================
+  Method: build ONE word list out of everything we have and sweep it with
+  structure-light patterns (the only shapes affordable at that list size).
+
+    data/vocab/ub_mega.txt = 60,000 entries, unioned from all 130 vocabulary
+    files in data/vocab/ + every token and leaf of all 6,086 known names
+    (overlay + catalogue + the Pre-Slayer matches)
+
+  Sweeps (GPU, ~1.2 G candidates/s):
+
+    units only (79 targets)   14 patterns: %e/%c/%p, %r/%c/%p, %r/%e/%p, %p,
+                              widths, mods, styles, cat forms
+                              78,876,300,000 candidates -> 0
+
+    all targets (1,719)       10 patterns incl. a suffix axis (%d/%p%s, %r/%p%s)
+                              9,325,800,000 candidates -> +1
+
+  The single hit came from SLOT ALIGNMENT, which is why the mega list is worth
+  keeping in the toolbox even though it mostly finds nothing:
+
+      characters/illusion_wizard/animations/chainlightning
+      (r=characters / e=illusion_wizard / c=animations / p=chainlightning -
+       all four words happened to be in the vocab lists)
+
+  Iterating that loop reached a fixpoint immediately (+0).
+
+  WHAT THIS SETTLES: for the unit family the answer is now exhaustive - roughly
+  245 BILLION candidates across every structural form and every vocabulary we
+  possess have produced the current 79 remaining units (166e9 grammar + 78.9e9
+  mega + tens of billions of smaller passes).  The leftovers need words that are
+  in no shipped artefact: unshipped art/prop source.
+
+  STATE: overlay 5,825 -> 5,826; unique unresolved 1,719 -> 1,718.
+
