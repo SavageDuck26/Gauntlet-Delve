@@ -15,6 +15,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | `make_particles_vocab.py` | `par_*.txt` — `effects/<pre>_<subject>_<verb>[_<mod>]`. |
 | `make_unit_vocab.py` | `unit_*.txt` — block piece grammar `<root>/d01_<env>/<cat>/<style>_<part>…`. |
 | `make_unit_vocab_big.py` | `ub_*.txt` — the same with vocabularies mined from resolved names. |
+| `make_recovered_vocab.py` | `recovered_names.txt` (every resolved name) + `tokens_ext.txt` (`data/names.txt` plus leaf/path tokens mined from those names) — the inputs for the `hashcracker mutate` phase (`FINDINGS.txt` §33). |
 
 ## generators/ — candidate generation
 
@@ -45,7 +46,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 
 | script | what it loops |
 | --- | --- |
-| `auto_run.sh [cycles]` | All families (particles → bundle-scoped → lua keys → blocks → textures) until a cycle finds nothing. |
+| `auto_run.sh [cycles]` | All families (particles → bundle-scoped → lua keys → blocks → textures → **mutate**) until a cycle finds nothing. |
 | `blocks_pipeline.sh [rounds]` | Unit grammar → unit edit-1 → unit→map-texture derivation. |
 | `tex_pipeline.sh [rounds]` | `tex_*` vocab sweep → block derivation → unit edit-1. |
 | `unit_big.sh [rounds]` | The wide unit grammar sweep. |

@@ -4730,3 +4730,58 @@ a material and a particle - same string, same hash).  A hash resolved once
   Remaining by family: texture 582 | animation 372 | shader_library 251 |
   material 225 | particles 189 | level 113 | unit 79 | shader 49 | timpani 37.
 
+================================================================================
+33. THE mutate LEVER - THE RECOVERED NAMES FEED BACK IN (+93 NAMES)
+================================================================================
+  WHAT WAS WRONG: `hashcracker mutate` has existed from the start, but no sweep
+  ever called it - its only mention was legacy/make_vocab.py, which builds the
+  `--names` input from data/known.txt.  That file held 3,278 names from before
+  the depot harvests; the catalogue now carries 5,940.
+
+  WHAT IT DOES (src/main.rs): for every known name, inside that name's OWN
+  directory, it tests
+    1. suffix swap                  <dir>/<stem><sfx>              (map variants)
+    2. token append / prepend       <dir>/<stem>_<tok>, <dir>/<tok>_<stem>
+       and both plus a suffix       <dir>/<stem>_<tok><sfx>
+    3. token edits                  merge two adjacent tokens; replace any
+                                    token; replace digit-bearing tokens by every
+                                    00-99 and 0-99 number
+  It runs on the CPU/rayon pool (~0.15G cands/s), not the GPU.
+
+  THE RUN:
+     round 1   names 6,108 (data/vocab/recovered_names.txt)
+               tokens 25,180, suffixes 77
+               = ~12.6 G candidates in 74 s                        -> +44
+     then a compounding loop that rebuilds BOTH the name list and the token
+     list from the updated catalogue every cycle:
+         cycle 1 +41   cycle 2 +6   cycle 3 +2   cycle 4 +0      -> +49
+     TOTAL +93 names   (matches.tsv 5,244 -> 5,337; overlay 5,847 -> 5,940)
+
+  WHAT IT REOPENED (families we had declared source-limited in sections 24-32):
+     material        225 -> 174   (-51)
+     particles       189 -> 138   (-51)
+     texture         582 -> 557   (-25)
+     unit             79 ->  72    (-7)
+     animation       372 -> 368    (-4)
+     level           113 -> 109    (-4)
+     shader_library  251 -> 249    (-2)
+     unresolved rows 4,071 -> 3,629   (catalogue 16,371/20,000 named = 81.9%)
+     unique unresolved   1,697 -> 1,604
+  Examples of what came back:
+     effects_ui/level_select_node_{completed,unlocked}_{arena,boss,procedural}
+     effects/wep_wizard_storm_{bolt,bomb,serpents}_{fire,trail,hit,blast}
+     effects/cha_cultist_sorcerer_psychic_attack_lightbeam, effects/statuseffect_*
+     blocks/d01_caves/caves_blacktop_{diff,norm}, blocks/d01_lava/lavastruct_*
+     blocks/d01_caves/stairs/stairs_2d, .../floors/caverock_floor_4c_4c_invisibility
+     props/menu/sky_colosseum_clouds, hud/controller_icons/button_touch
+     effects/textures/additive_cross, effects/textures/additive_weaponslash_circular_large
+
+  LESSON: the derivation sweeps were not exhausted, they were STARVED - every
+  generator drew its vocabulary from a snapshot of the names known at the time.
+  Feeding the full recovered set back in (and mining the token list out of the
+  names themselves) reopened texture/material/particle at once.  The pipeline now
+  ends every cycle with exactly this:
+      tools/make_recovered_vocab.py  ->  hashcracker mutate
+  (sweeps/auto_run.sh phase 6), so names recovered by one cycle become seeds for
+  the next.
+

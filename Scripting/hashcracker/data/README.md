@@ -20,6 +20,7 @@ costs a re-run.
 | particles | `par_dir.txt`, `par_pre.txt`, `par_sub.txt`, `par_verb.txt`, `par_mod.txt` | `%d/%p_%s_%v[_%m]` |
 | units / blocks | `unit_*.txt` (grammar) and `ub_*.txt` (mined: root/env/cat/style/part/orient/width/var/char/gib) | `%r/%e/%c/%s_%p…` |
 | animation | `anim_map.json` (unit → clip hashes, from the state machines), `anim_targets.txt`, `*_tok.txt`, `animation_parents.txt` | edit-distance-1 per unit |
+| mutate (all families) | `recovered_names.txt`, `tokens_ext.txt` (from `tools/make_recovered_vocab.py`) | `hashcracker mutate`: per name, inside its own directory — suffix swap, token append/prepend, token merge, token replace, numeric replace |
 | live scratch | `known.txt`, `events.txt`, `bundle_words.txt`, … | supporting lists |
 
 ## Legacy vocabularies
