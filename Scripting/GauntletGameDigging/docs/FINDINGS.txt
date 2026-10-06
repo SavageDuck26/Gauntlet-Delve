@@ -4645,3 +4645,79 @@ a material and a particle - same string, same hash).  A hash resolved once
   Remaining by family: texture 582 | animation 372 | shader_library 271 |
   material 225 | particles 189 | level 113 | unit 79 | shader 49 | timpani 37.
 
+================================================================================
+32. STINGRAY DOCS CRAWL + THE SHADER-LIBRARY GRAMMAR (20 NEW NAMES)
+================================================================================
+  A. ENGINE DOCS ARE NOW LOCAL
+     Sources the project had not touched: the Autodesk Stingray help (the engine
+     Gauntlet runs on), the Bitsquid blog/book, the Stingray how-to videos.
+     help.autodesk.com is a JS single-page app, so it was pulled with WebAudit
+     (Coding/Python/WebAudit) using a purpose-made config:
+         dist/configs/crawler_config_stingray.toml
+         -> 451 pages / 447 markdown files in
+            reference/Stingray-Docs-md/    (gitignored, ~5 MB)
+     Two things that run taught us about that tool:
+       * plain-HTTP fetching returns only a 6.6 KB shell whose body text is
+         "Help" (content is injected by JS);
+       * the crawler's own sanity check (`document.body.innerText.length < 30`)
+         fires 200 ms after domcontentloaded - i.e. BEFORE the SPA renders - so
+         the page is reported [Failed]; its post-load wait must be raised for
+         single-page-app targets.
+     Useful content: shading environment pages, standard-material property
+     tables, texture/DDS settings, render_config, the Lua API and Flow
+     references, and the 1.0-1.9 release notes.
+
+  B. DIRECT MINING OF THE DOCS = ZERO (expected)
+     447 files -> 16,408 raw tokens -> 147,278 candidates -> 0 matches.  The
+     docs describe the ENGINE; they do not contain the game's asset names.  They
+     were still worth pulling, for (C).
+
+  C. THE PAYOFF: shader_library NAMING GRAMMAR
+     Inspecting the 851 *named* shader_library resources: a name is a technique
+     plus its flags, and the flags are ALPHABETICALLY SORTED -
+         billboard:blend_additive:diffuse_map:rotation:vertex_color
+         base:deferred_decals_group_prop:diffuse_map:normal_map:one_bit_alpha
+         skin_filter:direction_x:step1
+     839 of 851 (98.6%) obey the sorted rule, so the unresolved ones are not
+     guesswork: for each technique, enumerate the sorted subsets of the flag
+     vocabulary seen with it.  Full space over the shipped catalogue: 202,573
+     candidates (milliseconds on the GPU).
+     NEW TOOL: generators/shader_chains.py
+         --global-flags N     widen each technique's pool with the global 91-flag
+                              vocabulary seen on other techniques
+         --composite-depth N  try composite technique names (prefix/suffix)
+         --technique T        single-technique mode for looped runs
+
+  D. YIELD = 20 NAMES (shader_library 271 -> 251 unresolved)
+     per-technique subsets                       ->  0
+     --global-flags 3 (9.6M candidates)          -> 11
+         omni_light_debug_lights:skin / :shadow_mapping
+         spot_light_debug_lights:skin / :shadow_mapping
+         psvita_omni_light:skin / :shadow_mapping
+         psvita_spot_light:skin / :shadow_mapping
+         mobile_copy:encode_as_rgbm, mobile_blend:screen
+         character:double_sided:skinned_3weights
+     --global-flags 4, one pass per technique (75 x 2.8M) -> 0
+     --composite-depth 2 (15.3M candidates)      -> 9
+         mobile_filter:{box,downsample_4x4,gaussian_blur_13tap,log_luminance,
+                        separable_gaussian_13tap_x,_y}
+         mobile_filter:depth_aware:separable_gaussian_13tap_x / _y
+         psvita_tone_mapping:blend
+     fixpoint once the vocabulary grew (77 techniques): wide +0, composite +0.
+     The finds are MOBILE renderer and PS VITA EMULATION renderer variants of
+     techniques we already knew - exactly the composite shapes the generator
+     encodes (mobile_*, psvita_*, *_debug_lights).
+
+  E. WHY THE REMAINING 251 RESIST
+     All 687 unresolved shader_library rows sit in the three renderer packages:
+     core/rendering/renderer (271 rows), core/rendering/mobile_renderer (216),
+     core/rendering/emulate_renderer (200) - 271 unique hashes.  The grammar is
+     now exhausted: the missing names need a technique or a flag that appears
+     NOWHERE among the 5,847 names we hold, so there is no vocabulary left to
+     enumerate - the same wall as section 31.
+
+  STATE AFTER: overlay 5,827 -> 5,847; catalogue 15,929/20,000 named (79.6%);
+  unresolved rows 4,109 -> 4,071; unique unresolved 1,717 -> 1,697.
+  Remaining by family: texture 582 | animation 372 | shader_library 251 |
+  material 225 | particles 189 | level 113 | unit 79 | shader 49 | timpani 37.
+
