@@ -4884,6 +4884,18 @@ a material and a particle - same string, same hash).  A hash resolved once
   OPTIONAL_CORPORA (skipped when the scratch folders are missing), so the wide
   mutate runs with this vocabulary too.
 
+  FOLLOW-UP - THE MINED VOCABULARY DID PAY (written after the first pass)
+     Folding the three mined lists into tools/make_tokens_big.py (OPTIONAL_CORPORA)
+     and re-running the wide mutate immediately produced 4 names that ~40 G
+     candidates of the old vocabulary had missed:
+         characters/avatar_wizard/animations/leap_hop
+         decals/crater_01, decals/moss_01, decals/moss_02
+     The *words* (moss, crater, leap, hop) come from the engine's sample project;
+     the *namespaces* (decals/, characters/avatar_wizard/animations/) are
+     Gauntlet's.  overlay 5,990 -> 5,994 (matches.tsv 5,387 -> 5,391).
+     LESSON: a new source is worth mining even when it shares no assets with the
+     game - its vocabulary is the lever, exactly as in section 33.
+
   STATE: unchanged - overlay 5,990 | 16,507/20,000 named | 1,554 unique
   unresolved.  The mining added vocabulary, not names.
 
