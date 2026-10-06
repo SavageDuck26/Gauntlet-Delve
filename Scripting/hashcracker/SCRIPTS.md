@@ -45,6 +45,7 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | `blocks_pipeline.sh [rounds]` | Unit grammar → unit edit-1 → unit→map-texture derivation. |
 | `tex_pipeline.sh [rounds]` | `tex_*` vocab sweep → block derivation → unit edit-1. |
 | `unit_big.sh [rounds]` | The wide unit grammar sweep. |
+| `unit_medium.sh [rounds]` | Medium unit sweep: grammar + double widths + modifiers, edit-1 and unit<->texture derivation, looped (`FINDINGS.txt` §22). |
 | `level_phase2.sh [rounds]` | Quilt `start_`/`NN 01-24`/mod patterns. |
 | `context_sweep.sh [rounds]` | Lua-derived candidates (derive/anim/ability). |
 

@@ -4196,3 +4196,44 @@ a material and a particle - same string, same hash).  A hash resolved once
   STATE: overlay 5,668 -> 5,726; unique unresolved 1,876 -> 1,818
   (shader_library 393 -> 341, level 117 -> 113, animation 387 -> 385).
 
+================================================================================
+22. UNIT MEDIUM SEARCH (+4) AND ITS SATURATION POINT
+================================================================================
+  With the unit vocabulary rebuilt from the Pre-Slayer names (which added
+  low/concave/convex/skulldoor/swatch/bricks/no_fade and the double-width
+  forms like 4c_4c), sweeps/unit_medium.sh ran a medium grammar:
+
+      %r/%e/%c/%s_%p            style_part
+      ..._%w  ..._%w_%w          single and DOUBLE width (4c_4c)
+      ..._%v  ..._%q  ..._%q_%w  variant / modifier / modifier+width
+      ..._%o                     orientation
+      %r/%e/%c/%p_%w  %p_%q      part-only forms
+      %r/%e/%s_%p_%q_%w          cat-less forms
+      %r/%e/%c/%g_%p, characters/%e/%c/%g   gib/character forms
+
+  +  edit-distance-1 in-directory and the unit<->texture derivation, looped to
+     a fixpoint.  Result: +4 units (83 -> 79):
+        blocks/d01_caves/floors/cavestruct_floor_concave_2c
+        blocks/d01_caves/floors/cavestruct_floor_convex_2c
+        blocks/d01_lava/walls/lavarock_wall_low_convex_2c
+        blocks/d01_lava/walls/lavarock_wall_low_convex_4c
+
+  THEN IT SATURATED - all of these returned ZERO:
+    * colours x styles/parts/widths        (1,015,787,520 candidates)
+    * numbered pieces (pillar_01..16 etc.)
+    * modifier chains %p_%q_%w
+    * noun-based generators re-run on the grown vocabulary:
+      derive_cands (3.1M: Lua literals x known dirs) and
+      bundle_scoped_cands (437k: same-bundle dirs x global leaves)
+    * the earlier huge grammar (166e9) had already found only +1
+
+  The remaining 79 units live in modules/d01_caves (48), d01_lava (34),
+  modules/menu (8), d01_crypt (6) and d01_hub_room (5).  The resolved tails show
+  shapes like gib_headless / sphere_<colour> / potion_<colour> / split_vertical /
+  froze_base / wall_convex / 4c_4c, i.e. PROP NOUNS and per-prop variants - the
+  vocabulary for those lives in the art/prop source we do not have.  Every
+  derived combination of the vocabulary we DO have has been tried.
+
+  STATE: overlay 5,726 -> 5,730; unique unresolved 1,818 -> 1,814
+  (unit 83 -> 79).
+

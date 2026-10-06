@@ -57,6 +57,12 @@ DEFAULT_PART = ["wall", "floor", "ceiling", "pillar", "column", "rock", "rocks",
                 "pit", "spike", "trapdoor", "ladder", "fence", "railing", "window",
                 "opening", "marker", "floorpile", "skullpile", "wall_end",
                 "wall_corner", "wall_door", "border_corner", "blackbox_2c"]
+MOD = """low high mid concave convex straight angled split_vertical
+split_horizontal froze_base frozen_base no_fade fade nodraw invisible
+damaged broken cracked destroyed rubble rubble_small var01 var02 var03 var04
+var05 var06 a b c d l r left right inner outer top bottom cap base middle
+corner edge side front back narrow wide long short thick thin 01 02 03 04 05""".split()
+
 GIBPART = ["gib", "gibs", "cape", "legs", "torso", "head", "headless", "split",
            "body", "arm", "arms", "hand", "foot", "feet", "shoulder", "hip",
            "neck", "jaw", "skull", "wing", "tail", "horn", "spike", "chain",
@@ -119,6 +125,19 @@ def main():
     dump("ub_part.txt", [t for t, _ in parts.most_common(120)])
     dump("ub_char.txt", [t for t, _ in chars.most_common(80)])
     dump("ub_gib.txt", [t for t, _ in gibs.most_common(60)])
+    mods = collections.Counter()
+    for n in names:
+        if not n.startswith(("blocks/", "props/")):
+            continue
+        toks = [t for t in n.rsplit("/", 1)[-1].split("_") if t and not t.isdigit()]
+        for t in toks[1:-1]:                       # head/tail carry style/width
+            mods[t] += 1
+    mods.update(MOD)
+    dump("ub_mod.txt", [t for t, _ in mods.most_common(120)])
+    dump("ub_color.txt", """red blue green gold purple orange yellow white black pink
+        cyan teal silver bronze grey gray brown dark light pale bright blood iron
+        stone wood bone sand ice fire poison shadow holy""".split())
+    dump("ub_num.txt", [f"{i:02d}" for i in range(1, 17)])
 
 
 if __name__ == "__main__":

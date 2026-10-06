@@ -5121,3 +5121,7 @@ c34fbb966c0cf65e	base:diffuse_map:jittered_transparency:skinned_3weights:static_
 dbd4753101a8a328	billboard:diffuse_map:pivot:soft_particles:vertex_color
 097fd232b98360fe	billboard:diffuse_map:pivot:uv_animation:vertex_color
 728158ed915eda4a	billboard:diffuse_map:tangent_locked:uv_animation:vertex_color
+7627ddccc76f6756	blocks/d01_caves/floors/cavestruct_floor_concave_2c
+681fcfc38e922b40	blocks/d01_caves/floors/cavestruct_floor_convex_2c
+de1c4f5006d7ded3	blocks/d01_lava/walls/lavarock_wall_low_convex_2c
+46508827d0bb0554	blocks/d01_lava/walls/lavarock_wall_low_convex_4c
