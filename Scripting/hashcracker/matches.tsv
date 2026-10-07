@@ -5748,3 +5748,9 @@ c2d6c8b3a75be1f0	gameobjects/traps/spikeplate_caves_1c_1c
 464d965526935c85	blocks/d01_lava/railings/lavastruct_railing_broken_2c
 67d554f37b3f619e	props/d01_common/torch_floor_blue_01_diff
 b5282f50de0a90ae	effects/wep_elf_arrow_light_trail
+d4cb1304a93bfdbe	menu/sparkle_overlay
+afbcff7277c248b1	blocks/d01_lava/stairs/morak_platform
+b28a4f9a3143943a	characters/avatar_warrior/animations/default_falling
+80b0600062097880	characters/spider_queen/animation/spawn_rock
+e344b614675a1947	characters/spider_warrior/animation/spawn_hanging
+768f22f84f493040	blocks/d01_crypt/d01_crypt_blackbox_secret

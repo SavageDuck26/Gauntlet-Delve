@@ -6062,6 +6062,11 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   turned out to have its own texture tree too (`map_caustics`, `map_gold_glitter`,
   `additive_glow_strip`, `additive_glow_ring`).
 
+  What is left in the atlases is the part whose naming is neither
+  referrer-derived nor a token recombination - most likely a hand-authored icon
+  list, so the UI/flow Lua is where to look next (`mine_source_names.py` already
+  walks it).
+
 48.4 PER-ATLAS FAMILY RECOMBINATION (make_atlas_family.py)
 
   Each referring atlas is a directory, and the icons in it are *members of a
@@ -6294,6 +6299,84 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
   best lever: the atlas rule is proven (any atlas whose icons follow the
   `D/L/<icon>` convention yields them), and what is left is the icon/descriptor
-  vocabulary inside atlases whose naming is neither referrer-derived nor a token
-  recombination - likely a hand-authored icon list (the UI/flow Lua is the place
-  to look next, as `mine_source_names.py` already walks it).
+
+==========================================================================
+52. TOKEN COMBINATION: BUILDING LEAVES OUT OF THE GAME'S OWN WORDS
+==========================================================================
+
+  Every vocabulary sweep up to here used ONE slot per pattern (`<dir>%m`), so it
+  could only ever propose a leaf we already held.  Combinations were only tried
+  where they were cheap: `pack_sweep.sh` combines a pack's own tokens but only
+  inside that one package, `make_guess_patterns.py` only for levels with a twin.
+
+  Split every resolved name on `/` and `_` and the whole catalogue collapses to
+  **1,958 tokens** (1,930 non-numeric; 784 distinct leaf-first tokens, 1,292
+  distinct leaf-last).  That is small enough to cross three deep against all
+  1,185 unresolved hashes at once (`tools/make_token_combo_vocab.py` +
+  `sweeps/token_combo_sweep.sh`):
+
+    free 2 tokens    %a_%b  %a/%b                                7.7 M
+    free 3 tokens    %a_%b_%c  %a/%b_%c  %a_%b/%c  %a/%b/%c     30.0 G
+    dir + 2 tokens   <known dir>%a_%b                             1.4 G
+    dir + basename   <dir><its own name>_%a_%b                    0.9 G
+
+  The free tiers carry no literal directory at all, which is the point: they can
+  reach a name whose *directory* is itself a token combination.
+
+52.1 MEASURED SPEED, AND WHY IT MATTERS
+
+  Pure token combinations are the fastest thing this engine does - no branching,
+  no per-candidate variation: **30,026,039,648 candidates in 16.1 s = 1.87 G/s**
+  on the RX 6600 XT, ~2.5x the 755 M/s the mixed sweeps achieve.  A
+  directory-anchored tier costs less per candidate (650 M/s) because 368
+  patterns mean 368 pipeline runs.
+
+  That changes what is affordable.  The deep tiers - `<dir>%a_%b_%c` (2.76 T) and
+  `<dir><basename>_%a_%b_%c` with both extra slots from the tail vocabulary
+  (1.2 T) - are 25-70 min, not the two hours estimated at 350 M/s, so they are
+  worth running.
+
+52.2 CONTROLS, AND WHAT THEY CAUGHT
+
+  Six positive controls, one per tier, each proved *structurally* (some pattern
+  can generate the name) and then *empirically* (mini vocabulary, real crack);
+  every hash came back byte-exact.
+
+    free2  flow/gib
+    free3  characters/necromancer/necromancer
+    dir2   characters/mummy_priest/mummy_priest
+    base2  characters/orc_melee/orc_melee_weapons_diff
+    dir3   props/d01_common/banner_torn_01
+    base3  gameobjects/carry/carry_crypt_relic_mask
+
+  Writing the controls caught a real bug: `--pattern '%a_%b_%c'` is a
+  *standalone* template, not an append - so the deep phase would have generated
+  `a_b_c` instead of `<dir><basename>_a_b_c`.  Hence
+  `make_token_combo_vocab.py` now emits `patterns_dirbase3.txt` as its own file.
+
+52.3 THE HAUL
+
+  **+6**, every one of them the `dir x 2 tokens` shape - exactly the space the
+  single-slot sweeps could not reach:
+
+    blocks/d01_crypt/d01_crypt_blackbox_secret
+    blocks/d01_lava/stairs/morak_platform
+    characters/avatar_warrior/animations/default_falling
+    characters/spider_queen/animation/spawn_rock
+    characters/spider_warrior/animation/spawn_hanging
+    menu/sparkle_overlay
+
+  Note the recurring `spawn_*` / `default_*` clips and the `blackbox_secret`
+  block: new *members of families we hold*, the same signature as section 49's
+  twins, reached this time from the token side instead of by reference.
+
+52.4 A TRAP WORTH REPEATING
+
+  The first run was killed mid-flight by a 30 s command timeout, and the second
+  run then reported `+0` for a 32 G-candidate space in 20 s.  That looked like
+  the "stale lock" failure the notes warn about, but measuring the tiers
+  properly (30,026,039,648 in 16.1 s) showed the 20 s was *correct* and the +0
+  genuine - the six had already been written by the killed run and folded in by
+  the next round's merge.  Lesson: when a run is suspiciously fast, measure the
+  tier directly rather than either trusting or discarding it.
+
