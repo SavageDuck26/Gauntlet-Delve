@@ -76,6 +76,19 @@ python3 hunt_unit_textures.py \
   --name characters/demon_overlord_mini/demon_overlord_mini --type unit
 ```
 
+## Probing one resource directly
+
+`probe_resource.py` — the one-shot version of the above: give it a name and it
+dumps what the resource *says* (printable strings) and what it *points at*
+(every 8-byte window matched against **every name we hold**, not just the
+bundle's TOC, so cross-bundle references resolve too).  Use it to ask whether a
+body is text or binary before building a vocabulary around it.
+
+```bash
+python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
+  --type state_machine --strings 20 --refs 25
+```
+
 ## Subdirectories
 
 `resource_tools/` (16-type resource read/write suite), `database_extractor/`,

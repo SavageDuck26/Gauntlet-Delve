@@ -6050,6 +6050,18 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `stone_pieces`, `candle_flame`), and 30.6 G candidates of the atlas patterns
   crossed with the 4.16 M extended leaves also added nothing beyond the 32 above.
 
+48.3 WHERE THAT LEAVES TEXTURES
+
+  By-reference coverage is now **418 of 453** textures (and 343 of 343 animations,
+  104 of 139 materials, 61 of 61 units), which is what says the atlas-subdirectory
+  rule matters: an icon's name is its atlas's directory plus the icon leaf
+  (`hud/action_icons/<icon>`, `hud/spells/<spell>`), and that directory appears in
+  no resolved name anywhere, so every directory sweep is blind to it.  The rule is
+  proven - `make_atlas_patterns.py` supplies the patterns and it found +32 - and
+  the recipes it unlocks are the ones this section goes on to mine.  `effects_ui/`
+  turned out to have its own texture tree too (`map_caustics`, `map_gold_glitter`,
+  `additive_glow_strip`, `additive_glow_ring`).
+
 48.4 PER-ATLAS FAMILY RECOMBINATION (make_atlas_family.py)
 
   Each referring atlas is a directory, and the icons in it are *members of a
@@ -6226,6 +6238,17 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   one: `effects/wep_elf_arrow_light_trail`, an *old-style* `wep_` name that still
   matches a resource in the current build.
 
+
+50.3 WHAT THIS SAYS ABOUT THE REMAINDER
+  The corpus is *newer* than either older build (the renames all run old -> new,
+  and we hold the new side), so cross-build evidence cannot reach the 1,191 left:
+  their resources were **added after 2015-08**, or renamed *within* the current
+  line of builds, and neither older snapshot contains them at all.  Combined with
+  the earlier negatives, the remaining blocks now look like content authored for
+  the shipped build and never referenced by anything we can read:
+  animation 340, texture 398, shader_library 165, material 135, unit 60,
+  shader 45, timpani_bank 37 (needs Wwise metadata), level 11, flow 1.
+
 ==========================================================================
 51. PROBING RESOURCES DIRECTLY (AND TWO MORE NEGATIVES)
 ==========================================================================
@@ -6267,17 +6290,6 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   those objects.  Anything still unresolved is therefore a name our sources have
   never printed, in any build.
 
-50.3 WHAT THIS SAYS ABOUT THE REMAINDER
-
-  The corpus is *newer* than either older build (the renames all run old -> new,
-  and we hold the new side), so cross-build evidence cannot reach the 1,191 left:
-  their resources were **added after 2015-08**, or renamed *within* the current
-  line of builds, and neither older snapshot contains them at all.  Combined with
-  the earlier negatives, the remaining blocks now look like content authored for
-  the shipped build and never referenced by anything we can read:
-  animation 340, texture 398, shader_library 165, material 135, unit 60,
-  shader 45, timpani_bank 37 (needs Wwise metadata), level 11, flow 1.
-
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
   best lever: the atlas rule is proven (any atlas whose icons follow the
@@ -6285,12 +6297,3 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   vocabulary inside atlases whose naming is neither referrer-derived nor a token
   recombination - likely a hand-authored icon list (the UI/flow Lua is the place
   to look next, as `mine_source_names.py` already walks it).
-
-
-
-
-
-
-
-
-
