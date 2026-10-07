@@ -64,13 +64,48 @@ def windows(body):
     return np.concatenate(parts)
 
 
+def pairs(bundle_path, prefix, sample=20):
+    """Print `<referrer> -> [referenced names]` for resolved pairs, to learn naming."""
+    _sig, _uz, data = L.decompress_bundle(pathlib.Path(bundle_path).read_bytes())
+    _count, toc = L.parse_toc(data)
+    entries, _end, _ok = L.parse_resources(data, toc)
+    name = {}
+    for r in load():
+        if r["_name"]:
+            name[int(r["name_hash"], 16)] = (r["_name"], r["type"])
+    shown = 0
+    for e in entries:
+        n = name.get(e.get("name_hash"))
+        if not n or not n[0].startswith(prefix):
+            continue
+        start = e["body_start"]
+        body = data[start:start + e.get("body_size", 0)]
+        if len(body) < 8:
+            continue
+        hits = np.unique(windows(body))
+        got = [name[int(h)] for h in hits.tolist() if int(h) in name]
+        if len(got) < 2:
+            continue
+        shown += 1
+        print(f"\n{n[0]}  [{n[1]}]")
+        for nm, ty in sorted(set(got)):
+            print(f"    {ty:<10} {nm}")
+        if shown >= sample:
+            break
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--pairs", help="bundle path, to print referrer->referenced name pairs")
+    ap.add_argument("--prefix", default="", help="only referrers whose name starts with this")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
+    if args.pairs:
+        pairs(args.pairs, args.prefix)
+        return
     rows = load()
     by_bundle = collections.defaultdict(lambda: {"targets": {}, "resolved": []})
     for r in rows:

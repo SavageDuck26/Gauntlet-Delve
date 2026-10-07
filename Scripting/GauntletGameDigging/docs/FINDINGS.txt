@@ -6022,6 +6022,44 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   which is the single best texture yield so far, and it generalises: any atlas we
   can identify yields its icons.
 
+48.2 THE EFFECTS CONVENTION (THE OTHER 398)
+
+  Probing resolved materials with `hunt_texture_refs.py --pairs <bundle> --prefix
+  effects/` shows what the `effects/*` edges mean - the textures are **generic**,
+  shared across effects, and not derived from the referrer's name:
+
+    effects/cha_pickup_skullcoin  [material]
+        effects/textures/additive_blob
+        effects/textures/additive_glow_spikey_02
+        effects/textures/alpha_skullcoin
+    effects/env_wall_burst        [material]
+        effects/textures/alpha_droplet
+        effects/textures/alpha_impact_splash_01
+        effects/textures/alpha_smoke_01
+        effects/textures/alpha_stone_pieces
+
+  i.e. `<kind>_<descriptor...>[_<n>][_norm|_diff]`, kinds {alpha, additive, atlas,
+  normal, stunned, hellfire, beam, glow}, descriptors mined from the 1,103
+  resolved effect textures (smoke, fire, liquid, cloud, blob, glow, thin,
+  sparkle, weaponslash, circular, shockwave, lightning, ...).  Since 398 of the
+  unnamed textures are drawn by `effects/*` particles they are further members of
+  that family, so `make_fx_texture_vocab.py` enumerates kind x descriptor[ x
+  descriptor] x number x suffix (156,288 candidates) behind a single
+  `effects/textures/%m` pattern -> **0**.  The descriptors are more idiosyncratic
+  than a token recombination reaches (`glow_spikey`, `impact_splash`,
+  `stone_pieces`, `candle_flame`), and 30.6 G candidates of the atlas patterns
+  crossed with the 4.16 M extended leaves also added nothing beyond the 32 above.
+
+48.3 WHERE THAT LEAVES TEXTURES
+
+  453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
+  best lever: the atlas rule is proven (any atlas whose icons follow the
+  `D/L/<icon>` convention yields them), and what is left is the icon/descriptor
+  vocabulary inside atlases whose naming is neither referrer-derived nor a token
+  recombination - likely a hand-authored icon list (the UI/flow Lua is the place
+  to look next, as `mine_source_names.py` already walks it).
+
+
 
 
 
