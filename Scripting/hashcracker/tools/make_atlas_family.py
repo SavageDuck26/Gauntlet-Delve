@@ -27,7 +27,7 @@ HC = HERE.parent
 DIG = HC.parent / "GauntletGameDigging"
 CATALOGUE = DIG / "bundle_manifest" / "04_bundle_resources.csv"
 OVERLAY = DIG / "resource_name_overlay.json"
-REFS = HC / "work" / "texture_refs.json"
+REFS = HC / "work" / "refs_texture.json"
 
 STATES = ["completed", "silver", "silver_completed", "locked", "over", "down",
           "disabled", "up", "normal", "owned", "equipped", "active", "empty",
@@ -79,6 +79,7 @@ def main():
                 atlases[r + "/"] += 1
 
     vocab = set()
+    all_states = set(STATES)
     for d in atlases:
         leaves = by_dir.get(d, [])
         if not leaves:
@@ -91,6 +92,7 @@ def main():
                 if L.endswith("_" + s):
                     stems.add(L[:-(len(s) + 1)])
                     states.add(s)
+        all_states |= states
         # cross-dir stems: a `menu/shop/x` family also borrows `menu/*/shop_*`
         for n in names:
             if "/" not in n:
@@ -117,9 +119,14 @@ def main():
     for d in sorted(atlases):
         pats += [f"{d}%m", f"{d}%m_%n"]
     (out / "vocab.txt").write_text("\n".join(vocab) + "\n")
+    # the `%m_%n` patterns need their own list: stems (`vocab.txt`) x states,
+    # otherwise the slot has no --list and the crack refuses to compile
+    states = sorted(all_states)
+    (out / "states.txt").write_text("\n".join(states) + "\n")
     (out / "patterns.txt").write_text("\n".join(sorted(set(pats))) + "\n")
-    print(f"atlas dirs {len(atlases)}  vocab {len(vocab):,}  patterns "
-          f"{len(set(pats))}  candidates ~{len(vocab) * len(set(pats)):,}")
+    print(f"atlas dirs {len(atlases)}  vocab {len(vocab):,}  states {len(states)}  "
+          f"patterns {len(set(pats))}  candidates "
+          f"~{len(vocab) * len(set(pats)) + len(vocab) * len(states):,}")
     print("top atlases:", [d for d, _ in atlases.most_common(8)])
 
 
