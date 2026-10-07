@@ -5432,3 +5432,5 @@ d7d34f722475737f	effects/wep_elf_special_explosive_shot_trail
 72dc8de3f57d353e	blocks/d01_caves/stairs/roundstairs_02
 138dcb8e6e5aabd0	menu/shop/shop_item_equipped_glow
 dfffae3e38ea4e26	shaders/crystal_ball
+ea66fa9001c60f33	modules/d01_crypt/room_crypt_floor3_05_south_wing
+7943cff1c523cf14	modules/d01_crypt/room_crypt_floor3_03_west_wing
