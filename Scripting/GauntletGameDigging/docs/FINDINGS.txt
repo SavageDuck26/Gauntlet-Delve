@@ -5461,3 +5461,61 @@ NEXT, IF WANTED: stream the candidates through the GPU path (today the GPU is
 wired for patterns only), and let outside generators (hashcat --stdout, the
 Python vocabulary tools) pipe candidates in.
 
+
+
+================================================================================
+42. THE SUBSTITUTE ENGINE GOES GPU - AND CROSS-TYPE (+22 NAMES TOTAL)
+                                                                    (2026-10-06)
+================================================================================
+
+Section 41's engine (names we already have, substituted in-context) was
+CPU/rayon: 70 M candidates in ~9.5 s (~7 M/s).  It is now **pattern-driven**, so
+the GPU path does the generation and the hashing, and it grew two new moves.
+Engine total so far: **22 names**.
+
+DESIGN - `hashcracker substitute` (src/substitute.rs)
+
+  per-type    positional shapes at depth 2-4-5 (any token position may take a
+              value seen in that position), numbers +/-3 with the width kept
+              (`_03` -> `_02`, `_04`, `_00`), plural siblings
+              (`juggernaut` -> `juggernauts`), stem+suffix, stem+number, and
+              directory-as-a-slot (the hybrid move)
+  cross-type  catalogue-wide pools - every directory x every stem x every
+              suffix/number - PLUS the mined vocabularies (`--vocab FILE`).
+              This is the pass that reaches a texture named after its unit
+              (`characters/x/x_diff`) or a name built from a word that lives in
+              another family.
+  knobs       `--by-package` (the section-41 precise/slow variant), `--depth N`,
+              `--top N`, `--vocab FILE...`, `--cpu`, `--suffixes FILE`
+
+MEASURED
+
+    per-type   131 M candidates in 0.4 s    (325 M/s, GPU)
+    depth 4    137 M candidates in 0.6 s
+    cross     4.45 G candidates in 12.5 s   (356 M/s, GPU)   -> +7 names
+    same shape on CPU (section 41): 70 M in 9.5 s (~7 M/s) - ~50x slower
+
+  Vocabulary size is not free: a 400 k-word pool ran ~5x slower per candidate
+  (bigger word table, cache misses); 80-150 k is the sweet spot.
+
+THE 7 CROSS-TYPE NAMES (engine total 22)
+
+    characters/illusion_wizard/animations/iceshards      (vocab: iceshards)
+    characters/illusion_wizard/animations/squat          (vocab: squat)
+    characters/cultist_sorcerer/animation/attack_serpent (vocab: serpent)
+    blocks/d01_caves/stairs/roundstairs_01               (vocab: roundstairs)
+    blocks/d01_caves/stairs/roundstairs_02
+    menu/shop/shop_item_equipped_glow                    (vocab: shop_item)
+    shaders/crystal_ball                                 (vocab: crystal_ball)
+
+  Note `characters/cultist_sorcerer/animation/...` - singular, where every other
+  clip lives in `animations/`.  The engine has no trouble with that because a
+  directory is just another slot.
+
+FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
+
+  per-package (70 M), per-type (131 M), depth 4 (137 M), cross-type (4.45 G),
+  cross-type with a 150 k vocabulary (8.5 G), three rounds with re-merging
+  between each: **0 new**.  The substitution space over everything present - and
+  over every vocabulary we have mined - is exhausted; the remaining 1,507 names
+  need components that appear nowhere in the game or in our corpora.

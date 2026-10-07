@@ -32,12 +32,12 @@ See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 
 ## Current state (2026-10-06)
 
-* overlay: **6,030** names · **1,514** unique unresolved hashes
-* catalogue: 20,000 resources, **16,661 named** (83.3%), 3,339 unresolved rows
+* overlay: **6,037** names · **1,507** unique unresolved hashes
+* catalogue: 20,000 resources, **16,676 named** (83.4%), 3,324 unresolved rows
 * GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
 
-Remaining by family (unique): `texture 528 · animation 349 · shader_library 245 ·
-material 146 · particles 115 · level 103 · unit 68 · shader 47 · timpani_bank 37`.
+Remaining by family (unique): `texture 527 · animation 346 · shader_library 245 ·
+material 145 · particles 115 · level 103 · unit 66 · shader 46 · timpani_bank 37`.
 
 **One hashcracker at a time**: every sweep calls `tools/hc.sh`, which `flock`s
 `work/hc.lock` so a second run queues instead of halving the first one's speed
