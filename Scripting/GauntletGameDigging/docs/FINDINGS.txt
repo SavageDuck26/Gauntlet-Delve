@@ -5101,3 +5101,40 @@ ENGINE IDEAS (asked: can the cracker be made smarter?)
   vocabulary, ~20% pattern shape.  And one hashcracker at a time still applies -
   every invocation goes through tools/hc.sh (flock).
 
+
+MAP-SIBLING AUTOMATION (units / decals almost always ship `_diff` + `_norm`)
+
+  A unit, prop, block or decal ships its maps next to itself, named by appending
+  the map suffix.  The rule is the norm, not the exception:
+
+    resolved names carrying a map suffix : 511 (real namespaces, no colon chains)
+      with BOTH `_diff` and `_norm`       : 192
+      `_diff` + `_spec`                   :  80
+      all three                           :  39
+      base name itself resolved           : 252 (49.3% - the other half never
+                                            ships as a resource of its own)
+    `_mat` / `_material`                  :  none (so the map suffixes are all)
+
+  `mutate` already appends suffixes, but only inside its heavy cycles.  New:
+  tools/derive_tex_siblings.py + sweeps/tex_derive.sh (and phase 0 of
+  auto_run.sh) do it as a ~1 s pass, so a unit/decal recovered by *any* phase
+  gets its `_diff`/`_norm`/`_spec` tried in the same cycle:
+
+    * namespaces are DISCOVERED from the data (16 of them, including the ones a
+      hard-coded list missed: `hud/`, `effects_ui/`, `core/`)
+    * the suffix list is the canonical `data/suffixes.txt` (77), so the
+      derivation is never narrower than mutate's suffix step
+    * both directions: unit -> its maps, and map -> its parent base
+    * validated by re-deriving the map names we already hold: 100% recall
+      (511/511; a hard-coded namespace list scored 79%)
+
+  Current yield: 0 new names - and that is the useful result.  4,320 bases x 77
+  suffixes (306,465 candidates) covers every sibling of every name we have, and
+  the sweep is at fixpoint; the sibling-completion launched *from the map names
+  themselves* (which also emits `<base><suffix>` for all 77 suffixes) is likewise
+  empty.  So none of the 532 unresolved textures is a sibling of a name we hold:
+  they hang off base names (units/blocks/props/decals) that we have not
+  recovered yet.  The suffix rule is now automatic and can never be the blocking
+  step again - the remaining textures are a *vocabulary* problem, exactly like
+  the rest of the catalogue.
+

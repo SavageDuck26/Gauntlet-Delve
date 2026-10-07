@@ -23,6 +23,7 @@ hashcracker ever runs — two at once halve each other's GPU/CPU throughput).
 | `make_unit_vocab.py` | `unit_*.txt` — block piece grammar `<root>/d01_<env>/<cat>/<style>_<part>…`. |
 | `make_unit_vocab_big.py` | `ub_*.txt` — the same with vocabularies mined from resolved names. |
 | `make_recovered_vocab.py` | `recovered_names.txt` (every resolved name) + `tokens_ext.txt` (`data/names.txt` plus leaf/path tokens mined from those names) — the inputs for the per-cycle `hashcracker mutate` phase (`FINDINGS.txt` §33). |
+| `derive_tex_siblings.py` | `derived_tex.txt` — every unit/decal/prop/block we hold **plus its `_diff`/`_norm`/`_spec` maps**, and the parent of every map (both directions). Seeds and namespaces are discovered from the data, and the suffix list is the canonical `data/suffixes.txt`, so it is never narrower than `mutate`'s suffix step — but it costs ~1 s instead of a mutate cycle, so it runs as phase 0 of `auto_run.sh` and `sweeps/tex_derive.sh`. Validated by re-deriving the map names we already hold: **100 % recall** (511/511). |
 | `make_tokens_big.py` | The wide token list for big runs: mines `recovered_names.txt` + `data/names.txt` + `lua_strings.txt` + `events.txt` + `bundle_words.txt` + the Stingray docs into `tokens_big.txt` (ranked by frequency, `--max-tokens`, default 80k). Cost of a mutate run grows linearly with this list (`FINDINGS.txt` §34). |
 
 ## generators/ — candidate generation
@@ -54,7 +55,8 @@ hashcracker ever runs — two at once halve each other's GPU/CPU throughput).
 
 | script | what it loops |
 | --- | --- |
-| `auto_run.sh [cycles]` | All families (particles → bundle-scoped → lua keys → blocks → textures → **mutate**) until a cycle finds nothing. |
+| `auto_run.sh [cycles]` | All families (map-siblings → particles → bundle-scoped → lua keys → blocks → textures → **mutate**) until a cycle finds nothing. Phase 0 re-derives every unit/decal map sibling, so a name recovered by any other phase gets its `_diff`/`_norm` tried in the same cycle. |
+| `tex_derive.sh [rounds]` | The map-sibling derivation on its own (`derive_tex_siblings.py` → `crack --candidates`), looped to fixpoint; log `work/texderive/status.log`. Cheap enough to run after *every* merge. |
 | `big_run.sh [rounds]` | The wide battery: shader grammar → 80k-token mutate → `auto_run` → every specialist sweep (blocks/tex/unit/level/context), each stage wrapped in `timeout` so no oversized vocabulary can run away (`FINDINGS.txt` §34). |
 | `blocks_pipeline.sh [rounds]` | Unit grammar → unit edit-1 → unit→map-texture derivation. |
 | `tex_pipeline.sh [rounds]` | `tex_*` vocab sweep → block derivation → unit edit-1. |
