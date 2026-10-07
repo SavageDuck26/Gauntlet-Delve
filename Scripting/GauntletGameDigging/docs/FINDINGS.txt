@@ -5632,3 +5632,160 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   The tooling for all three now exists (`make_target_patterns.py` templates,
   `make_family_vocab.py`, `make_quilt_vocab.py --full`, `make_tile_vocab.py`).
 
+==========================================================================
+44. THE LEVEL GRAMMAR, ENUMERATED PROPERLY
+==========================================================================
+
+  Following the hint that there are ten levels per environment with the tenth as
+  the boss floor, and that the wings and numbers line up, each level template was
+  taken apart and enumerated from the game's own data rather than from the list
+  of names we happen to hold.
+
+44.1 ROOMS ARE `room_<env>_floor...`
+
+  The resolved corpus shows every shape the room name takes:
+
+    room_caves_floor_10_boss          floor_%f_boss          (the boss floor)
+    room_lava_floor_10_boss_felix     floor_%f_boss_%m
+    room_crypt_floor_06_boss
+    room_crypt_floor_01_adventure     floor_%f_%m
+    room_caves_floor_adventure_1      floor_%m_%k
+    room_caves_floor_adventure_1_dark floor_%m_%k_%m
+    room_lava_floor_adventure_2
+    room_lava_floor3                  floor%f
+    room_crypt_floor3_02_north_wing   floor%f_%k_%w_wing
+    room_crypt_floor3_03_west_wing    (both found in §43)
+    room_dummy / prefab_* / arena / colosseum
+
+  `sweeps/room_sweep.sh` (`make_room_vocab.py`) crosses floor x sub-number x wing
+  x mod with padded *and* unpadded numbers (floor_01 / floor01 / floor3), both
+  orders (floor_01_adventure vs floor_adventure_1) and the wing grid.  It is
+  cheap (a few 1e6) and returned 0: with the two wings already found in §43 the
+  wing grid is complete, so the remaining levels are not rooms of this shape.
+
+44.2 THE QUILT CELL CODE IS FULLY ENUMERABLE
+
+  Verified over every resolved quilt (29/29 distinct groups, no exceptions), a
+  cell group is always
+
+    x^a  s^b  x^c        s in {e,i,o}, b >= 1        (or all x)
+
+  - `x` solid, `e` open, `i` entrance, `o` exit - hence `xox`, `iix`, `eee`,
+  `oox`, `xxi`, `xxxxx`, and never `exi`.  Each shape's side-length profiles are
+  fixed too (blackbox (1,1,1,1); straight (1,1,1,1)/(1,2,1,2)/(2,1,2,1); turn
+  (1,1,1,1)/(1,2,1,2); smallroom (1,1,1,1)/(2,2,2,2); mediumroom (3,2,3,2)/
+  (3,3,3,3); largeroom (3,3,3,3); encounter (3,2,3,2)/(3,3,3,3); saferoom
+  (3,2,3,2); entrance (2,2,2,2)/(3,2,3,2)/(3,5,3,5); exit (2,2,2,2)/(2,3,2,3)/
+  (3,2,3,2)/(3,5,3,5)).
+
+  Crossing the two gives the complete plausible code set - 2,171,139
+  `<shape>__<cells>` pairs (`make_quilt_codes.py`), covering 43/44 of the codes we
+  hold (the 44th is a genuine authoring typo in the data:
+  `caves_quilt_largeroom__xox_xex__xix_xex__02_spider`, double underscore).
+
+  Sweeps closing that space, all 0:
+    * `qcode_sweep.sh` - the whole 2.17 M pairs x 19 numbers x 5 subdirs x each
+      environment's mod vocabulary (the caves tier, 8.3e10 candidates, completed).
+    * `qcode_shape_sweep.sh` - one shape at a time, so the 40 k prop-derived mod
+      list fits (a shape has 256 - 846 k codes).
+    * `mod_pattern_sweep.sh` (`make_mod_patterns.py`) - the harvest-derived mod
+      vocabulary including the *glued* attach form (`__%n%m`).
+
+  So the cell code was not the missing component either.
+
+==========================================================================
+45. THE DEPOT IS NOT STRING-FREE: HARVESTING RAW BUNDLE BODIES
+==========================================================================
+
+  The breakthrough.  Every snapshot carries `_names.txt` - a previous session's
+  harvest of every ASCII string found in the *decompressed* bundle bodies plus
+  the binaries, reproducible with:
+
+    python3 tools/harvest_depot.py      # -> work/harvest/{raw,*_ids}.txt
+
+  Plain `grep` reports the depot as containing no strings at all, because each
+  resource body is a chain of zlib blocks - which is exactly why the depots had
+  been written off as name-less.  Decompress the blocks and real resource names
+  tumble out, as slash-joined runs of them:
+
+    .../caves_quilt_straight__xx_e_xx_e__05_spider/caves_quilt_...__04_spider/...
+
+45.1 WHAT THE HARVEST PROVED ABOUT THE NAMING
+
+  * mods are frequently **glued straight onto the number**, with no separator:
+    `crypt_quilt_straight__e_x_e_x__01chain`.  No `%n_%m` pattern can express
+    that; the sweep has to try `%n%m`.
+  * compound mods are **single tokens**: `goldchain`, `bridgechain`,
+    `sarcophaguschain`, `spiketrapschain`, `spinnertraps`, `speartraps`,
+    `crankbridge`, `fountainsandcenter`, `centerpiecewithwalkway`,
+    `keydoorseast`, `statueeast` - recombining tokens we had seen cannot produce
+    them.
+  * tiles are far richer than assumed:
+      `lavarock_16c_16c_uu_ug_uu_gu_01_encounter`   non-square, multi-char groups
+      `lavarock_8c_16c_g_gu_g_uu_01_stairspass`     mixed cell widths
+      `lavastruct_8c_8c_w_d_d_w_01_corridorturn`    a `lavastruct` rock
+      `caverock_8c_8c_g_g_g_g_start01`              `_start01` / `_05_end` tails
+      `lavarock_dungeon_tiles_master`               per-environment master lists
+      `blackbox_2c_2c_01`
+  * wings and floors are NOT in the harvest (`north_wing`, `floor3` -> 0 hits),
+    so the remaining rooms cannot be read off it - they are unreferenced.
+
+45.2 RESULT
+
+  62 level names from the harvest, none of which 80 G candidates of pattern
+  sweeping could reach, because every one of them violates a grammar assumption
+  the sweeps encoded:
+
+    crypt_quilt_straight__x_e_x_e__03_goldchain
+    crypt_quilt_turn__e_x_x_e__01chain
+    crypt_quilt_straight__xx_e_xx_e__04_goldchain_skeleton
+    crypt_quilt_straight__e_x_e_x__02_spinnertraps
+    crypt_quilt_straight__e_x_e_x__03_speartraps
+    crypt_quilt_straight__x_e_x_e__02_sarcophaguschain
+    crypt_quilt_straight__e_xx_e_xx__03_bridgechain_skeleton
+    crypt_quilt_encounter__xxoxx_xxxi_xxixx_ixxx__01
+    lava_quilt_mediumroom__xox_ox_xix_ix__02_fountains_demons
+    lava_quilt_mediumroom__xox_xi_xix_xo__03_wide_demons
+    lava_quilt_mediumroom__xox_ix_xix_ox__02_sides_mixed
+    lava_quilt_mediumroom__xox_xo_xix_xi__04_centerpiecewithwalkway_mixed
+    lava_quilt_mediumroom__xox_ex_xix_ex__03_statueeast_cultists
+    lava_quilt_straight__o_xx_i_xx__01_crankbridge
+    lavarock_8c_8c_g_g_g_g_03_hole / _02_rocks
+    lavarock_16c_8c_gg_g_gu_g_01_smallstairs
+    lavarock_16c_16c_uu_ug_uu_gu_01_encounter
+    lavarock_8c_16c_g_gu_g_uu_01_stairspass
+    lavastruct_8c_8c_d_d_w_d_01_corridor / _w_d_w_d_01_corridor
+    lavastruct_8c_8c_w_d_d_w_01_corridorturn
+    lavastruct_8c_8c_w_w_d_d_01
+    lavastruct_16c_16c_ww_ww_ww_dw_01_end
+    caverock_16c_16c_uu_gu_gu_ug_01_encounter
+    caverock_8c_8c_g_g_g_g_end01 / _start01
+    lavarock_dungeon_tiles_master / caves_dungeon_tiles_master
+    lavastruct_dungeon_tiles_master
+    ... (62 total)
+
+  Pipeline: `harvest_depot.py` -> `mine_harvest_names.py` (whole lines, path
+  expansion around each leaf) -> `mine_harvest_ids.py` (id -> every plausible
+  package path).  Three tools, no GPU, seconds each.
+
+45.3 SESSION RESULT
+
+  16,676 -> 16,758 of 20,000 (83.79%); unresolved levels 103 -> 32; unique
+  unresolved 1,505 -> 1,436.  The remaining 32 levels are not quilt-shaped (2.17 M
+  legal codes x mods -> 0), not tile-shaped over every rock/dims/group/tail the
+  harvest shows, not rooms, and not module-level (`d01_common`, `debug`, `menu`,
+  `hub_room` -> 0).  The harvest does not contain them, so they are unreferenced
+  authored content - the same wall as the two unnamed super-nova siblings in §40.
+
+45.4 NEXT
+
+  The harvest is the highest-value vein and is *not* level-specific: the same
+  decompressed strings must contain texture/material/animation names, which is
+  where ~1,100 of the remaining 1,436 hashes live.  `mine_harvest_any.py` is the
+  starting point (it pairs each harvested leaf with the directory found in the
+  same line); the missing piece is a bounded way to pair a leaf with a directory
+  when the line carries none - the token-join heuristic (try the directories that
+  share a token with the leaf) is the obvious next step.
+
+
+
