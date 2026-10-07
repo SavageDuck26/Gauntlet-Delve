@@ -9,8 +9,9 @@
 //! See README.md for usage.
 
 mod gpu;
-mod murmur;
+pub(crate) mod murmur;
 mod pattern;
+mod substitute;
 
 use anyhow::{anyhow, Context, Result};
 use pattern::Compiler;
@@ -27,6 +28,7 @@ fn main() -> Result<()> {
         Some("crack") => crack(&args[2..]),
         Some("mutate") => mutate(&args[2..]),
         Some("mine") => mine(&args[2..]),
+        Some("substitute") => substitute::run(&args[2..]),
         Some("-h") | Some("--help") | None => {
             print_help();
             Ok(())
@@ -43,6 +45,9 @@ USAGE
   hashcracker crack  --targets <file> --list <X=file>... --pattern <pat>... [opts]
   hashcracker mutate --names <file> --targets <file> [--suffixes F] [--tokens F]
   hashcracker mine   --dict <file> --corpus <file>... [opts]
+  hashcracker substitute --catalogue <csv> [--packages N] [--no-hybrids]
+                      [--no-two-field] [--matches FILE]   (names we have,
+                      substituted in-context - no dictionaries)
 
 MUTATE OPTIONS (derive candidates from known names by swapping/editing tokens)
   --names <file>      known names to mutate (one per line)
@@ -71,12 +76,12 @@ CRACK OPTIONS
 }
 
 /// Parse `--flag value` style args into a flat list.
-struct Args {
+pub(crate) struct Args {
     flags: Vec<(String, String)>,
 }
 
 impl Args {
-    fn parse(a: &[String]) -> Result<Args> {
+    pub(crate) fn parse(a: &[String]) -> Result<Args> {
         let mut flags = Vec::new();
         let mut i = 0;
         while i < a.len() {
@@ -100,22 +105,22 @@ impl Args {
         }
         Ok(Args { flags })
     }
-    fn all(&self, key: &str) -> Vec<String> {
+    pub(crate) fn all(&self, key: &str) -> Vec<String> {
         self.flags.iter().filter(|(k, _)| k == key).map(|(_, v)| v.clone()).collect()
     }
-    fn one(&self, key: &str) -> Option<String> {
+    pub(crate) fn one(&self, key: &str) -> Option<String> {
         self.flags.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
     }
-    fn one_or(&self, key: &str, d: &str) -> String {
+    pub(crate) fn one_or(&self, key: &str, d: &str) -> String {
         self.one(key).unwrap_or_else(|| d.to_string())
     }
-    fn has(&self, key: &str) -> bool {
+    pub(crate) fn has(&self, key: &str) -> bool {
         self.flags.iter().any(|(k, _)| k == key)
     }
 }
 
 /// Read a file of lines into lowercased, non-empty byte vectors.
-fn read_lines(path: &str) -> Result<Vec<Vec<u8>>> {
+pub(crate) fn read_lines(path: &str) -> Result<Vec<Vec<u8>>> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {path}"))?;
     let mut out = Vec::new();
     for line in text.lines() {
@@ -129,7 +134,7 @@ fn read_lines(path: &str) -> Result<Vec<Vec<u8>>> {
 }
 
 /// Read target hashes (first whitespace/comma token per line, parsed as hex).
-fn read_targets(path: &str) -> Result<HashSet<u64>> {
+pub(crate) fn read_targets(path: &str) -> Result<HashSet<u64>> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {path}"))?;
     let mut set = HashSet::new();
     for line in text.lines() {
@@ -147,7 +152,7 @@ fn read_targets(path: &str) -> Result<HashSet<u64>> {
 
 /// Open-addressed u64 set with a cheap multiply-hash (no SipHash) — used for
 /// the per-candidate membership test in the hot loop.
-struct TargetSet {
+pub(crate) struct TargetSet {
     mask: usize,
     slots: Vec<u64>,
     used: Vec<bool>,
@@ -158,7 +163,7 @@ impl TargetSet {
     fn slot(h: u64, mask: usize) -> usize {
         (h.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 40) as usize & mask
     }
-    fn new(hashes: impl IntoIterator<Item = u64>) -> Self {
+    pub(crate) fn new(hashes: impl IntoIterator<Item = u64>) -> Self {
         let v: Vec<u64> = hashes.into_iter().collect();
         let mut cap = 16;
         while cap < v.len() * 2 {
@@ -182,7 +187,7 @@ impl TargetSet {
         s
     }
     #[inline]
-    fn contains(&self, h: u64) -> bool {
+    pub(crate) fn contains(&self, h: u64) -> bool {
         let mut i = Self::slot(h, self.mask);
         loop {
             if !self.used[i] {
@@ -199,13 +204,13 @@ impl TargetSet {
 /// Append-only, de-duplicated match writer. Loads hashes already on disk so
 /// repeated runs never write the same name twice; each new hit is flushed
 /// immediately (matches are rare, so the I/O cost is negligible).
-struct Matches {
+pub(crate) struct Matches {
     seen: HashSet<u64>,
     file: std::fs::File,
 }
 
 impl Matches {
-    fn open(path: &str) -> Result<Self> {
+    pub(crate) fn open(path: &str) -> Result<Self> {
         let mut seen = HashSet::new();
         if let Ok(text) = fs::read_to_string(path) {
             for line in text.lines() {
@@ -223,7 +228,7 @@ impl Matches {
         Ok(Matches { seen, file })
     }
     /// Returns true if this hash was newly written.
-    fn add(&mut self, h: u64, name: &str) -> std::io::Result<bool> {
+    pub(crate) fn add(&mut self, h: u64, name: &str) -> std::io::Result<bool> {
         if !self.seen.insert(h) {
             return Ok(false);
         }
@@ -231,7 +236,7 @@ impl Matches {
         self.file.flush()?;
         Ok(true)
     }
-    fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.seen.len()
     }
 }

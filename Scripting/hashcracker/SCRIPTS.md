@@ -4,7 +4,15 @@ Everything that drives the brute-forcer. **Workflow:** build targets →
 build/flatten vocabularies → generate candidates → `hashcracker crack` →
 merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 
-## tools/ — targets and vocabularies
+## Rust modes (the engine itself)
+
+| mode | purpose |
+| --- | --- |
+| `crack` | pattern / candidate brute force (`--pattern`, `--candidates`), GPU when available. |
+| `mutate` | per-name edits (suffix swap, token append/prepend/merge/replace, numeric edits) inside each name's own directory. |
+| `mine` | prune a dictionary to the tokens that really occur in the corpora. |
+| `substitute` | **names we already have, substituted in-context** (`src/substitute.rs`, `FINDINGS.txt` §41): a package is a small self-consistent naming world, so candidates are built by swapping a component for a value observed in the same `(package_path, type)` context — field swap, append/prepend, two fields at once, and hybrids (one name's directory + another's leaf). Covers **every** package, unlike `pack_sweep.sh`; ~70 M candidates in ~10 s, no intermediate files. Driver: `sweeps/subst_run.sh`. |
+
 
 **Always start the binary through `tools/hc.sh`** (wraps it in `flock` so only one
 hashcracker ever runs — two at once halve each other's GPU/CPU throughput).
@@ -61,6 +69,7 @@ hashcracker ever runs — two at once halve each other's GPU/CPU throughput).
 | --- | --- |
 | `auto_run.sh [cycles]` | All families (map-siblings → index-siblings → particles → bundle-scoped → lua keys → blocks → textures → **mutate**) until a cycle finds nothing. Phases 0/0b re-derive every map and index sibling, so a name recovered by any other phase gets its `_diff`/`_norm` and its `01`/`03` neighbours tried in the same cycle. |
 | `tex_derive.sh [rounds]` | The map-sibling derivation on its own (`derive_tex_siblings.py` → `crack --candidates`), looped to fixpoint; log `work/texderive/status.log`. Cheap enough to run after *every* merge. |
+| `subst_run.sh [passes]` | The Rust **substitute engine** looped to fixpoint (`hashcracker substitute`), merging each pass so new names feed the next pass; log `work/subst/status.log`. Logs every pass's candidate count and matched names. |
 | `num_derive.sh [rounds]` | The index-sibling derivation on its own (`derive_number_siblings.py` → `crack --candidates`), looped to fixpoint; log `work/numderive/status.log`. Also cheap enough to run after every merge. |
 | `big_run.sh [rounds]` | The wide battery: shader grammar → 80k-token mutate → `auto_run` → every specialist sweep (blocks/tex/unit/level/context), each stage wrapped in `timeout` so no oversized vocabulary can run away (`FINDINGS.txt` §34). |
 | `blocks_pipeline.sh [rounds]` | Unit grammar → unit edit-1 → unit→map-texture derivation. |

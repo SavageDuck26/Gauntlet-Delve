@@ -5409,3 +5409,55 @@ NEW TOOLING
                                     the Lua-derived words
   tools/hc.sh                        (one hashcracker at a time)
 
+
+================================================================================
+41. THE SUBSTITUTE ENGINE - NAMES WE HAVE, SUBSTITUTED IN-CONTEXT (+15 NAMES)
+                                                                    (2026-10-06)
+================================================================================
+
+IDEA (asked for): stop guessing with dictionaries.  Build every candidate out
+of a name we already have - a *substitution* engine, in Rust (the large-data
+rule: engines live in the cracker, Python only builds vocabularies).
+
+DESIGN - `hashcracker substitute` (src/substitute.rs)
+
+  context  (package_path, type).  A package is a small self-consistent naming
+           world, so every value substituted in is one the game really uses
+           there.
+  moves    * field swap      `caverock_rock_01` -> `_02`   (numbers seen here)
+                             `x_diff` -> `x_norm`           (suffixes seen here)
+                             `x/y` -> `x/z`                 (leaves seen here)
+           * append/prepend a token or number seen in the context
+           * two fields     two components swapped at once (bounded 40 x 20)
+           * hybrid         one present name's directory + another's leaf, and
+                            a leaf's stem x every suffix in the context
+  coverage EVERY package (1,665 contexts), not just the 20 biggest that
+           sweeps/pack_sweep.sh handles; adds the hybrid and two-field moves
+  cost     70 M candidates in ~9.5 s over the whole catalogue - rayon, dedup by
+           hash so nothing is tested twice, no intermediate files
+
+RESULTS - 15 NAMES, THEN FIXPOINT
+
+    effects/wep_wizard_ultimate_polymorph_trail    effects/wep_wizard_ultimate_polymorph_blast
+    effects/wep_elf_special_explosive_shot_explode effects/wep_elf_special_explosive_shot_trail
+    effects/wep_elf_special_shadow_shot_trail      effects/wep_elf_special_shadow_shot_expire
+    effects/wep_elf_special_root_shot_trail        effects/wep_elf_special_root_shot_impact
+    effects/gam_spawner_lava_spawn_cultist         effects/gam_spawner_caves_spawn_grunt
+    effects/gam_spawner_caves_spawn_orc
+    hud/keyboardmouse_icons/key_left  key_down  key_right  key_up
+
+  Every one is a substitution of something already present: the `gam_spawner_*`
+  trio is the `crypt_spawn_mummy` shape with env/creature swapped (the move that
+  gave `gam_spawner_lava_spawn_demon` in section 40), the `wep_elf_special_*`
+  set is the shot/trail/impact/expire family completed, and the four `key_*`
+  icons come from names the `hud/keyboardmouse_icons` context already had.
+  Passes 2+ return 0 new - at fixpoint on the current catalogue.
+
+DRIVER: sweeps/subst_run.sh - loops passes to fixpoint, merging each pass so new
+names feed the next pass's substitutions, and runs through tools/hc.sh so it
+queues behind GPU work (the mode itself is CPU/rayon).
+
+NEXT, IF WANTED: stream the candidates through the GPU path (today the GPU is
+wired for patterns only), and let outside generators (hashcat --stdout, the
+Python vocabulary tools) pipe candidates in.
+
