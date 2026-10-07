@@ -5737,3 +5737,8 @@ d294f860962fa534	modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_0
 06a7f480b85605bf	hud/spells/fire_serpents
 09262083c2c931e0	hud/spells/frost_serpents
 0f7d4c6d004298d8	hud/spells/storm_serpents
+4be25cff031ecc95	achievement_icons/light_footed_locked
+1ce2623b692782d5	blocks/d01_caves/stairs/roundstairs_diff
+c0edb422fc86e071	blocks/d01_caves/stairs/roundstairs_norm
+058a36885cba63c1	effects/wep_elf_special_explosive_shot_attached
+2e6f31b8bfe249db	effects/wep_elf_special_shadow_shot_attached
