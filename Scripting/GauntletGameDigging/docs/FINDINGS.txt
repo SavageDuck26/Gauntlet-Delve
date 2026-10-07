@@ -6125,6 +6125,25 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   Both are cheap enough to re-run after every batch, which is now the standing
   procedure: merge, re-derive, re-crack, repeat.
 
+48.7 RE-RUN THE HEAVY ENGINES TOO - THEY SELF-FEED
+
+  The substitute engine (§42) is driven by the names we hold, so every batch of
+  new names is new fuel.  Re-running it (`sweeps/subst_run.sh`) after this
+  chapter's additions gave **+16** where the same engine had reported fixpoint
+  before - and the finds show why: it completes *naming grids*.
+
+    hud/spells/frost_bolt      hud/spells/fire_serpents
+    hud/spells/frost_bomb      hud/spells/frost_serpents
+    hud/spells/storm_serpents
+
+  i.e. once `hud/spells/<element>_<form>` is partly known, the engine fills in
+  the rest of the element x form grid.  Spread across types, which is typical of
+  the engine: texture 416 -> 403 and level 14 -> 11 in the same pass.
+
+  Standing procedure, now: merge, re-derive (index/tex siblings), re-run the
+  substitute engine, re-crack the atlas families - *every* batch, because each
+  one only pays off against the newest names.
+
 48.3 WHERE THAT LEAVES TEXTURES
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
