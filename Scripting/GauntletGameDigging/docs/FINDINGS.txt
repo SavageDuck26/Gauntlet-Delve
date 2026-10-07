@@ -6491,3 +6491,44 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   suggests.  `wide5` was the one tier the 7e12 default cap skipped, and it is the
   only shape in this family still untested; `postail5` (48e12, ~10 h) remains
   over the cap deliberately.
+
+==========================================================================
+54. FAMILY COMPLETION, AND A CORPUS-WIDE STATE-SIBLING NEGATIVE
+==========================================================================
+
+54.1 THE ACHIEVEMENT TRIPLET IS COMPLETE
+
+  The positional run closed a family that had been found half-named - the
+  `_bronze` and `_gold` members were recovered, and the obvious missing member was
+  recovered in the same pass:
+
+    effects_ui/achievement_unlocked_background_bronze
+    effects_ui/achievement_unlocked_background_silver
+    effects_ui/achievement_unlocked_background_gold
+    effects_ui/achievement_unlocked_text_glow
+
+  Pressing on it - 4,878 hand-built variants (13 metals x 9 states x 14 subdirs,
+  with and without `_01`/`_02`, and the reverse orders) - returned **0**, so the
+  family really is the triplet.  The game's own convention nearby corroborates the
+  metals vocabulary: `achievement_icons/frame_{basic,bronze,silver,gold}` uses
+  the same three plus a generic.  Recorded as closed.
+
+  The atlas around it is complete too: `achievement_icons/` holds **125**
+  textures, 61 plain and 60 `_locked`, and all **60** plain
+  icons have their `_locked` partner - the pairing convention needs no more work.
+
+54.2 THE SAME INSTINCT, CORPUS-WIDE: 689,073 FORMS, 0
+
+  The general form of that guess is a *state sibling*: take every name we hold and
+  (a) drop its last token, (b) swap the last token for 43 state/index tokens
+  (`locked`, `unlocked`, `norm`, `diff`, `spec`, `over`, `off`, `on`, `empty`,
+  `full`, `owned`, `equipped`, `base`, `complete`, `bronze`, `silver`, `gold`,
+  `01`..`03`, ...), (c) append one, (d) prepend one - then test each against the
+  unresolved hashes.  689,073 forms, **0 hits**.
+
+  Expected, and worth stating: `hashcracker mutate` already does exactly this
+  inside each name's own directory (suffix swap, token insert/append/prepend/
+  replace, numeric edits) and has been run to fixpoint, so that space is owned and
+  closed.  The shapes that keep paying are the *positional* tiers of section 53;
+  the shapes that do not are the ones `mutate`, the map/number derivations and the
+  atlas families already cover.
