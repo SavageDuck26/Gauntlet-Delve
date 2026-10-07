@@ -57,15 +57,26 @@ Gauntlet-Reverse-Engineering/
 
 - **Catalogue everything**: `cd Scripting/GauntletGameDigging && python3 list_game_bundles.py`
   (writes `bundle_manifest/00…05`).
+- **Harvest names from the depots** (the biggest single lever, `FINDINGS.txt` §45–48):
+  `hashcracker/tools/harvest_depot.py` decompresses every zlib block in the
+  `Gauntlet-PreSlayer-*/` bundle bodies — which `grep` reports as string-free —
+  and writes `work/harvest/{raw,*_ids}.txt`; `mine_harvest_{names,ids,paths}.py`
+  hash those against the unresolved set.
 - **Recover names (current workflow)**: build targets →
   `Scripting/hashcracker/tools/build_targets.py`; generate candidates →
-  `Scripting/hashcracker/generators/targeted_*.py`; run the GPU sweeps →
-  `Scripting/hashcracker/sweeps/auto_run.sh`; fold hits back with
-  `tools/merge_matches.py` then re-run `list_game_bundles.py --only resources`.
+  `Scripting/hashcracker/tools/make_*_vocab.py` /
+  `make_atlas_patterns.py` / `make_chain_candidates.py`; run the GPU sweeps →
+  `Scripting/hashcracker/sweeps/auto_run.sh` plus the per-lever sweeps
+  (`subst_run.sh`, `leaf_sweep.sh`, `chain_sweep.sh`, `num_derive.sh`); fold hits
+  back with `tools/merge_matches.py` then re-run
+  `list_game_bundles.py --only resources`.  Every engine is driven by the names
+  we hold, so **re-run them after each batch** — see §48.7.
 - **Script indexes**: `Scripting/hashcracker/SCRIPTS.md` and
   `Scripting/GauntletGameDigging/SCRIPTS.md` (every tool, grouped by purpose).
 - **Findings / current state**: `Scripting/GauntletGameDigging/docs/FINDINGS.txt`
-  (§17 history, **§18 = state of play, remaining work and what would unblock it**).
+  (§17 history; **§18 = state of play**; **§44–48 = the level grammar, the depot
+  harvest, and the reference/atlas/chain levers**).  The live numbers live in
+  `.clinerules` → *Resource-name recovery state*.
 
 ## Notes
 
