@@ -59,6 +59,23 @@ builder** (`--only resources` regenerates `bundle_manifest/03_…txt` and
 `unit_to_gltf.py` **(lib)**; `gltf_to_unit.py` **(lib)**;
 `create_texture_package.py` **(lib)**; `clone_material.py` **(lib)**.
 
+## Reading a resource for what it uses
+
+`hunt_unit_textures.py` — point it at a depot `contents/<bundle-id>` file and a
+resource, and it lists what that resource references.  It picks the right entry
+when one name hash carries several types (bones/unit/material, `--type`), matches
+body references against the **bundle's own TOC** (so references we cannot name
+yet show up as targets), names what it can by convention (including Stingray's
+`m_<name>` material form), and with `--materials` decodes referenced materials
+for their texture slots.  This is how `characters/demon_overlord_mini` was shown
+to inherit `characters/demon_heavy`'s maps (`FINDINGS.txt` §38).
+
+```bash
+python3 hunt_unit_textures.py \
+  --bundle ../../Gauntlet-PreSlayer-2015-08-11/depot_258972/contents/1bbcb9610a009446 \
+  --name characters/demon_overlord_mini/demon_overlord_mini --type unit
+```
+
 ## Subdirectories
 
 `resource_tools/` (16-type resource read/write suite), `database_extractor/`,
