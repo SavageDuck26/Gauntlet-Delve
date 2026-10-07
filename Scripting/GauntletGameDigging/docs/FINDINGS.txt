@@ -6445,3 +6445,49 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   first line (one specific directory), then its directory index could not reach a
   pattern that opens with a slot (the free-form tier).  Worth recording: a
   control that reports FAIL is a claim about the checker as much as the tier.
+
+53.4 THE HAUL: +29, AND THEY ARE ALL FAMILIES
+
+  Round 1 of the positional sweep returned **+29** (round 2 a fixpoint), overlay
+  6,411 -> 6,440, catalogue 17,334 -> 17,418 of 20,000 (87.09%).  Per tier:
+
+    pos4 +18   postail4 +3   pos5 +5   postail6 +2   wide4 +1
+    (every basename tier and every free tier: +0)
+
+  Shape confirms the design.  Of the 29, **22 have four-token leaves**, 5 have
+  five and 2 have six; **all 29 end in a token from the tail vocabulary**, and
+  **none** begins with its directory's basename - which is exactly why the
+  basename tiers stayed at zero while the plain and tail-anchored ones paid.
+  By type: texture 14, material 10, unit 3, animation 1, level 1.
+
+  The more useful observation is that **18 of the 29 are members of named
+  families**, i.e. the engine did what section 48.7 described - it completed
+  naming grids rather than finding isolated names:
+
+    menu/level_select/flow_background_special_01 .. 06        (a run of six)
+    gameobjects/spawners/spawner_{mummy,orc,grunt,skeleton,cultist}_crystal_diff
+    effects_ui/achievement_unlocked_background_{bronze,silver,gold}
+    blocks/d01_lava/floors/lavastruct_floor_border_01_{convex,concave}
+    effects/wep_elf_special_root_bomb_{pulse,field}
+
+  plus `effects/textures/alpha_floor_dust_trail`,
+  `effects/cha_necromagus_coffin_burst`, `decals/decal_crypt_sand_01`,
+  `blocks/d01_caves/caves_water_01_norm`,
+  `blocks/d01_lava/borders/lavastruct_border_stairs_end`,
+  `gameobjects/spawners/spawner_damage_effect_energy`,
+  `modules/d01_lava/prefabs/prefab_lava_pit_2c_2c`,
+  `characters/avatar_valkyrie/animations/spear_attack_heavy_impact`,
+  `effects/wep_wizard_frost_serpents_charge`,
+  `effects/cha_necromagus_skeleton_light_destroy`,
+  `effects/obj_morak_trap_spikes`,
+  `effects/wep_elf_special_root_bomb_pulse` / `_field`.
+
+53.5 RATE OF THE ANCHORED TIERS
+
+  Round 1 was ~6.4 h of wall clock for 29.7e12 candidates, i.e. **~1.3 G/s**
+  effective - slower than the 1.87 G/s of the free-form tiers, because a tier
+  with 368 `--pattern`s pays the pipeline restart 368 times.  Worth pricing in:
+  the `wide5` tier (9.19e12) is ~2 h, not the 82 min a pure-combination rate
+  suggests.  `wide5` was the one tier the 7e12 default cap skipped, and it is the
+  only shape in this family still untested; `postail5` (48e12, ~10 h) remains
+  over the cap deliberately.
