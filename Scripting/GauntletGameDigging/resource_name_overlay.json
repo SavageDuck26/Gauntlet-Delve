@@ -4470,6 +4470,7 @@
   "b519e7d80b646768": "characters/avatar_elf/animations/passout_enter",
   "b521b224dfb2d888": "modules/d01_caves/quilts/encounters/caves_quilt_largeroom__oox_xix_iii_xox__01_spider",
   "b52574b873bf3930": "effects_ui/scorescreen_stat_glow",
+  "b5282f50de0a90ae": "effects/wep_elf_arrow_light_trail",
   "b53e28e95c0a0bbb": "foundation/lua/util/render_settings",
   "b5431def30219fc1": "effects/cutscene_boss_mummy_heart",
   "b560cffaad1d04c9": "blocks/d01_caves/rocks/caverock_stalagmites_01",

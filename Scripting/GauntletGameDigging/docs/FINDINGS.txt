@@ -6180,7 +6180,63 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   The second is the engine feeding itself again (§48.7), so this is re-run after
   every batch like the others.
 
-48.3 WHERE THAT LEAVES TEXTURES
+==========================================================================
+50. CROSS-BUILD DIFFS: WHAT CHANGED BETWEEN SNAPSHOTS
+==========================================================================
+
+  The older snapshots share bundle ids with the current one (same package name),
+  so a bundle that exists in both is the same package at two points in time and
+  its TOC entries line up by name hash.  `hunt_build_diff.py` reports three
+  things per shared bundle (49 of them between 2015-01 and 2015-08):
+
+    old-only 1,706   names that were removed
+    new-only 3,992   names that were added
+    content moves  513   bodies that are byte-identical across builds but carry
+                         a *different* name hash - i.e. renames
+
+  of which 341 are clean 1:1 moves (many-to-many buckets are just resources that
+  share a body, e.g. the placeholder effects that all three of `env_lightbeams_
+  small_01`, `env_lightbeams_large_01` and `env_receptor_beams` point at).
+
+50.1 NAMING THE OLD BUILD
+
+  A hash depends only on the name, so a hash present in an old build but not in
+  the current one is a name that was removed or renamed - and our corpus can
+  never name it (every name we hold exists in the current build).  The old
+  build's *own* harvest can: `hunt_old_names.py` matches that snapshot's
+  `_names.txt` (17.7 M lines, 124.5 M split variants) against the old build's
+  TOC and resolved **3,329 old names**, of which **476 were new to us**.
+
+50.2 THE RENAME GRAMMAR, FROM 101 EXAMPLES
+
+  Joining the three sets gives 101 rename examples (both sides named) and - because
+  almost every renamed resource is one we had already resolved - only 3 targets.
+  The examples are worth having anyway; they are the game's own vocabulary edits:
+
+    characters/mummy_boss/mummy_boss_spec -> characters/boss_mummy/boss_mummy_spec
+    equipment/elf/wep_bow01_diff          -> equipment/elf/weapon01_diff
+    characters/morak_sword/morak_sword_norm -> characters/boss_morak_sword/boss_morak_sword_norm
+    effects/wep_elf_arrow_explosive_trail -> effects/wep_elf_special_explosive_shot_trail
+
+    token translations: bandit -> soldier (x7), wep -> cha (x5), arrow -> special (x4)
+
+  Applied corpus-wide (`apply_renames.py`, 19,217 candidates) -> 0, and the 3
+  targets -> 0: those renames are all resolved already.  The old names are not
+  wasted though - used as bases for the variant/map edits -> **+1**, and a telling
+  one: `effects/wep_elf_arrow_light_trail`, an *old-style* `wep_` name that still
+  matches a resource in the current build.
+
+50.3 WHAT THIS SAYS ABOUT THE REMAINDER
+
+  The corpus is *newer* than either older build (the renames all run old -> new,
+  and we hold the new side), so cross-build evidence cannot reach the 1,191 left:
+  their resources were **added after 2015-08**, or renamed *within* the current
+  line of builds, and neither older snapshot contains them at all.  Combined with
+  the earlier negatives, the remaining blocks now look like content authored for
+  the shipped build and never referenced by anything we can read:
+  animation 340, texture 398, shader_library 165, material 135, unit 60,
+  shader 45, timpani_bank 37 (needs Wwise metadata), level 11, flow 1.
+
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
   best lever: the atlas rule is proven (any atlas whose icons follow the
