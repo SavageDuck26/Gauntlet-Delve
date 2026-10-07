@@ -300,42 +300,74 @@ def themes_from_source(root: pathlib.Path):
     return sorted(words)
 
 
-def creatures(root: pathlib.Path, names):
+def mod_words(root: pathlib.Path, names):
     """
-    Creature / enemy-group words, singular *and* plural.
+    The mod vocabulary: the game's enemy groups, creatures and set pieces.
 
-    A quilt mod names the enemy group its room is themed with (`...__01_spider`,
-    `...__03_cultists`, `...__04_demons`), so the game's own creature list is the
-    mod vocabulary: `characters/boss_mummy/crown_guard` -> `mummy`, and the
-    plurals (`mummies`, `cultists`, `ghosts`) are what the names actually use.
+    A quilt mod names the group (or feature) its room is themed with -
+    `...__01_spider`, `...__03_cultists`, `...__04_statues_mixed` - and the
+    *plural* is what the names use (`orc_juggernaut` -> `juggernauts`,
+    `living_statue` -> `statues`; both were found exactly this way).  Sources:
+
+      * `characters/`, `gameobjects/`, `ability_units/`, `props/` resource names
+        (the source tree ships one file per resource, so the paths *are* names)
+      * `lua/settings/encounter_settings.lua` - floor types (themes) mapped to
+        enemy groups and the `unit_path` each group spawns
+      * `lua/settings/spawned_entity_tags.lua` - spawn-animation tags
+
+    Returns singular and plural forms of every word and compound.
     """
     stop = {"base", "template", "generic", "abilities", "ability", "reacts", "hit",
             "summoned", "enemy", "avatar", "boss", "weapon", "projectile", "spawner",
             "projectiles", "body", "parts", "lua", "tables", "properties", "test",
             "default", "shared", "melee", "ranged", "heavy", "mini", "small", "big",
-            "armor", "unit", "units", "props", "prop", "decal", "music"}
-    words: set = set()
-    for n in names:
-        if n.startswith(("characters/", "ability_units/", "gameobjects/")):
-            for t in n.rsplit("/", 1)[-1].split("_"):
-                if len(t) > 2 and not t.isdigit() and t not in stop:
-                    words.add(t)
-    ch = root / "Gauntlet-SourceCode-LUA" / "characters"
-    for f in sorted(ch.iterdir()) if ch.exists() else []:
-        for t in f.stem.split("_"):
-            if len(t) > 2 and not t.isdigit() and t not in stop:
-                words.add(t)
-    out: set = set()
-    for w in words:
-        out.add(w)
-        if w.endswith(("ed", "ing")):      # participles do not pluralise
+            "armor", "unit", "units", "props", "prop", "decal", "settings", "blob",
+            "cost", "max", "min", "spawn", "t1", "t2"}
+    raw: set = set()
+
+    def add(value: str):
+        if len(value) < 4 or value.isdigit() or value in stop:
+            return
+        raw.add(value)
+        for t in value.split("_"):
+            if len(t) > 3 and not t.isdigit() and t not in stop:
+                raw.add(t)
+
+    for sub in ("characters", "gameobjects", "ability_units", "props"):
+        d = root / "Gauntlet-SourceCode-LUA" / sub
+        if not d.exists():
             continue
-        out.add(w + "s")
-        out.add(w + "es")
-        if w.endswith("y"):
-            out.add(w[:-1] + "ies")
-        if w.endswith(("s", "x", "ch", "sh")):
-            out.add(w + "es")
+        for f in d.rglob("*.lua"):
+            for part in str(f.relative_to(d))[:-4].split("/"):
+                add(part)
+    for n in names:
+        if n.startswith(("characters/", "gameobjects/", "ability_units/", "props/")):
+            add(n.rsplit("/", 1)[-1])
+    settings = root / "Gauntlet-SourceCode-LUA" / "lua" / "settings"
+    keyw = re.compile(r'^\s*([a-z0-9_][a-z0-9_]{3,})\s*=')
+    strw = re.compile(r'"([a-z0-9_]{3,})"')
+    for f in sorted(settings.glob("*.lua")) if settings.exists() else []:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        for line in text.splitlines():
+            for rx in (keyw, strw):
+                for m in rx.finditer(line):
+                    add(m.group(1))
+
+    out: set = set()
+    for w in raw:
+        out.add(w)
+        # pluralise the word and, for compounds, its last token:
+        #   orc_juggernaut -> orc_juggernauts, living_statue -> living_statues
+        for cand in (w, w.rsplit("_", 1)[-1]):
+            if cand.endswith("y"):
+                out.add(cand[:-1] + "ies")
+            elif cand.endswith(("s", "x", "ch", "sh")):
+                out.add(cand + "es")
+            elif cand.endswith("f"):
+                out.add(cand[:-1] + "ves")
+            out.add(cand + "s")
+            if cand != w:
+                out.add(w[: len(w) - len(cand)] + cand + "s")
     return sorted(out)
 
 
@@ -358,16 +390,16 @@ def main():
     codew, codew_all = wide_codes(s["code"])
     groups = group_lists(s["code"])
     themes = themes_from_source(SOURCE)
-    beasts = creatures(SOURCE, names)
+    nouns = mod_words(SOURCE, names)
     mod, mod2, modbig = expand_mods(s["mod"])
-    # themes and creature groups are mods too: `...__01_mummy`, `...__02_spider_02_1`,
-    # `...__03_cultists_mixed`
-    bases_mod = set(themes) | set(beasts)
-    theme_mods = set(bases_mod)
-    theme_mods |= {f"{t}_{x}" for t in bases_mod for x in SECOND}
-    theme_mods |= {f"{t}_{x}" for t in bases_mod for x in NN}
-    theme_mods |= {f"{t}_{x}_{p}" for t in bases_mod for x in NN for p in PARTS}
-    modbig = sorted(set(modbig) | theme_mods)
+    # themes and creature/group words are mods too: `...__01_mummy`,
+    # `...__03_cultists_mixed`, `...__02_statues`, `...__01_juggernauts`
+    bases_mod = set(themes) | set(nouns)
+    modsmall = sorted(set(mod2) | bases_mod |
+                      {f"{t}_{x}" for t in bases_mod for x in SECOND})
+    modbig = sorted(set(modbig) | set(modsmall) |
+                    {f"{t}_{x}" for t in bases_mod for x in NN} |
+                    {f"{t}_{x}_{p}" for t in bases_mod for x in NN for p in PARTS})
     quads = sorted(s["quad"] | {"_".join(t) for t in
                                 itertools.product(sorted(s["quadchar"] or "gu"), repeat=4)})
     rocks = sorted(s["rock"] | {"rock", "caverock", "lavarock", "cryptrock",
@@ -395,7 +427,8 @@ def main():
     for n, gl in sorted(groups.items()):
         w(f"g{n}.txt", gl)
     w("theme.txt", themes)
-    w("beast.txt", beasts)
+    w("modnoun.txt", nouns)
+    w("modsmall.txt", modsmall)
     w("nn.txt", nn)
     w("mod.txt", mod2)
     w("modbig.txt", modbig)
@@ -424,7 +457,7 @@ def main():
         f"cells codes legal   : {codew_all} (capped {len(codew)})\n"
         f"mods seen/2tok/big  : {len(mod)} / {len(mod2)} / {len(modbig)}\n"
         f"themes (source tree): {len(themes)}  {themes[:12]}\n"
-        f"creature words      : {len(beasts)}  {beasts[:12]}\n"
+        f"creature words      : {len(nouns)}  {nouns[:12]}\n"
         f"cell groups         : " +
         ", ".join(f"len{n} {len(g)}" for n, g in sorted(groups.items())) + "\n" +
         f"shapes seen/extra   : {len(s['shape'])} / {len(SHAPES_EXTRA)}\n"
