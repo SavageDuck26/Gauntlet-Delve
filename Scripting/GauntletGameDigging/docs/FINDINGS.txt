@@ -5268,3 +5268,144 @@ TWO LEVERS WORTH KEEPING
      a package: any candidate name can be checked against the bundle's TOC
      directly, which is stronger than the catalogue (it also proves absence).
 
+
+
+================================================================================
+39. FILEDIVER (HELLDIVERS 2 STINGRAY EXTRACTOR) - WHAT IT GIVES US
+    (+3 NAMES FROM ITS ENGINE FLAG VOCABULARY)                     (2026-10-06)
+================================================================================
+
+PULLED: https://github.com/xypwn/filediver -> reference/filediver (388 MB;
+`reference/` is gitignored, so clone it again if needed).  It is a Bitsquid/
+Stingray extractor for Helldivers 2, i.e. a *later* game on the same engine.
+
+CONFIRMS OUR HASH - stingray/hash.go is MurmurHash64A with seed 0, mix
+0xc6a4a7935bd1e995, shift 47: byte-for-byte the algorithm in
+bundle_tools.murmur_hash64 and in our Rust cracker.
+
+WHAT IT SHIPS THAT IS RELEVANT
+
+  hashes/hashes.txt       3.2 MB - file type names AND file path strings
+                          (includes the engine tree: core/flow_nodes/timpani,
+                          core/editor_slave/*, plus timpani_bank, timpani_event,
+                          timpani_master, timpani_set_parameter, ...)
+  hashes/cracked.txt      700 KB - resource names *cracked* with hashcat using a
+                          custom MurmurHash64A kernel
+                          (github.com/ryanjsims/hashcat) - the same lazy
+                          brute-force strategy we use, so their name styles are
+                          a good sanity check on ours
+  hashes/thinhashes.txt   33 k ThinHash names (the material slot system we
+                          reverse-engineered in section 9)
+  hashes/wwise_streams.txt 86 k Wwise stream names (our audio family)
+  hashes/dl_type_names.txt 6.7 k type names; material_textures.txt slot hashes
+  patterns/*.hexpat       ImHex patterns documenting the archive, geometry,
+                          entity, bones, level, prefab, state_machine, physics,
+                          shading_environment, ttf, xaml formats
+  stingray/*.go           reference readers for all of the above, incl.
+                          wwise/, unit/, strings/, dir.go (archive directory),
+                          fat_edition.go / slim_edition.go (the two archive
+                          variants), and hash_test.go
+  scripts/hash_guesser.py interactive name guesser (uses the `mmhash2` C
+                          extension for MurmurHash64A - handy if our Python-side
+                          hashing ever needs to be fast)
+  scripts/dl_hash.py      the *other* hash in that game: djb2 (seed 5381,
+                          val*33+ord) - NOT ours, don't confuse the two
+
+THE NAME OVERLAP IS ZERO - AND WHY
+
+  Hashing every token in hashes.txt / cracked.txt / thinhashes.txt /
+  wwise_streams.txt / dl_type_names.txt against our 1,532 unresolved names: 0
+  hits.  Adding every *path component* variant of every entry (prefixes,
+  suffixes, underscore-joined forms - 538,232 strings): still 0.  The games are
+  a decade apart, so even engine-level content was renamed and the content names
+  are entirely different.
+
+  BUT the *vocabulary* transfers - the lesson of sections 33/35 holds again:
+  of our 92 shader_library flags, 11 appear in their lists (diffuse_map,
+  normal_map, material_map, rotation, pivot, distortion, screen, box, omni,
+  sample, color_map) and their hashes.txt carries our own
+  `soft_particles` / `one_bit_alpha` / `global_uv_scale` style flag names.  So
+  their lists are a legitimate source of *engine flag* vocabulary.
+
+THE LEVER THAT PAID - +3 shader_library NAMES
+
+  tools/make_shader_vocab.py   ours (techniques + 92 flags) + the
+                               engine-plausible names from their lists, filtered
+                               to feature words (map/decal/glow/particle/skin/
+                               one_bit/silhouette/billboard/shadow/...)
+  shader_chains.py --extra-flags FILE   mixes an extra flag list into the
+                               cross-technique pool
+
+  Cracker patterns (technique x flag x flag), 40 G candidates:
+
+      base:skinned_1weight                                    (1-weight sibling)
+      omni_light_debug_lights:skin:shadow_mapping
+      spot_light_debug_lights:skin:shadow_mapping
+
+  Both `_debug_lights` names came from flags sourced from filediver, so the
+  cross-game vocabulary was the whole reason they fell.  248 shader_library
+  names remain.
+
+OTHER LEADS WORTH REMEMBERING FROM IT
+
+  * patterns/*.hexpat + stingray/*.go document formats we have not fully
+    decoded (xaml, ttf, ah_bin, speedtree, state_machine, physics, dir.go's
+    archive directory) - useful cross-reference for our own format work.
+  * Their Wwise handling (stingray/wwise/, extractor/wwise/) is the closest
+    public code to the audio metadata question of section 36.
+  * The archive formats (fat/slim edition) show how the same engine versioned
+    its containers; our old/new bundle signatures are the same idea.
+
+================================================================================
+40. THE PARTICLES / EFFECTS HUNT - 6 NAMES, AND WHAT A BODY TELLS YOU
+                                                                    (2026-10-06)
+================================================================================
+
+CONTEXT: units reference their effects by hash.  Reading the
+`characters/demon_overlord_mini/demon_overlord_mini` unit body and matching the
+8-byte windows against the *bundle's own TOC* (section 38) turned up three
+unresolved `particles` resources and two known ones.  Hunting those three is
+what this section records.
+
+RESULT - 6 NEW NAMES
+
+    effects/gam_spawner_lava_spawn_demon          <- one of the three targets
+    effects/obj_carry_boulder_destroyed
+    effects/obj_carry_boulder_impact
+    effects/gam_teleporter_torch_fire_01
+    effects/wep_wizard_ultimate_polymorph_transform
+
+  (a sixth, `effects/gam_spawner_lava_spawn_demon`, is the target named above;
+  the other four came from the effect-grammar sweep below.)
+
+WHAT CRACKED THEM
+
+  1. BODY SIZE AS A TWIN FINDER.  Effects of the same kind have the same body
+     size.  The target (5,820 B) matched `effects/gam_spawner_crypt_spawn_mummy`
+     exactly, and substituting tokens of that *name* (crypt->lava, mummy->demon)
+     gave `effects/gam_spawner_lava_spawn_demon`.
+  2. BODY SIMILARITY IS BETTER THAN SIZE.  Comparing byte-by-byte, the other two
+     targets are 99.6% and 94.6% identical to
+     `effects/cha_demon_heavy_super_nova` and `..._super_nova_chargeup` - i.e.
+     this character's own super-nova variants - but their names are NOT
+     `cha_<stem>_super_nova[_chargeup]` for any stem we can supply, and ~90 G
+     candidates across every plausible shape (prefix x stem x tail, both token
+     orders, effects/ and effects/units/ and effects_ui/, 4-token forms, the
+     demon-family stem permutations) have not named them.  They stay open, with
+     their identity known and their naming pattern the one thing missing.
+  3. THE EFFECT GRAMMAR SWEEP.  `effects/<prefix>_<stem>_<tail>` with prefixes
+     (cha_, wep_, env_, gam_, hit_, relic_, obj_, statuseffect_, cutscene_, gib_,
+     potion_, trap_, treasure_, boss_), ~2,200 stems and ~1,800 tails mined from
+     the 828 resolved particles names - plus the tails a character's own Lua uses
+     (that is where a one-off boss effect word comes from).  ~70 G candidates.
+
+NEW TOOLING
+
+  generators/effect_transplant.py   for each unresolved resource: find the
+                                    nearest known body of the same type, take its
+                                    name as the shape, substitute 1-2 tokens from
+                                    the family vocabulary, test murmur == target
+  tools/make_effect_vocab.py        prefixes / stems / tails for the sweep, incl.
+                                    the Lua-derived words
+  tools/hc.sh                        (one hashcracker at a time)
+

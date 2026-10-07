@@ -132,6 +132,10 @@ def main() -> None:
     ap.add_argument("--flag-variants", action="store_true",
                     help="expand the cross-technique flag pool with numbered/"
                          "paired siblings (step0-9, iter0-9, _x/_y, _hq/_lq, ...)")
+    ap.add_argument("--extra-flags", default=None,
+                    help="file of additional flag tokens to mix into the global "
+                         "pool (e.g. engine flag names mined from another "
+                         "BitSquid-family game - see FINDINGS section 39)")
     args = ap.parse_args()
 
     catalogue = pathlib.Path(args.catalogue)
@@ -143,6 +147,12 @@ def main() -> None:
             _KNOWN_CACHE.setdefault(r["name"].split(":")[0], []).append(r["name"])
 
     per_tech, global_flags = load(catalogue)
+    if args.extra_flags:
+        extras = [l.strip().lower() for l in
+                  pathlib.Path(args.extra_flags).read_text().split() if l.strip()]
+        for f in extras:
+            global_flags[f] += 0        # Counter: a 0 count still registers the key
+        print(f"extra flags : {len(extras)}  (global pool {len(global_flags)})")
     n = 0
     seen = set()
     with open(args.out, "w", encoding="utf-8") as fh:
