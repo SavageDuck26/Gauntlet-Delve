@@ -5869,6 +5869,104 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     directions (the way `derive_tex_siblings.py` does for names we hold) is the
     next step.
 
+==========================================================================
+47. SCALING THE HARVEST: DIRECTORIES, BUNDLES, AND CHAINS
+==========================================================================
+
+  With `name = <directory><leaf>` established, three further scalings pay off.
+
+47.1 RE-RUN THE SIBLING DERIVATIONS
+
+  Every new name is a new seed for the sibling rules, so the derivations have to
+  be re-run after every batch: `tex_derive.sh` -> 0 (map suffixes of the new
+  names are all present), `num_derive.sh` -> +1.
+
+47.2 DIRECTORY x VOCABULARY (universal_sweep.sh, make_universal_vocab.py)
+
+  The directories are almost all known (365 resolved, 47 of them animation dirs,
+  157 unit dirs, 109 texture dirs), so what is missing is the *leaf vocabulary*.
+  One tool now collects every vocabulary we have - the harvested leaves, their
+  number/suffix siblings (`leaf_ext.txt`, 4.16 M), every string and identifier
+  in the shipped Lua, and the leaves/tokens of the names we hold (125,503) - and
+  crosses it with every resolved directory and with the harvest's own 15,322
+  path prefixes, as one cracker pattern per directory.
+
+47.3 BUNDLE-SCOPED DIRECTORIES (bundle_sweep.sh, make_bundle_targets.py)
+
+  A resource's bundle constrains its directory much better than the global list:
+  a texture in the `characters/mummy_risen` bundle is almost certainly
+  `characters/mummy_risen/<leaf>`.  So the sweep runs *per bundle*: that bundle's
+  own targets against the directories of the resolved names in the same bundle
+  (51 bundles, 969 patterns, 3,101 targets - about 19 directories each).
+
+47.4 SHADER CHAINS: ONE FLAG IN, OUT OR SWAPPED (make_chain_candidates.py)
+
+  A shader_library name is `<technique>:<flag>:<flag>:...` with the flags
+  alphabetically sorted (§41), so the legal neighbourhood of a chain is small:
+
+    insert one vocabulary flag in its sorted position
+    drop one flag
+    swap one flag for another vocabulary flag (re-sorting)
+
+  From the 1,541 chains we hold plus the 1,335 the harvest prints, with 118
+  techniques and 255 flags, that is 2.48 M candidates.  It is also *self-feeding*
+  - each round's new chains are new seeds - so `chain_sweep.sh` loops it: round 1
+  **+47**, round 2 **+22**, then fixpoint.  **69 `shader_library` names in two
+  rounds** (190 left -> 168), the best yield of the batch:
+
+    base:deferred_decals_group_prop:diffuse_map:instanced:static_lighting
+    base:diffuse_map:material_map:material_tint_rgb:one_bit_alpha:silhouette:silhouette_decals_group_level:skinned_3weights:static_lighting
+    base:blend_normal_world_positive_z:deferred_decals_group_prop:diffuse_map:double_sided:one_bit_alpha:skinned_3weights
+
+  The same candidates against the `shader` type -> 0.
+
+47.5 PREFABS (prefab_sweep.sh)
+
+  The last levels are prefabs in six subdirectories, with the shapes
+  `prefab_<env>_door_wall_<Nc>`, `prefab_<env>_<kind>_detail_<mod>_<NN>[_16c]`,
+  `prefab_<env>_spawner_<mod>_<NN>`, `prefab_<env>_special_rooms_<mod>_<NN>`,
+  `prefab_<env>_gate_exit_<NN>` - swept over the mod vocabulary, the dimension
+  suffixes (1c..32c) and 01..32 -> 0, so the 14 left are outside those shapes.
+
+47.6 A TYPE'S LEAVES ARE THE GAME'S OWN VOCABULARY (sibling_sweep.sh)
+
+  For the animation family the leaf is not arbitrary: clips are *shared between
+  units on the same rig* (`idle`, `walk`, `axe_attack_heavy1_sweep` appear under
+  many `characters/<unit>/animations/`), so the clip we are missing is usually a
+  sibling or a variant of one we hold.  `make_type_sibling_vocab.py` crosses
+  every leaf we hold for a type (plus number/suffix siblings, plus the harvested
+  leaves) with every directory we hold for it (plus harvested directories whose
+  path mentions the type): animation 15 M, unit 417 M, material 26 M, texture
+  17.7 M, particles 1.4 M, shader 10 k candidates.
+
+  Result: **+2 animations** (`animation` tier), everything else 0.
+
+47.7 NEGATIVES, FOR THE RECORD
+
+  * the 20 M-line snapshot harvests (`_names.txt`, the earlier session's
+    suffix/case-mutated lists) run through `mine_harvest_paths.py`
+    (`--raw`): **70.8 M candidates, 0**.  The *raw* strings are the useful part;
+    the generated mutations add nothing.
+  * bundle-scoped directories (`bundle_sweep.sh`, 51 bundles, ~19 directories
+    each): 0.
+  * the universal directory x vocabulary sweep (`universal_sweep.sh`): 0 in the
+    resolved-directory tiers; its harvest-directory x extended-leaf tier is the
+    slowest and was stopped.
+
+47.8 SESSION RESULT (this block)
+
+  16,898 -> 17,102 of 20,000 (85.51%); unique unresolved 1,333 -> 1,261.
+  shader_library 237 -> 168, animation 345 -> 343, level 14.
+
+  The remaining blocks - texture 453, animation 343, shader_library 168,
+  material 139, unit 61, shader 45, timpani_bank 37, level 14, flow 1 - are now
+  almost entirely resources whose *directory* and *leaf* both appear nowhere in
+  the bundles, the Lua, or the names we hold: the same unreferenced-authored-
+  content wall as §40 and §45.3, with `timpani_bank` still needing Arrowhead's
+  Wwise metadata.
+
+
+
 
 
 
