@@ -2,25 +2,26 @@
 """
 Number siblings of every name we hold.
 
-Two passes, both over everything we have:
+Four passes, all over everything we have, covering every combination of "is
+there an index" x "is it glued on or a separate token":
 
-  * REPLACE - names that already carry an index get their neighbours tried:
-    `arena01` -> `arena02`, `hit_offset1` -> `hit_offset2`, `__02_s_mixed` ->
-    `__01_`/`__03_`, `skinned_3weights` -> `2weights`, `spider_02_1` ->
-    `spider_02_2`.
-  * APPEND  - names with *no* index get one: `decals/moss` -> `decals/moss_01`
-    ..`decals/moss_10` and `caves_arena` -> `caves_arena01`..`arena10`
-    (the concatenated form is how `caves_arena01` is spelled).
+  * REPLACE   `arena01`    -> `arena02`      (indexed names get their neighbours)
+  * APPEND    `decals/moss`-> `decals/moss_2` / `decals/moss2`
+              `<mod>_<nn>` -> `<mod>_<nn>_2` / `<mod>_<nn>2`
+  * STRIP     `hit_offset2`-> `hit_offset`
+  * SHAPE     `caves_arena01` -> `caves_arena_01`   (underscore in)
+              `hit_offset_2`  -> `hit_offset2`      (underscore out)
 
 `hashcracker mutate` has a numeric step, but it replaces a whole numeric
 *token* (`__02_` -> `__03_`); it cannot rewrite digits *inside* a token
-(`hit_offset1` -> `hit_offset2`), which is where most indices live.
+(`hit_offset1` -> `hit_offset2`), add or remove an index, or move it between the
+glued and the token spelling.
 
 The index range is a knob (`--range`, default `1-10`) and each value is emitted
-unpadded, two-digit padded and padded to the original run's width, so both
-spellings are covered.
+unpadded (`2`), two-digit (`02`) and padded to the original run's width, so both
+spellings of both forms are covered.
 
-    python3 tools/derive_number_siblings.py [--range 1-10] [--out FILE]
+    python3 tools/derive_number_siblings.py [--range 1-10] [--pairs] [--out FILE]
 
 Digits are taken from the *leaf* only: the `d01_<env>` module prefix is fixed,
 so varying it would only generate noise.
@@ -86,6 +87,33 @@ def append_variants(name: str, values: list) -> set:
     return out
 
 
+def shape_variants(name: str) -> set:
+    """
+    The other three ways an index can sit on the same base:
+
+        strip it       `hit_offset2`   -> `hit_offset`
+        underscore it  `caves_arena01` -> `caves_arena_01`
+        un-underscore  `hit_offset_2`  -> `hit_offset2`
+
+    (the fourth, replacing the digits, is `replace_variants`).  Together with
+    `append_variants` (`X` -> `X2` / `X_2`) that covers every combination of
+    "is there a number" x "is it glued on or a separate token".
+    """
+    directory, _, leaf = name.rpartition("/")
+    pre = directory + "/" if directory else ""
+    out = set()
+    for m in RUN.finditer(leaf):
+        s, e = m.start(), m.end()
+        out.add(pre + leaf[:s] + leaf[e:])                      # strip
+        if s > 0 and leaf[s - 1] == "_":
+            out.add(pre + leaf[:s - 1] + leaf[e:])              # strip the separator too
+            out.add(pre + leaf[:s - 1] + leaf[s:e] + leaf[e:])  # drop the underscore
+        else:
+            out.add(pre + leaf[:s] + "_" + leaf[s:e] + leaf[e:])  # add an underscore
+    out.discard(name)
+    return out
+
+
 def pair_variants(name: str, values: list) -> set:
     """
     Replace *two* index runs at the same time (`spider_02_1` -> `spider_03_2`).
@@ -128,6 +156,7 @@ def main():
         cand |= replace_variants(n, values)     # arena01 -> arena02
     for n in names:
         cand |= append_variants(n, values)      # every name: <leaf>_01 .. <leaf>10
+        cand |= shape_variants(n)               # strip / underscore in / underscore out
     if args.pairs:
         for n in indexed:
             cand |= pair_variants(n, values)    # spider_02_1 -> spider_03_2
