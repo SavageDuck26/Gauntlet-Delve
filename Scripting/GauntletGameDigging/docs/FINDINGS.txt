@@ -6513,9 +6513,14 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   metals vocabulary: `achievement_icons/frame_{basic,bronze,silver,gold}` uses
   the same three plus a generic.  Recorded as closed.
 
-  The atlas around it is complete too: `achievement_icons/` holds **125**
-  textures, 61 plain and 60 `_locked`, and all **60** plain
-  icons have their `_locked` partner - the pairing convention needs no more work.
+  The atlas around it is complete too, which is worth spelling out because the
+  counts look suspicious: `achievement_icons/` holds **125** textures - 60
+  `<icon>` / `<icon>_locked` pairs, the atlas root
+  `achievement_icons/achievement_icons`, and four `frame_*` icons.  Every
+  `_locked` icon has its plain partner, and the only plain entries without one are
+  the atlas root and the four frames, which have no locked state by design.  Their
+  `_locked` / `_unlocked` / `_norm` / `_diff` / metal forms were all tested anyway
+  (35 hashes): none is an unresolved target.
 
 54.2 THE SAME INSTINCT, CORPUS-WIDE: 689,073 FORMS, 0
 
