@@ -5965,6 +5965,18 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   content wall as §40 and §45.3, with `timpani_bank` still needing Arrowhead's
   Wwise metadata.
 
+47.9 ALSO TRIED, ALSO 0
+
+  Animation clips are named after the ability/state that plays them
+  (`axe_attack_heavy1_sweep` beside the ability `axe_attack_heavy1`), and
+  `lua/generated/animation_events.lua` carries the game's own 482 event names.
+  Each name, with and without its `ability_` prefix, crossed with the clip
+  suffixes the corpus shows (`_sweep`, `_right`, `_left`, `_back`, `_start`,
+  `_end`, `_windup`, `_loop`, `_offset`, `_hit`, `_01`..`_05`) against the 113
+  animation directories: 1.14 M candidates, **0**
+  (`make_anim_vocab.py`).
+
+
 
 
 
