@@ -5787,5 +5787,88 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   when the line carries none - the token-join heuristic (try the directories that
   share a token with the leaf) is the obvious next step.
 
+==========================================================================
+46. THE HARVEST, APPLIED TO EVERY TYPE
+==========================================================================
+
+  The harvest is not level-specific.  It holds complete paths for the other
+  families too:
+
+    characters/avatar_warrior/animations/axe_attack_light3_sweep
+    base:colored_specular:diffuse_map:diffuse_uv_anim:one_bit_alpha
+    base:DIFFUSE_MAP:MATERIAL_TINT_RGB:SILHOUETTE:SKINNED_3WEIGHTS:STATIC_LIGHTING
+    effects_ui/hud_colosseum_wave_complete_impact
+
+46.1 THREE MECHANICS
+
+  * the length byte in front of every string is printable, and the strings are
+    runs of names glued together, so both the leading and the trailing 1-2
+    characters of every path-shaped substring have to be tried:
+
+      ..._01chainqmodules/d01_crypt/quilts/base/crypt_quilt_..._01chainqmodules/...
+
+    (`mine_harvest_paths.py`, `ROOT`/`CHAIN` patterns).  Matching is exact, so the
+    extra variants can only add true hits, never false ones.
+  * **hashing is case-insensitive** - `bundle_tools.murmur_hash64` lowercases
+    (`key.lower()`), and so does the engine.  That is why a harvested uppercase
+    shader chain and its lowercase twin both match the same hash; candidates are
+    collapsed to the lowercase spelling, the form the rest of the corpus uses.
+  * a resource name is `<directory><leaf>`, so the whole plausible space is one
+    cracker pattern per directory crossed with a leaf list:
+    `patterns_<type>.txt` = `<dir>%m`.  Directories come from the resolved names
+    of that type *and* from the harvest's own path prefixes (15,322 of them -
+    the game's real directory layout).
+
+46.2 WHAT THAT PRODUCED
+
+  `mine_harvest_paths.py` (full paths, ~1.4 M split variants):
+
+    modules/d01_crypt/prefabs/door_walls/prefab_crypt_door_wall_4c
+    modules/d01_crypt/prefabs/floor_details/prefab_crypt_floor_detail_raised_altar_02
+    modules/d01_crypt/prefabs/gate_exit/prefab_crypt_gate_exit_01
+    modules/d01_crypt/prefabs/spawners/prefab_crypt_spawner_sarcophagus_lit_01
+    modules/d01_crypt/prefabs/special_rooms/prefab_crypt_special_rooms_mummy_king_01
+    modules/d01_lava/prefabs/floor_details/prefab_lava_floor_detail_pit_square_01
+    base:colored_specular:diffuse_map:self_illumination_map:self_illumination_multiplier_map:static_lighting
+    shadow:deferred_decals_group_floor:deferred_decals_group_level:deferred_decals_group_prop:diffuse_map
+    multilayer_mesh:diffuse_map:red_diffuse_map:green_diffuse_map:blue_diffuse_map:alpha_diffuse_map
+    billboard:diffuse_map:external_rotation:pivot:soft_particles:tangent_locked:uv_animation:vertex_color
+    characters/avatar_warrior/animations/axe_attack_light3_sweep
+  -> the remaining levels were **prefabs** all along, in six subdirectories
+    (door_walls, floor_details, gate_exit, spawners, special_rooms, wall_details),
+    plus 16 shader_library chains, 1 animation, 3 materials.
+
+  `sweeps/leaf_sweep.sh` (`make_leaf_patterns.py`) - directories x leaves:
+
+    +64 textures   equippables_icons/relic_arcadian_hatchet, menu/colosseum/help_arrow_left,
+                   cutscenes/outro/outro_image02, effects/cha_valkyrie_foot_slide_dust, ...
+    +3  materials  effects_ui/hud_colosseum_wave_complete_impact, ...
+    +5  from the harvest's own directory list
+    +2  more once the leaf list was extended with number/suffix siblings
+
+  The texture hits exposed the family pattern - one stem, a numbered set suffix
+  (`equippables_icons/<item>_set01` ... `_set07`) - so the leaf list is extended
+  with the other numbers of a set and the other map suffixes of a stem
+  (`leaf_ext.txt`, 4.16 M).
+
+46.3 TOTALS
+
+  16,676 -> 16,898 of 20,000 (84.49%); unique unresolved 1,505 -> 1,335;
+  levels 103 -> 15.  The remaining big blocks are texture 455, animation 345,
+  shader_library 237, material 139, unit 61, shader 45, timpani_bank 37.
+
+46.4 NEXT
+
+  * animation/unit: the names are `<unit dir>/animation(s)/<clip>`.  The unit
+    directories are known (157 resolved unit dirs), so those 345 clips are
+    reaching for a clip vocabulary that is not in the harvest - the harvested
+    Lua (ability/state names) is the obvious source, the same way
+    `make_effect_vocab.py` mines ability names for effects.
+  * texture: 455 left, mostly in directories the harvest never prints.  Pairing
+    the harvested *stems* with the *resolved* map-suffix families in both
+    directions (the way `derive_tex_siblings.py` does for names we hold) is the
+    next step.
+
+
 
 
