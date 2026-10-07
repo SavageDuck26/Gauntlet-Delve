@@ -6226,6 +6226,47 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   one: `effects/wep_elf_arrow_light_trail`, an *old-style* `wep_` name that still
   matches a resource in the current build.
 
+==========================================================================
+51. PROBING RESOURCES DIRECTLY (AND TWO MORE NEGATIVES)
+==========================================================================
+
+  `probe_resource.py` is the reusable form of a check that had been ad hoc all
+  session: given a name it decompresses the owning bundle, finds the body, prints
+  its printable strings and - matching every 8-byte window against *every* name we
+  hold, not just the bundle's TOC - the resources it references.
+
+51.1 STATE MACHINES DO NOT NAME THEIR CLIPS
+
+  State machines are the natural place to look for the animation block (340):
+  a `.state_machine` drives a character's clips, and 111 of them are resolved.
+  They are per-unit and share the unit's name (`characters/mummy_priest/
+  mummy_priest` is a unit, a bones, a material, a lua *and* a state_machine).
+
+  Probing one: 520,903 bytes, 8,128 printable runs and not one is a word (the
+  body is binary), and its 16 references are `flow/status_effect_*`, materials,
+  `audio/enemy_mummy` and another state machine - **no animations at all**.
+  So the animation names are not recorded there.  Negative.
+
+51.2 THE SHIPPED LUA'S UNIT TABLES
+
+  `unit_path_to_components.lua`, `units_with_settings.lua`,
+  `spawners_unit_path.lua`, `unit_paths.lua`, `unit_paths_short_lookup.lua`,
+  `settings_paths.lua`, `flow_events.lua` and `characters_unit_path.lua` are
+  literal resource-path tables (2,089 names).  Their names are already held -
+  which is why testing them as-is gave 0 - so the last useful thing is to use
+  their *leaves* as bases: 925 leaves x 173 directories from the tables, plus
+  token-drop and number/map-suffix edits, 2.0 M candidates -> **0**.  Negative.
+
+51.3 WHY: A NAME MAPS TO SEVERAL RESOURCES
+
+  One name hash covers every resource type recorded under it (a unit, its bones,
+  its material, its state machine and its lua all share one hash, because the
+  hash *is* the name).  So a name resolved anywhere resolves all of that name's
+  rows - and it means the tables in the shipped Lua, the status-effect names and
+  the unit paths we already hold are *exactly* the set of names the game used for
+  those objects.  Anything still unresolved is therefore a name our sources have
+  never printed, in any build.
+
 50.3 WHAT THIS SAYS ABOUT THE REMAINDER
 
   The corpus is *newer* than either older build (the renames all run old -> new,
