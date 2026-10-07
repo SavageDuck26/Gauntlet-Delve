@@ -5138,3 +5138,40 @@ MAP-SIBLING AUTOMATION (units / decals almost always ship `_diff` + `_norm`)
   step again - the remaining textures are a *vocabulary* problem, exactly like
   the rest of the catalogue.
 
+
+INDEX-SIBLING AUTOMATION (an index implies its neighbours)          (+4 names)
+
+  If a name carries an index, the neighbouring indices almost always ship too -
+  animation hit offsets, arena/colosseum slots, quilt variant numbers, `floor02`
+  rooms, `spider_02_1` pieces, `skinned_3weights` shader chains.
+
+  `hashcracker mutate` has a numeric step, but it replaces a whole numeric
+  *token* (`__02_` -> `__03_`); it cannot rewrite digits *inside* a token
+  (`hit_offset1` -> `hit_offset2`), which is where most indices live.  So
+  tools/derive_number_siblings.py + sweeps/num_derive.sh (and phase 0b of
+  auto_run.sh) do both, as a ~1 s pass:
+
+    * seeds: every resolved name with an index in its LEAF (2,287 of them).
+      Leaf-only on purpose - the only digit-bearing directories are the fixed
+      `d01_<env>` modules (d01_caves/d01_crypt/d01_lava/d01_common/d01_hub_room),
+      so varying them would only make noise.
+    * variants: each digit run replaced one at a time with 0..99, both unpadded
+      and zero-padded to the run's width (`01` -> `1`..`99`, `1` -> `0`..`99`).
+    * 181,385 candidates, CPU, well under a second.
+
+  FIRST RUN - 4 names, all in families the numeric-token step could not reach:
+
+    characters/mummy_risen/animations/hit_offset2        (from hit_offset1)
+    characters/mummy_risen/animations/hit_offset3
+    characters/avatar_warrior/animations/hit_offset03    (from hit_offset01/02)
+    base:diffuse_map:silhouette:silhouette_decals_group_level:skinned_2weights:static_lighting
+      (from the `skinned_3weights` chain - the flag chain family of section 32)
+
+  THE `s_mixed` CASE, ANSWERED: `lava_quilt_mediumroom__xox_xe_xix_xe__02_s_mixed`
+  does NOT have an `01` or `03`.  Their hashes
+  (474d73df93d5c210 / 5cfdb673fed4b006 / d1f0cdc09cad57ed) do not occur anywhere
+  in the catalogue - the bundle ships only the `02`.  Same for
+  `..._02_statues_mixed` (no `01`, no `03`).  So the rule is worth having (it
+  paid immediately on other families) but the quilt variant numbers are not a
+  dense series: they follow the pieces that exist, not a counter.
+
