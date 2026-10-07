@@ -4965,3 +4965,139 @@ a material and a particle - same string, same hash).  A hash resolved once
   Scripting/hashcracker/work/audio/ (tokens, extracted bank bodies, per-batch
   candidate lists and logs).
 
+
+================================================================================
+37. THE `.level` (QUILT) FAMILY - SCHEMA, CONTEXT CONDITIONING AND THE MOD
+    VOCABULARY (5 NEW NAMES)                                      (2026-10-06)
+================================================================================
+
+THE SCHEMA (confirmed on 581 resolved level names)
+
+    modules/d01_<env>/<sub>/<env>_quilt_<shape>__<u>_<r>_<d>_<l>__<nn>[_<mods>]
+
+    <env>     caves | crypt | lava
+    <sub>     quilts/{base,encounters,entrances,exits,saferooms}   (or nothing)
+    <shape>   straight turn mediumroom largeroom smallroom blackbox
+              entrance exit saferoom encounter
+    u/r/d/l   the four cell rows from `lua/dungeon/quilt_builder.lua`:
+              characters from {x wall, e through, i entrance, o exit}, with
+              len(u) == len(d) (quilt width) and len(r) == len(l) (height)
+    <nn>      01..NN, or `start` (entrances) / `end` (exits)
+    <mods>    enemy GROUPS / set pieces: spider, civilization, juggernauts,
+              statues_mixed, keydoorseast_spider_queen, ... and the nested form
+              `<mod>_<nn>_<part>` (spider_02_1)
+
+  The other level families in the same packs:
+    modules/d01_<env>/arena/<env>_arena<NN>
+    modules/d01_<env>/colosseum/<env>_colosseum_<NN>_<mod>
+    modules/d01_<env>/dungeon_tiles/<rock>_8c_8c_<a>_<b>_<c>_<d>_<NN>[_corridor]
+    modules/d01_<env>/room_<tokens>,  prefabs/prefab_<env>_<tokens>
+    modules/d01_<env>/{resources,room_dummy,shading_environment}
+
+WHAT THE DECOMPILED LUA TREES GIVE US
+
+  game-source/Gauntlet-SourceCode-LUA/lua/dungeon/layouts/*.lua IS the quilt
+  catalogue: the names are bare table keys under a
+  `path = "modules/d01_<env>/quilts/<cat>/"` field, so they must be reassembled
+  with the path in scope (tools/mine_lua_modules.py).  266 full names
+  reconstructed - and every one of them was ALREADY resolved.  The tree is a
+  pre-Slayer drop: hashing all 927 file paths, all 21k tokens in the tree and
+  every string literal in it against the unresolved set gives 0 hits.  The
+  layouts do, however, pin the subdir list exactly (the five above), the theme
+  words (`floor_type`, layout filenames: spider, ruins, slaves, fancy, temple,
+  demon, mummy, skeleton) and every (shape, cells, nn) tuple in use.
+
+  lua/settings/encounter_settings.lua is the mod vocabulary: it maps floor
+  types to enemy GROUPS and lists the `unit_path` each group spawns
+  (`mummy_small_01`, `cultist_zealot`, `orc_juggernaut`, `spider_queen`, ...).
+  Quilt mods are those group names - and the PLURAL is what the names use.
+
+
+THE LEVER THAT MATTERS: CONTEXT CONDITIONING
+
+  Crossing the global schema (3 envs x 5 subs x 29 shapes x 43 codes x 43 nn x
+  85k mods) is 68,767,323,870 candidates.  But each (env, sub) pair is its own
+  tiny world - `crypt/quilts/base` only ever uses 4 cell codes, 5 variant
+  numbers and 20 mods - so the *closed form* per context is 1,780 candidates in
+  total.  Pinning the context in the pattern LITERAL (only the tail stays a slot
+  product) turns the family into a ladder of small searches instead of one
+  unfeasible one:
+
+    stage 1  ctx codes x ctx nn x ctx shapes x ctx mods   (the closed form)
+    stage 2  1-char cell neighbourhood      stage 3  all nn
+    stage 4  all shapes                     stage 5  ctx codes x groups
+    ...
+    deep     new cell codes x the whole group vocabulary, every nn x groups,
+             the 180k legal cell codes x ctx
+
+  Tools: tools/make_level_context.py + sweeps/level_context.sh (the tiered
+  schema sweep is sweeps/level_full.sh, tools/make_level_full.py).
+
+RESULTS - 5 NEW LEVEL NAMES (108 -> 103 unresolved unique)
+
+    modules/d01_crypt/quilts/encounters/crypt_quilt_encounter__xox_xi_xix_ix__01
+    modules/d01_caves/quilts/encounters/caves_quilt_mediumroom__xox_xex_xix_xex__01_juggernauts
+    modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_xo_xix_xi__02_statues_mixed
+    modules/d01_lava/quilts/base/lava_quilt_blackbox__x_x_x_x__06_skull
+    modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_xe_xix_xe__02_s_mixed
+
+  plus, just before this write-up, the pack battery's
+    .../caves_quilt_mediumroom__xox_xex_xix_xex__02_spider_02_1
+  which is the name that revealed the nested `<mod>_<nn>_<part>` tail form.
+
+  Where each came from:
+    * `encounter` is a shape that appears exactly once in the 581 known names -
+      it needed the *wide cells* tier (a 1-char neighbourhood of a known code).
+    * `juggernauts` and `statues_mixed` are the PLURAL of group names that only
+      exist inside the game's own encounter tables (`orc_juggernaut`,
+      `living_statue`): pure vocabulary, no amount of cell enumeration finds
+      them.
+    * `_skull` is a group/feature word mined from the game's resource names.
+    * `s_mixed` is literally what the shipped name is (an authoring shorthand,
+      sibling of the `statues_mixed` above) - a reminder that the true name is
+      not always the pretty one.
+
+
+NEGATIVES (recorded so nobody repeats them)
+
+  * exhaustive cells: every cell code with 1-3 cell sides over {x,e,i,o}
+    (64^4 combos at the top end) x seen shapes/subs/nn = 0
+  * the 180k "legal codes" list x every shape = 0; 1-char neighbourhood x the
+    two-token mods = only the `encounter` name above
+  * body_size does NOT fingerprint a family - 393 of 442 known quilt rows have
+    a *unique* size - so sizes cannot classify or filter the unknowns.  They do
+    show the unknowns are a MIX: 1,104-204,352 bytes, i.e. both tiny
+    (tile/blackbox-like) and huge (room/colosseum-like) names remain.
+  * 0 hits from: all 927 source-tree file paths, all 21k tree tokens, every
+    already-mined corpus (names / lua_strings / tokens_big / bundle_words / ...).
+
+WHY THE REST RESIST
+
+  Every survivor needs at least one field value never seen in its context: a
+  cell code outside the 1-char neighbourhood AND/OR a group name the shipped
+  game does not list (Slayer-era additions).  The cheapest remaining levers are
+  (a) deeper cell neighbourhoods paired with the *small* group list, (b) more
+  group/theme vocabulary from any new source, (c) per-target routing by
+  body-size band so the deep tiers only run where they are plausible.
+
+ENGINE IDEAS (asked: can the cracker be made smarter?)
+
+  The tool's model already is "literal prefix + slot product", and the prefix is
+  exactly where the win came from - pinning `modules/d01_<env>/<sub>/<leaf>`
+  removed 7 orders of magnitude.  Beyond that, in rough value order:
+
+    1. per-target routing in-process: a pattern should be able to declare which
+       target subset it applies to (type / package / size band), so one run can
+       carry 100 small patterns instead of 100 processes (GPU init each).
+    2. joint slot lists (a slot value may expand to a tuple, e.g. a whole
+       `<nn>_<mod>` tail) - today we emulate that with separate slots.
+    3. slot constraints (len(%d) == len(%u), numeric ordering) so structural
+       sets can be enumerated without materialising giant lists.
+    4. likelihood-ordered enumeration (most frequent slot value first) so a
+       time-capped run yields the plausible names first.
+    5. dedupe candidates across slot combinations (some lists overlap).
+
+  None of these replace vocabulary/grammar work: the 5 names above are ~80%
+  vocabulary, ~20% pattern shape.  And one hashcracker at a time still applies -
+  every invocation goes through tools/hc.sh (flock).
+

@@ -30,14 +30,23 @@ hashcracker/
 
 See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 
-## Current state (2026-10-05)
+## Current state (2026-10-06)
 
-* overlay: **5,990** names · **1,554** unique unresolved hashes
-* catalogue: 20,000 resources, **16,507 named** (82.5%), 3,493 unresolved rows
+* overlay: **6,003** names · **1,541** unique unresolved hashes
+* catalogue: 20,000 resources, **16,562 named** (82.8%), 3,438 unresolved rows
 * GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
 
-Remaining by family: `texture 537 · animation 353 · shader_library 249 ·
-material 165 · particles 131 · level 109 · unit 68 · shader 47 · timpani_bank 37`.
+Remaining by family (unique): `texture 532 · animation 352 · shader_library 249 ·
+material 162 · particles 131 · level 103 · unit 68 · shader 47 · timpani_bank 37`.
+
+**One hashcracker at a time**: every sweep calls `tools/hc.sh`, which `flock`s
+`work/hc.lock` so a second run queues instead of halving the first one's speed
+(see `.clinerules` → *One hashcracker at a time*).
+
+For the uniform families the win is **context conditioning**, not brute force:
+pin the fixed part of the name in the pattern and escalate one field at a time
+(`sweeps/level_context.sh`, `FINDINGS.txt` §37 - the level schema crosses to
+68 G globally but is 1,780 candidates as a closed form per (env, sub) context).
 
 That set is now limited by **missing source data**, not by generation strategy —
 the shipped Lua, bundle bodies and binaries contain no further name material.
