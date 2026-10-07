@@ -6370,6 +6370,13 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   block: new *members of families we hold*, the same signature as section 49's
   twins, reached this time from the token side instead of by reference.
 
+  The rest of the standing battery (`sweeps/battery.sh`), re-run on the same
+  batch, was flat: map siblings +0, index siblings (wide range, paired) +0, twins
+  by fingerprint 874 targets / 1.68 M candidates +0, the atlas families 239.6 M
+  +0, the substitute engine 146 M per-type + 4.59 G cross-type +0.  The new
+  *space* is what paid, which is the expected shape - edits and derivations of
+  the names we hold were already exhausted, combinations of them were not.
+
 52.4 A TRAP WORTH REPEATING
 
   The first run was killed mid-flight by a 30 s command timeout, and the second
