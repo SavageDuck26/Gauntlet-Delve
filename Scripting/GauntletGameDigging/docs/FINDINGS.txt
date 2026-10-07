@@ -5976,6 +5976,53 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   animation directories: 1.14 M candidates, **0**
   (`make_anim_vocab.py`).
 
+==========================================================================
+48. TEXTURES BY REFERENCE, AND THE ATLAS SUBDIRECTORY
+==========================================================================
+
+  A texture's name is not in the bundle, but its *referrers* are: material and
+  unit bodies carry the hashes of the textures they draw.  `hunt_texture_refs.py`
+  decompresses each bundle that holds unnamed textures, matches every 8-byte
+  window of every resolved body against the unresolved set (`hunt_unit_textures`
+  technique, vectorised with numpy at all 8 alignments), and writes
+  `texture_refs.json`.
+
+  **418 of the 453 unnamed textures turn out to be referenced**, by resources
+  whose names we know:
+
+    effects/                 398      effects_ui/           101
+    gameobjects/spawners/    110      menu/                  74
+    hud/                      65      equippables_icons/     53
+    blocks/d01_caves/         37      equipment/{warrior,wizard,elf}/  36 each
+
+48.1 WHAT THE EDGES ARE GOOD FOR
+
+  Two things, one obvious and one not:
+
+  * the referrer's directory is the texture's directory, and its name supplies
+    the stem - which is what `gen_texture_candidates.py` does
+    (`<dir><stem><suffix>` with the suffix vocabulary mined from the resolved
+    textures).  It found 2 (`blocks/d01_caves/stairs/roundstairs_{diff,norm}`).
+  * **the atlas subdirectory**.  Resolved icons live in a subdirectory named
+    after their atlas:
+
+      hud/controller_icons              (the atlas material/unit)
+      hud/controller_icons/button_y     (its icon textures)
+      hud/keyboardmouse_icons/lmb
+
+  so a texture drawn by an atlas `D/L` is `D/L/<icon>` - and that directory
+  appears in **no resolved name**, so every directory sweep in §46-47 was blind
+  to it.  `make_atlas_patterns.py` turns each referring atlas into one pattern
+  (`<atlas>/%m`, `<atlas>_%m`, `<atlas>/%m_%n` - 1,581 of them) and crossing them
+  with the vocabularies found **32 names in one run**:
+
+    hud/action_icons/...   (20)   hud/spells/fire_bolt, hud/spells/void_chain,
+    hud/spells/...         (12)   hud/spells/ice_beam, hud/spells/storm_bomb, ...
+
+  which is the single best texture yield so far, and it generalises: any atlas we
+  can identify yields its icons.
+
+
 
 
 

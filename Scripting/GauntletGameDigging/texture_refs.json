@@ -1,0 +1,2035 @@
+{
+ "004793ed3184c2a4": [
+  "hud/spells"
+ ],
+ "006092561807ee0b": [
+  "equipment/elf/cape_s03",
+  "equipment/necromagus/cape_s03",
+  "equipment/valkyrie/cape_s03",
+  "equipment/warrior/cape_s03",
+  "equipment/wizard/cape_s03"
+ ],
+ "009287fd141cc824": [
+  "menu/level_select"
+ ],
+ "0111e133f5ec1c24": [
+  "menu/level_select"
+ ],
+ "015e97806f1576ef": [
+  "menu/colosseum/colosseum"
+ ],
+ "01c96de3c37a4a16": [
+  "hud/hud"
+ ],
+ "01d4b1da2fcd59ff": [
+  "menu/level_select"
+ ],
+ "01f03948e18b4899": [
+  "effects_ui/hud_counter_09"
+ ],
+ "025f4095ea73aa32": [
+  "effects/cha_beast_leap_shockwave",
+  "effects/cha_demon_heavy_exploding_charge",
+  "effects/cha_tyrfing_explosion",
+  "effects/elemental_orb_shockwave",
+  "effects/env_tutorial_descent_streaks",
+  "effects/gam_spawner_crypt_damage_01",
+  "effects/gam_spawner_crypt_damage_02",
+  "effects/gam_spawner_crypt_damage_03",
+  "effects/gam_spawner_crypt_destroy",
+  "effects/gam_spawner_crypt_head_destroy",
+  "effects/gam_spawner_crypt_hit",
+  "effects/gam_spawner_mortar_mine_expire"
+ ],
+ "02645408743ec88f": [
+  "equipment/elf/cape_s03",
+  "equipment/necromagus/cape_s03",
+  "equipment/valkyrie/cape_s03",
+  "equipment/warrior/cape_s03",
+  "equipment/wizard/cape_s03"
+ ],
+ "03be10bb448c6133": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "040c6141e8c39660": [
+  "props/d01_lava/lava_redwizard_brazier_01",
+  "props/d01_lava/lava_skulloven"
+ ],
+ "0451f9d391a4ce38": [
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "049e0a1efa42d921": [
+  "menu/level_select"
+ ],
+ "04a503c793a55b3a": [
+  "hud/spells"
+ ],
+ "0568fef95f147d6a": [
+  "equippables_icons/equipment"
+ ],
+ "062ba873a0ce8e73": [
+  "props/menu/sky_plane_titlescreen"
+ ],
+ "062fdf681373e72f": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "06a7f480b85605bf": [
+  "hud/spells"
+ ],
+ "080223ab1c88aa0a": [
+  "equippables_icons/equipment"
+ ],
+ "08121e1d33b6298d": [
+  "menu/level_select"
+ ],
+ "0863aaf66df2b9b7": [
+  "menu/level_select"
+ ],
+ "09262083c2c931e0": [
+  "hud/spells"
+ ],
+ "099dd53eb945df50": [
+  "achievement_icons/achievement_icons"
+ ],
+ "0abc30c794338950": [
+  "menu/colosseum/colosseum"
+ ],
+ "0ad698e8679a9940": [
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1"
+ ],
+ "0b5fe2bb171e48ca": [
+  "menu/colosseum/arenas"
+ ],
+ "0bf14254d240fff2": [
+  "effects/wep_wizard_sinister_orb_explode",
+  "effects/wep_wizard_sinister_orb_hover"
+ ],
+ "0c345032741d02e3": [
+  "props/menu/sky_plane_titlescreen"
+ ],
+ "0cdf3e987c3436ef": [
+  "effects/cha_beast_leap_smash_marker",
+  "effects/cha_demon_heavy_slowing",
+  "effects/cha_grunt_shaman_buff_source",
+  "effects/env_barrel_marker",
+  "effects/relic_golden_feather_cast",
+  "effects/statuseffect_invisible_enter",
+  "effects_ui/hero_coin_hover",
+  "effects_ui/level_select_node_hover",
+  "effects_ui/scorescreen_coin_impact"
+ ],
+ "0d1857a74ca2f5a1": [
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1"
+ ],
+ "0d1bc97598464de0": [
+  "menu/level_select"
+ ],
+ "0f1b125e15d37ed0": [
+  "gameobjects/spawners/spawner_ghost"
+ ],
+ "0f25eee251b7b72c": [
+  "menu/level_select"
+ ],
+ "0f7d4c6d004298d8": [
+  "equippables_icons/shop_action_icons",
+  "hud/spells"
+ ],
+ "121f8821f5dc8368": [
+  "characters/avatar_necromagus_summoned_soldier/necromagus_summoned_soldier",
+  "props/d01_crypt/armor_01"
+ ],
+ "12809bd4e1e66e32": [
+  "equippables_icons/equipment"
+ ],
+ "129b967a1eedd0d7": [
+  "menu/level_select"
+ ],
+ "12b80abb62f5a944": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "144d0f6f9d259722": [
+  "menu/menu"
+ ],
+ "147991c92ef8ea86": [
+  "props/menu/sky_plane_titlescreen"
+ ],
+ "1495c238adecc26c": [
+  "decals/decal_caves_floor_02"
+ ],
+ "15081624571ecef5": [
+  "effects_ui/hud_counter_05"
+ ],
+ "15f98d27e7d0f120": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "162e8ab6d6a3268e": [
+  "hud/hud"
+ ],
+ "1644df1acbf87204": [
+  "equippables_icons/equipment"
+ ],
+ "1701d9e4bee3a0da": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "174111e70af497a6": [
+  "equippables_icons/equipment"
+ ],
+ "17c2fdc5fb760e0c": [
+  "equipment/elf/cape_s02",
+  "equipment/necromagus/cape_s02",
+  "equipment/valkyrie/cape_s02",
+  "equipment/warrior/cape_s02",
+  "equipment/wizard/cape_s02"
+ ],
+ "17cb5a383a3c73d0": [
+  "menu/colosseum/grades/grades"
+ ],
+ "17ed5208b0abc2a1": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "18fc99eba2227ec7": [
+  "equipment/elf/cape_s01",
+  "equipment/elf/cape_s02",
+  "equipment/elf/cape_s03",
+  "equipment/elf/cape_s04",
+  "equipment/elf/cape_s05",
+  "equipment/elf/cape_s06",
+  "equipment/warrior/cape_s01",
+  "equipment/warrior/cape_s02",
+  "equipment/warrior/cape_s03",
+  "equipment/warrior/cape_s04",
+  "equipment/warrior/cape_s05",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s01",
+  "equipment/wizard/cape_s02",
+  "equipment/wizard/cape_s03",
+  "equipment/wizard/cape_s04",
+  "equipment/wizard/cape_s05",
+  "equipment/wizard/cape_s06"
+ ],
+ "19f43db0cb32fe69": [
+  "menu/level_select"
+ ],
+ "1a2d1ec89b4fbe29": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "1a9bb0e67a9102fa": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "1aa7966f13f672c9": [
+  "menu/level_select"
+ ],
+ "1b5ab1c094d75cdb": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "1c390fc44e58cba8": [
+  "blocks/d01_caves/swamp_civilization",
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/swamp_stone_overgrowth"
+ ],
+ "1c4e9a3f70a70df3": [
+  "effects/wep_elf_special_root_shot_impact"
+ ],
+ "1c78120e59df0106": [
+  "hud/spells"
+ ],
+ "1ce2623b692782d5": [
+  "blocks/d01_caves/stairs/roundstairs_01"
+ ],
+ "1d2602fd2c6f191d": [
+  "menu/colosseum/colosseum"
+ ],
+ "1ef35ab1425d475d": [
+  "props/d01_common/lava_redwizard_banner_01"
+ ],
+ "1f767f42fb3fea48": [
+  "equipment/elf/cape_s04",
+  "equipment/necromagus/cape_s04",
+  "equipment/valkyrie/cape_s04",
+  "equipment/warrior/cape_s04",
+  "equipment/wizard/cape_s04"
+ ],
+ "1fd02bc8bc73748b": [
+  "menu/colosseum/grades/grades"
+ ],
+ "2058cbdaaced0bf2": [
+  "props/d01_lava/lava_redwizard_brazier_01",
+  "props/d01_lava/lava_topfence"
+ ],
+ "208637b6926f2092": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "21364e1b76331d0f": [
+  "effects_ui/hero_coin_locked_warrior"
+ ],
+ "215c9a45abda94ce": [
+  "hud/hud"
+ ],
+ "21c77f2715e98dc9": [
+  "equipment/elf/cape_s05",
+  "equipment/necromagus/cape_s05",
+  "equipment/valkyrie/cape_s05",
+  "equipment/warrior/cape_s05",
+  "equipment/wizard/cape_s05"
+ ],
+ "221c16200d9e6e5c": [
+  "props/d01_lava/lava_redwizard_brazier_01"
+ ],
+ "22c6899df5b32fd5": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "231c9038c9435875": [
+  "menu/colosseum/arenas"
+ ],
+ "24262d1dc3811425": [
+  "characters/avatar_necromagus_summoned_soldier/necromagus_summoned_soldier",
+  "props/d01_crypt/armor_01"
+ ],
+ "250dfb341c8e915c": [
+  "equippables_icons/equipment"
+ ],
+ "259a5de116746c90": [
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "2618ae87f2476443": [
+  "hud/spells"
+ ],
+ "2684e7e403dbd7cd": [
+  "blocks/d01_caves/swamp_set"
+ ],
+ "26de19421d6e8195": [
+  "hud/hud"
+ ],
+ "2707062ae9c02f74": [
+  "props/menu/titlescreen_background"
+ ],
+ "2751f4480f3f13fa": [
+  "menu/colosseum/arenas"
+ ],
+ "27fce015d2b049f2": [
+  "menu/level_select"
+ ],
+ "28a6e5bbab46f816": [
+  "menu/colosseum/colosseum"
+ ],
+ "28dc66e855004aac": [
+  "menu/buttons/buttons"
+ ],
+ "2a1f2b611987d3e1": [
+  "effects/cha_demon_heavy_spawn",
+  "effects/cha_demon_ranged_position",
+  "effects/gam_spawner_caves_spawn_grunt",
+  "effects/gam_spawner_caves_spawn_orc",
+  "effects/gam_spawner_crypt_spawn_mummy",
+  "effects/gam_spawner_crypt_spawn_skeleton",
+  "effects/gam_spawner_cultist_wave_ground",
+  "effects/gam_spawner_demon_wave_ground",
+  "effects/gam_spawner_ghost_wave_ground",
+  "effects/gam_spawner_grunt_wave_ground",
+  "effects/gam_spawner_mummy_wave_ground",
+  "effects/gam_spawner_orc_wave_ground",
+  "effects/gam_spawner_skeleton_wave_ground",
+  "effects/relic_vampire_heart",
+  "effects/relic_vampire_heart_tier2",
+  "effects/relic_vampire_heart_tier3"
+ ],
+ "2aaa4c86f5ec59ce": [
+  "equipment/elf/cape_s05",
+  "equipment/necromagus/cape_s05",
+  "equipment/valkyrie/cape_s05",
+  "equipment/warrior/cape_s05",
+  "equipment/wizard/cape_s05"
+ ],
+ "2ad8d2ce3c954909": [
+  "effects/wep_wizard_lightning_burst",
+  "effects/wep_wizard_lightning_hand",
+  "effects/wep_wizard_lightning_shield_end",
+  "effects/wep_wizard_lightning_shield_hit",
+  "effects/wep_wizard_lightning_shield_start",
+  "effects/wep_wizard_lightning_shield_windup",
+  "effects/wep_wizard_storm_bomb_hit",
+  "effects/wep_wizard_storm_bomb_trail",
+  "effects/wep_wizard_storm_serpents_blast",
+  "effects/wep_wizard_storm_serpents_trail",
+  "effects/wep_wizard_void_shield_windup"
+ ],
+ "2b1bdea63cb3e2f8": [
+  "props/menu/titlescreen_background"
+ ],
+ "2be3953d53f13bc4": [
+  "hud/spells"
+ ],
+ "2d13d2d7580c5deb": [
+  "effects/hit_gib_black_decapitation",
+  "effects/hit_gib_black_horizontal",
+  "effects/hit_gib_black_vertical",
+  "effects/hit_gib_burning_decapitation",
+  "effects/hit_gib_burning_horizontal",
+  "effects/hit_gib_burning_vertical",
+  "effects/hit_gib_head_drip",
+  "effects/hit_gib_red_decapitation",
+  "effects/hit_gib_red_horizontal",
+  "effects/hit_gib_red_vertical"
+ ],
+ "2d310d84c5753dbb": [
+  "menu/level_select"
+ ],
+ "2f55431b922837c2": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "2f5b699a8d46c0a2": [
+  "menu/level_select"
+ ],
+ "30cc11f380b51790": [
+  "menu/level_select"
+ ],
+ "30d04761827f791d": [
+  "menu/level_select"
+ ],
+ "315f62e2962c3b29": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "31edb108e5d91a57": [
+  "equipment/elf/cape_s04",
+  "equipment/necromagus/cape_s04",
+  "equipment/valkyrie/cape_s04",
+  "equipment/warrior/cape_s04",
+  "equipment/wizard/cape_s04"
+ ],
+ "323f91b814012c05": [
+  "props/d01_common/lava_redwizard_banner_01"
+ ],
+ "326550231e5bcf02": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "32f6d7301d9d03f3": [
+  "gameobjects/crests/crank_bridge",
+  "props/d01_lava/brazier",
+  "props/d01_lava/fence_4c"
+ ],
+ "335889ef9537b3e6": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "338843929b9f3fa6": [
+  "menu/level_select"
+ ],
+ "33d008cb77f0ae12": [
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/swamp_stone_overgrowth"
+ ],
+ "34665b2e6d151198": [
+  "effects_ui/hud_counter_08"
+ ],
+ "35176a6abb8f8231": [
+  "menu/level_select"
+ ],
+ "36e6f8f1c5a0f5bf": [
+  "menu/level_select"
+ ],
+ "3747c16d0d1d65dd": [
+  "props/d01_common/common_redwizard_table_02"
+ ],
+ "3825afee5c318972": [
+  "props/menu/titlescreen_background"
+ ],
+ "38b503b0549e90db": [
+  "menu/level_select"
+ ],
+ "38c784fafe139251": [
+  "menu/level_select"
+ ],
+ "3a25a5d9cbadf716": [
+  "hud/spells"
+ ],
+ "3bebb49a6936541b": [
+  "effects/cha_cultist_zealot_transform_complete",
+  "effects/cha_lich_shadowdive_trail",
+  "effects/wep_elf_bomb_fuse",
+  "effects/wep_elf_bomb_fuse_dropped",
+  "effects/wep_elf_special_explosive_shot_trail",
+  "effects/wep_elf_special_shadow_shot_trail",
+  "effects/wep_valkyrie_spear_throw",
+  "effects/wep_valkyrie_spear_thrust_heavy",
+  "effects/wep_valkyrie_spear_thrust_light"
+ ],
+ "3c25028047123ccb": [
+  "effects/boss_circle_turn",
+  "effects/boss_circle_turn_outer",
+  "effects/cha_beast_fallingrock_marker",
+  "effects/cha_beast_leap_marker",
+  "effects/cha_blob_projectile_marker",
+  "effects/cha_demon_heavy_exploding_marker",
+  "effects/cha_lich_shadowdive_marker",
+  "effects/cha_morak_cataclysm_marker",
+  "effects/cha_mummy_bloated_marker",
+  "effects/cha_necromancer_ice_field_marker",
+  "effects/cha_orc_juggernaut_throw_marker",
+  "effects/cha_skeleton_commander_spell_marker",
+  "effects/cha_spider_queen_leap_marker",
+  "effects/elemental_poison_cloud",
+  "effects/env_firebomb_marker",
+  "effects/gam_spawner_exploding_marker",
+  "effects/gam_spawner_freeze_marker",
+  "effects/gam_spawner_mortar_marker",
+  "effects/gam_spawner_mortar_mine_triggered_marker",
+  "effects/gam_spawner_poison_marker",
+  "effects/gam_spawner_poison_projectile_cloud",
+  "effects/obj_cryptrock_marker"
+ ],
+ "3cda00f68b50069a": [
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "3d1e4adc4b2abd4c": [
+  "effects_ui/level_select_node_hover_arena"
+ ],
+ "3d3838325208d0ce": [
+  "effects/boss_circle_complete",
+  "effects/cha_cultist_sorcerer_psychic_attack_lightbeam",
+  "effects/cha_lich_shadowbeam_winddown",
+  "effects/cha_morak_transform_human",
+  "effects/cha_player_spawn_elf",
+  "effects/cha_player_spawn_necromagus",
+  "effects/cha_player_spawn_warrior",
+  "effects/cha_player_spawn_wizard",
+  "effects/gam_spawner_beam_laser",
+  "effects/gam_spawner_lava_spawn_cultist",
+  "effects/relic_crystalized_chaos_destination",
+  "effects/wep_elf_lazersight",
+  "effects/wep_elf_ultimate_hypersniper_windup",
+  "effects/wep_warrior_rushaim"
+ ],
+ "3d8a9a2f647c4816": [
+  "menu/colosseum/arenas"
+ ],
+ "3e16b7b6bfd2cc00": [
+  "gameobjects/crests/crank_bridge",
+  "props/d01_lava/brazier",
+  "props/d01_lava/fence_4c"
+ ],
+ "3e17e682c2680fb3": [
+  "decals/decal_redwizard_floor_02"
+ ],
+ "3ea8548ed96c6986": [
+  "effects/cha_cultist_sorcerer_psychic_attack",
+  "effects/cha_cultist_sorcerer_psychic_attack_staff",
+  "effects/cha_death_drainfield",
+  "effects/cha_demon_heavy_spawn",
+  "effects/cha_demon_ranged_position",
+  "effects/cha_grunt_shaman_projectile_windup",
+  "effects/cha_grunt_shaman_turbo_beam",
+  "effects/cha_lich_charge",
+  "effects/cha_morak_transform_human",
+  "effects/cha_necromancer_transform",
+  "effects/menu_entrance_glow",
+  "effects/obj_souleater_trail",
+  "effects/relic_vampire_heart",
+  "effects/relic_vampire_heart_tier2",
+  "effects/relic_vampire_heart_tier3",
+  "effects/wep_elf_ultimate_hypersniper_windup",
+  "effects/wep_warrior_ultimate_moreofthor_grow",
+  "effects/wep_warrior_ultimate_moreofthor_shrink",
+  "effects/wep_wizard_void_burst_fire",
+  "effects_ui/level_select_node_unlocked_adventure",
+  "effects_ui/level_select_node_unlocked_arena",
+  "effects_ui/level_select_node_unlocked_boss",
+  "effects_ui/level_select_node_unlocked_procedural"
+ ],
+ "3f29f5959f0d0b8f": [
+  "characters/avatar_necromagus/abilities/ultimate_remnant",
+  "effects/meshes/summon_portal",
+  "menu/level_select"
+ ],
+ "3f3c0ca0ae92203a": [
+  "achievement_icons/achievement_icons"
+ ],
+ "3f5b0492e89bb293": [
+  "menu/colosseum/arenas"
+ ],
+ "3fc866b33d803b27": [
+  "menu/level_select"
+ ],
+ "402c8d6e26caf96f": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "40a6467849f510ec": [
+  "equippables_icons/equipment"
+ ],
+ "412357117943d9c6": [
+  "effects_ui/hero_coin_locked_lizard",
+  "effects_ui/hero_coin_locked_valkyrie"
+ ],
+ "4148e3634b6b5dc0": [
+  "menu/colosseum/arenas"
+ ],
+ "423b142b34159ddb": [
+  "equipment/elf/cape_s01",
+  "equipment/necromagus/cape_s01",
+  "equipment/valkyrie/cape_s01",
+  "equipment/warrior/cape_s01",
+  "equipment/wizard/cape_s01"
+ ],
+ "42a7ab24e5def72c": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "42c45822bd6aca28": [
+  "equippables_icons/equipment"
+ ],
+ "4352ae7076ac5ee1": [
+  "characters/cultist_novice/cultist_weapons"
+ ],
+ "445c0133abc2411f": [
+  "menu/level_select"
+ ],
+ "44a4572ec0dd37c8": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "453c5cea75b4b942": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "454306563f059f1c": [
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/swamp_stone_overgrowth"
+ ],
+ "46206820c26b7b72": [
+  "props/menu/titlescreen_background"
+ ],
+ "4651576d3eee6815": [
+  "menu/level_select"
+ ],
+ "479bb5656ca0eb86": [
+  "effects/cha_death_drainfield",
+  "effects/cha_demon_heavy_demon_egg",
+  "effects/cha_demon_melee_spawn_windup",
+  "effects/cha_demon_ranged_spawn_windup",
+  "effects/env_summon_portal",
+  "effects/wep_wizard_void_shield_fire"
+ ],
+ "47e433bb626e4d33": [
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1"
+ ],
+ "485f22a8cc4156c8": [
+  "characters/avatar_necromagus/abilities/ultimate_remnant"
+ ],
+ "4923d5531399d621": [
+  "hud/hud"
+ ],
+ "49529c3fe18f2e38": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "4b398358f7d261c3": [
+  "menu/level_select"
+ ],
+ "4be25cff031ecc95": [
+  "achievement_icons/achievement_icons"
+ ],
+ "4cefbb36a16bba20": [
+  "effects/cha_cultist_sorcerer_shielding",
+  "effects/elemental_orb_heal",
+  "effects/wep_wizard_lightning_shield_end",
+  "effects/wep_wizard_ultimate_shield_end",
+  "effects_ui/hero_coin_hover",
+  "effects_ui/hero_coin_locked",
+  "effects_ui/hero_coin_locked_elf",
+  "effects_ui/hero_coin_locked_lizard",
+  "effects_ui/hero_coin_locked_necromagus",
+  "effects_ui/hero_coin_locked_valkyrie",
+  "effects_ui/hero_coin_locked_warrior",
+  "effects_ui/hero_coin_locked_wizard",
+  "effects_ui/level_select_node_completed_adventure",
+  "effects_ui/level_select_node_completed_arena",
+  "effects_ui/level_select_node_completed_boss",
+  "effects_ui/level_select_node_completed_procedural",
+  "effects_ui/level_select_node_hover",
+  "effects_ui/level_select_node_hover_adventure",
+  "effects_ui/level_select_node_hover_arena",
+  "effects_ui/level_select_node_hover_boss",
+  "effects_ui/level_select_node_hover_procedural",
+  "effects_ui/level_select_node_unlocked_adventure",
+  "effects_ui/level_select_node_unlocked_arena",
+  "effects_ui/level_select_node_unlocked_boss",
+  "effects_ui/level_select_node_unlocked_procedural",
+  "effects_ui/scorescreen_coin_winner"
+ ],
+ "4dae7441ede44e0b": [
+  "characters/orc_juggernaut/orc_juggernaut_sword"
+ ],
+ "5004873d8b327e0d": [
+  "effects/cha_orc_juggernaut_enraged",
+  "effects/cha_skeleton_defender_enraged",
+  "effects/statuseffect_enraged"
+ ],
+ "5067d2382d17a94c": [
+  "achievement_icons/achievement_icons"
+ ],
+ "51624ead28b9c573": [
+  "effects/menu_head_glow"
+ ],
+ "531ae970f338cbb3": [
+  "menu/level_select"
+ ],
+ "555b6764391817e1": [
+  "effects_ui/hud_counter_02"
+ ],
+ "559155d644cfbe1c": [
+  "effects/cha_beast_charge_target",
+  "effects/cha_morak_sword_stab_target",
+  "effects/statuseffect_confused"
+ ],
+ "55d151bbf2ab79b3": [
+  "gameobjects/carry/carry_crypt_relic"
+ ],
+ "57c55fce356ffd15": [
+  "effects/cha_demon_ranged_dark_trail",
+  "effects/cha_morak_cataclysm_explode",
+  "effects/cha_morak_cataclysm_marker",
+  "effects/cha_morak_chop_impact",
+  "effects/env_firebomb_explode",
+  "effects/gam_spawner_mortar_mine_explosion",
+  "effects/relic_firetrail_area",
+  "effects/relic_firetrail_area_tier3",
+  "effects/wep_elf_special_firebomb_explode",
+  "effects/wep_wizard_sinister_beam_eruption",
+  "effects/wep_wizard_sinister_orb_hover"
+ ],
+ "57d099f7f2005187": [
+  "menu/colosseum/arenas"
+ ],
+ "580e02598b3df17d": [
+  "equippables_icons/shop_action_icons",
+  "hud/spells"
+ ],
+ "59b5da1a66c33da7": [
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1"
+ ],
+ "5b3a7066094a7a04": [
+  "effects_ui/hud_counter_07"
+ ],
+ "5b9060863ec3d3b3": [
+  "menu/colosseum/colosseum"
+ ],
+ "5c61aac138878980": [
+  "menu/floor_end_screen"
+ ],
+ "5d0e5a4ba8128252": [
+  "menu/score_screen/score_screen"
+ ],
+ "5db3d3be14dce735": [
+  "menu/colosseum/arenas"
+ ],
+ "5e66afd0c3dfdf10": [
+  "menu/shop"
+ ],
+ "5e963fc690185df3": [
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "5f1cd10c35621057": [
+  "menu/level_select"
+ ],
+ "600d56cd580eb6b7": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "608652e0d763612f": [
+  "gameobjects/doors/door_wall_01_lava"
+ ],
+ "60b33a8f413266fd": [
+  "props/d01_crypt/dummy_target_01"
+ ],
+ "61dcc60e7a046dc0": [
+  "effects/cha_cultist_sorcerer_psychic_attack",
+  "effects/cha_cultist_sorcerer_psychic_attack_shockwave",
+  "effects/cha_cultist_sorcerer_psychic_attack_staff",
+  "effects/cha_skeleton_commander_buff_marker",
+  "effects/cha_skeleton_soldier_buffed_floor",
+  "effects/gam_spawner_lava_spawn_cultist"
+ ],
+ "62e2c47102d79e0c": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "63bb0860beef4cb8": [
+  "gameobjects/gold/blood_money",
+  "gameobjects/gold/pile_large",
+  "gameobjects/gold/pile_medium",
+  "props/d01_lava/lava_metalbox"
+ ],
+ "648227977281baea": [
+  "menu/floor_end_screen"
+ ],
+ "658808f40b560d36": [
+  "blocks/d01_caves/water/caves_water_4c_4c_01"
+ ],
+ "66257fc9db097aeb": [
+  "menu/level_select"
+ ],
+ "66b02cb8e2a7ac88": [
+  "equipment/elf/cape_s01",
+  "equipment/elf/cape_s02",
+  "equipment/elf/cape_s03",
+  "equipment/elf/cape_s04",
+  "equipment/elf/cape_s05",
+  "equipment/elf/cape_s06",
+  "equipment/warrior/cape_s01",
+  "equipment/warrior/cape_s02",
+  "equipment/warrior/cape_s03",
+  "equipment/warrior/cape_s04",
+  "equipment/warrior/cape_s05",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s01",
+  "equipment/wizard/cape_s02",
+  "equipment/wizard/cape_s03",
+  "equipment/wizard/cape_s04",
+  "equipment/wizard/cape_s05",
+  "equipment/wizard/cape_s06"
+ ],
+ "66f6602d7f146925": [
+  "decals/decal_caves_floor_03"
+ ],
+ "67cd76deee5c77b7": [
+  "menu/level_select"
+ ],
+ "6a353470af568601": [
+  "menu/buttons/buttons"
+ ],
+ "6afdd5c12f013c54": [
+  "equipment/elf/cape_s04",
+  "equipment/necromagus/cape_s04",
+  "equipment/valkyrie/cape_s04",
+  "equipment/warrior/cape_s04",
+  "equipment/wizard/cape_s04"
+ ],
+ "6b2a98fdde761472": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "6b6fe6cb14d55846": [
+  "blocks/d01_caves/swamp_set"
+ ],
+ "6cb2a5b0079eb893": [
+  "equipment/elf/cape_s02",
+  "equipment/necromagus/cape_s02",
+  "equipment/valkyrie/cape_s02",
+  "equipment/warrior/cape_s02",
+  "equipment/wizard/cape_s02"
+ ],
+ "6d3fbae6409ce9a4": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "6da515e9faa3fc03": [
+  "menu/level_select"
+ ],
+ "6ec583c48ca1f35b": [
+  "menu/level_select"
+ ],
+ "6fbd28b3c2501c07": [
+  "decals/decal_redwizard_floor_01"
+ ],
+ "7183d3cda348bb94": [
+  "props/d01_common/common_redwizard_table_02"
+ ],
+ "71f3d873de61a230": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "72363b5263f238e0": [
+  "characters/boss_orox/boss_orox",
+  "characters/demon_heavy/gib/gib",
+  "characters/demon_melee/gib/demon_gib",
+  "characters/lich/lich",
+  "characters/spider_queen/abilities/spider_egg",
+  "characters/spider_queen/abilities/spider_egg_projectile",
+  "gameobjects/spawners/spawner_beam",
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1",
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1",
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1",
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1",
+  "gameobjects/spawners/spawner_exploding",
+  "gameobjects/spawners/spawner_freeze_nova",
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1",
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1",
+  "gameobjects/spawners/spawner_mortar",
+  "gameobjects/spawners/spawner_poison_launcher",
+  "gameobjects/spawners/spawner_twister"
+ ],
+ "728cc302ec7a3b8c": [
+  "characters/cultist_armor/cultist_armor",
+  "characters/cultist_armor/cultist_armor_core"
+ ],
+ "730866ddf82f3567": [
+  "hud/spells"
+ ],
+ "73b8fa59556a8365": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "749ea5bb8e471dc5": [
+  "menu/level_select"
+ ],
+ "76daf87ef6891e63": [
+  "effects/cha_valkyrie_scarred_veteran_activate"
+ ],
+ "775bdb4de3596772": [
+  "equipment/elf/cape_s01",
+  "equipment/necromagus/cape_s01",
+  "equipment/valkyrie/cape_s01",
+  "equipment/warrior/cape_s01",
+  "equipment/wizard/cape_s01"
+ ],
+ "778e37caca1465db": [
+  "menu/level_select"
+ ],
+ "78fc54d4497d3b67": [
+  "achievement_icons/achievement_icons"
+ ],
+ "79660816ead6f462": [
+  "hud/spells"
+ ],
+ "7a752de1038b596b": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "7b2bb0c0fee537ac": [
+  "menu/colosseum/colosseum"
+ ],
+ "7b92430911b96a75": [
+  "props/menu/sky_plane_titlescreen"
+ ],
+ "7b98021120564f09": [
+  "menu/level_select"
+ ],
+ "7bb003d89adb557c": [
+  "menu/buttons/buttons"
+ ],
+ "7c02af015147aaf6": [
+  "hud/spells"
+ ],
+ "7ddc5a5550256ad3": [
+  "equippables_icons/equipment"
+ ],
+ "7ee88aad50f1bfe5": [
+  "props/d01_common/common_redwizard_table_02"
+ ],
+ "7f6d26359671c666": [
+  "hud/spells"
+ ],
+ "80aa6f03337c79a7": [
+  "effects/cha_cultist_zealot_projectile",
+  "effects/cha_demon_melee_spawn_windup",
+  "effects/cha_demon_ranged_spawn_windup",
+  "effects/wep_wizard_lightning_hand",
+  "effects/wep_wizard_lightning_shield_windup",
+  "effects/wep_wizard_storm_bomb_trail",
+  "effects/wep_wizard_void_shield_windup"
+ ],
+ "812b54616475399b": [
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "831fc452a119a4de": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "847b4dc2cfe72851": [
+  "equipment/elf/cape_s06",
+  "equipment/necromagus/cape_s06",
+  "equipment/valkyrie/cape_s06",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s06"
+ ],
+ "84af8c5b3b5a06d2": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "84f7500cb52412f6": [
+  "decals/decal_redwizard_floor_02"
+ ],
+ "8505b8fbcf7ba10c": [
+  "menu/level_select"
+ ],
+ "85877f98203e0c43": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "87c748f3f89fec76": [
+  "equippables_icons/shop_action_icons",
+  "hud/spells"
+ ],
+ "88796fbe6e3b0277": [
+  "menu/level_select"
+ ],
+ "888cf4fd0cc77e91": [
+  "menu/colosseum/arenas"
+ ],
+ "893d223a16d626c4": [
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1"
+ ],
+ "89b44afbce158907": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "8b3787cab4296a53": [
+  "effects_ui/hud_counter_03"
+ ],
+ "8c168139a2f6dc7d": [
+  "effects/cha_beast_anim_chomp",
+  "effects/cha_cultist_sorcerer_beam",
+  "effects/cha_cultist_sorcerer_beam_hit",
+  "effects/cha_cultist_sorcerer_beam_windup",
+  "effects/cha_cultist_sorcerer_book_vanish",
+  "effects/cha_cultist_sorcerer_psychic_attack",
+  "effects/cha_cultist_sorcerer_psychic_attack_shockwave",
+  "effects/cha_cultist_sorcerer_psychic_attack_staff",
+  "effects/cha_cultist_sorcerer_shielding_beam",
+  "effects/cha_cultist_sorcerer_staff_idle",
+  "effects/cha_cultist_zealot_transform",
+  "effects/cha_cultist_zealot_transform_complete",
+  "effects/cha_demon_heavy_confuse",
+  "effects/cha_demon_heavy_confuse_chargeup",
+  "effects/cha_demon_heavy_explode",
+  "effects/cha_demon_heavy_exploding_charge",
+  "effects/cha_demon_heavy_super_nova_projectile",
+  "effects/cha_demon_heavy_super_nova_projectile_hit",
+  "effects/cha_demon_heavy_super_nova_start",
+  "effects/cha_demon_melee_spawn_appear",
+  "effects/cha_demon_ranged_fireball_throw",
+  "effects/cha_demon_ranged_spawn_appear",
+  "effects/cha_grunt_scavenger_buffed_eyes",
+  "effects/cha_grunt_scavenger_buffed_turbo",
+  "effects/cha_grunt_shaman_projectile",
+  "effects/cha_grunt_shaman_projectile_ending",
+  "effects/cha_grunt_shaman_projectile_split",
+  "effects/cha_grunt_shaman_projectile_split_hit",
+  "effects/cha_grunt_shaman_projectile_windup",
+  "effects/cha_grunt_shaman_turbo_beam",
+  "effects/cha_lich_charge",
+  "effects/cha_lich_shadowbeam",
+  "effects/cha_lich_shadowbeam_hit",
+  "effects/cha_lich_shadowbeam_hit_stop",
+  "effects/cha_lich_shadowbolt",
+  "effects/cha_lich_shadowbolt_hit",
+  "effects/cha_lich_shadowdive_appear",
+  "effects/cha_morak_death",
+  "effects/cha_morak_sword_rift_explosion",
+  "effects/cha_morak_sword_rift_tell",
+  "effects/cha_morak_transform_demon",
+  "effects/cha_mummy_bloated",
+  "effects/cha_mummy_explosion",
+  "effects/cha_mummy_explosion_nogore",
+  "effects/cha_mummy_priest_scepter",
+  "effects/cha_mummy_priest_scepter_charge",
+  "effects/cha_mummy_rays",
+  "effects/cha_necromagus_curse_of_the_undying_explosion",
+  "effects/cha_necromagus_curse_of_the_undying_ready",
+  "effects/cha_necromagus_curse_of_the_undying_trigger",
+  "effects/cha_necromagus_summoned_ghost_death",
+  "effects/cha_necromancer_staff",
+  "effects/cha_necromancer_transform_gib",
+  "effects/cha_skeleton_commander_arrow_impact",
+  "effects/cha_skeleton_commander_arrow_trail",
+  "effects/cha_skeleton_soldier_buffed",
+  "effects/cha_skeleton_spawn",
+  "effects/cha_tyrfing_explosion",
+  "effects/cha_wisp_elf",
+  "effects/cha_wisp_necromagus",
+  "effects/cha_wisp_valkyrie",
+  "effects/cha_wisp_warrior",
+  "effects/cha_wisp_wizard",
+  "effects/cha_wretch_shaman_staff_idle",
+  "effects/cutscene_boss_mummy_heart",
+  "effects/env_barrel_explosion",
+  "effects/env_firebomb",
+  "effects/env_firebomb_explode",
+  "effects/env_lock_wall_glow",
+  "effects/env_lock_wall_unlock",
+  "effects/env_receptor_on",
+  "effects/gam_spawner_beam_charge",
+  "effects/gam_spawner_beam_laser",
+  "effects/gam_spawner_beam_laser_hit",
+  "effects/gam_spawner_crypt_damage_01",
+  "effects/gam_spawner_crypt_damage_02",
+  "effects/gam_spawner_crypt_damage_03",
+  "effects/gam_spawner_crypt_destroy",
+  "effects/gam_spawner_crypt_head_destroy",
+  "effects/gam_spawner_crypt_hit",
+  "effects/gam_spawner_crypt_skeleton_spawn_glow",
+  "effects/gam_spawner_crypt_skeleton_wave_start",
+  "effects/gam_spawner_crypt_spawn_glow",
+  "effects/gam_spawner_crypt_wave_start",
+  "effects/gam_spawner_crystal_glow",
+  "effects/gam_spawner_cultist_spawn",
+  "effects/gam_spawner_demon_spawn",
+  "effects/gam_spawner_exploding_explosion",
+  "effects/gam_spawner_exploding_marker_ball",
+  "effects/gam_spawner_grunt_spawn",
+  "effects/gam_spawner_lava_spawn_cultist",
+  "effects/gam_spawner_mortar_mine_explosion",
+  "effects/gam_spawner_mummy_spawn",
+  "effects/gam_spawner_orc_spawn",
+  "effects/gam_spawner_poison_projectile",
+  "effects/gam_spawner_skeleton_spawn",
+  "effects/gam_spawner_turbo",
+  "effects/gam_summoned_wall_tell",
+  "effects/hit_tutorial_target",
+  "effects/hit_tutorial_target_strong",
+  "effects/obj_crystalkey_glow",
+  "effects/obj_souleater_hit",
+  "effects/potion_blue_explode",
+  "effects/relic_crystalized_chaos_explode",
+  "effects/relic_golden_feather_transform",
+  "effects/relic_sirens_lute_burst",
+  "effects/statuseffect_confused",
+  "effects/statuseffect_frozen_end",
+  "effects/statuseffect_invisible_exit",
+  "effects/wep_archer_arrow_trail",
+  "effects/wep_cultist_sorcerer_projectile",
+  "effects/wep_demon_ranged_projectile",
+  "effects/wep_demon_ranged_projectile_hit",
+  "effects/wep_elf_bomb_explosive_hit",
+  "effects/wep_elf_bomb_fuse",
+  "effects/wep_elf_bomb_fuse_dropped",
+  "effects/wep_elf_special_explosive_shot_explode",
+  "effects/wep_elf_special_explosive_shot_trail",
+  "effects/wep_elf_special_firebomb_explode",
+  "effects/wep_elf_special_firebomb_shot",
+  "effects/wep_elf_special_root_shot_trail",
+  "effects/wep_elf_ultimate_hypersniper_windup",
+  "effects/wep_elf_ultimate_wisp_trail",
+  "effects/wep_mummy_priest_bolt",
+  "effects/wep_necromagus_summoned_superarcher_arrow_trail",
+  "effects/wep_necromagus_ultimate_darkhunger_windup",
+  "effects/wep_shaman_skull_death",
+  "effects/wep_shaman_skull_trail",
+  "effects/wep_valkyrie_special_lightning",
+  "effects/wep_warrior_ultimate_hunger_explode",
+  "effects/wep_warrior_ultimate_hunger_transform",
+  "effects/wep_warrior_ultimate_moreofthor_grow",
+  "effects/wep_warrior_ultimate_moreofthor_windup",
+  "effects/wep_wizard_fire_bolt_hit",
+  "effects/wep_wizard_fire_bolt_trail",
+  "effects/wep_wizard_fire_bomb_explode",
+  "effects/wep_wizard_fire_serpent",
+  "effects/wep_wizard_fire_serpent_arrive",
+  "effects/wep_wizard_frost_bolt_hit",
+  "effects/wep_wizard_frost_bomb_explode",
+  "effects/wep_wizard_ice_beam",
+  "effects/wep_wizard_ice_beam_hit",
+  "effects/wep_wizard_ice_beam_windup",
+  "effects/wep_wizard_ice_orb_hover",
+  "effects/wep_wizard_lightning_hand",
+  "effects/wep_wizard_lightning_shield_end",
+  "effects/wep_wizard_lightning_shield_windup",
+  "effects/wep_wizard_sinister_beam",
+  "effects/wep_wizard_sinister_beam_hit",
+  "effects/wep_wizard_sinister_beam_windup",
+  "effects/wep_wizard_sinister_orb_explode",
+  "effects/wep_wizard_sinister_orb_hover",
+  "effects/wep_wizard_sinister_orb_trail",
+  "effects/wep_wizard_sinister_orb_windup",
+  "effects/wep_wizard_storm_bolt_fire",
+  "effects/wep_wizard_storm_bolt_hit",
+  "effects/wep_wizard_storm_bolt_trail",
+  "effects/wep_wizard_storm_bomb_fire_book",
+  "effects/wep_wizard_storm_serpents_fire",
+  "effects/wep_wizard_storm_serpents_trail",
+  "effects/wep_wizard_ultimate_arcaneblast_explosion",
+  "effects/wep_wizard_ultimate_polymorph_blast",
+  "effects/wep_wizard_ultimate_polymorph_trail",
+  "effects/wep_wizard_ultimate_polymorph_transform",
+  "effects/wep_wizard_ultimate_shield",
+  "effects/wep_wizard_ultimate_shield_end",
+  "effects/wep_wizard_ultimate_shield_hit",
+  "effects/wep_wizard_void_burst_fire",
+  "effects/wep_wizard_void_shield_windup",
+  "effects_ui/achievement_unlocked_text_glow",
+  "effects_ui/colosseum_cape_unlocked_glow",
+  "effects_ui/floorcleared_crown",
+  "effects_ui/hud_action_ready_elf",
+  "effects_ui/hud_action_ready_lizard",
+  "effects_ui/hud_action_ready_necromagus",
+  "effects_ui/hud_action_ready_valkyrie",
+  "effects_ui/hud_action_ready_warrior",
+  "effects_ui/hud_action_ready_wizard",
+  "effects_ui/hud_colosseum_wave_complete_impact",
+  "effects_ui/hud_colosseum_wave_total_score",
+  "effects_ui/hud_gold_collect",
+  "effects_ui/hud_new_skull_coin",
+  "effects_ui/hud_player_revived",
+  "effects_ui/hud_skull_coin_ready",
+  "effects_ui/hud_skull_coin_ready_to_revive",
+  "effects_ui/level_select_node_completed_adventure",
+  "effects_ui/level_select_node_completed_arena",
+  "effects_ui/level_select_node_completed_boss",
+  "effects_ui/level_select_node_completed_procedural",
+  "effects_ui/level_select_node_unlocked_adventure",
+  "effects_ui/level_select_node_unlocked_arena",
+  "effects_ui/level_select_node_unlocked_boss",
+  "effects_ui/level_select_node_unlocked_procedural",
+  "effects_ui/menu_logo_impact",
+  "effects_ui/menu_selected_item",
+  "effects_ui/scorescreen_banked",
+  "effects_ui/scorescreen_coin_impact",
+  "effects_ui/scorescreen_coin_winner",
+  "effects_ui/shop_gold_glint",
+  "effects_ui/shop_item_equip",
+  "effects_ui/shop_item_purchase",
+  "effects_ui/stat_climax",
+  "effects_ui/stat_popup"
+ ],
+ "8c7492c2e13d45cc": [
+  "characters/mummy_bloated/mummy_bloated"
+ ],
+ "8ccb7ff84d10946f": [
+  "gameobjects/dispensers/dispenser_barrel_lava",
+  "props/d01_lava/lava_redwizard_ritual"
+ ],
+ "8fd067b0d1c7bab6": [
+  "menu/colosseum/arenas"
+ ],
+ "8ffce03115c686d8": [
+  "blocks/d01_caves/water/caves_water_4c_4c_01"
+ ],
+ "9035a78588f9ed80": [
+  "effects_ui/hud_counter_06"
+ ],
+ "9050e824055b12ce": [
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1"
+ ],
+ "90ddbe971e81fe54": [
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1"
+ ],
+ "90eec8ec737591f9": [
+  "effects/cha_wisp_elf",
+  "effects/cha_wisp_necromagus",
+  "effects/cha_wisp_valkyrie",
+  "effects/cha_wisp_warrior",
+  "effects/cha_wisp_wizard",
+  "effects/wep_elf_ultimate_wisp_trail"
+ ],
+ "928ab9ca01525137": [
+  "menu/level_select"
+ ],
+ "92d5bed0c4f34435": [
+  "blocks/d01_crypt/d01_crypt_swatch"
+ ],
+ "939e3cebc55dbb2e": [
+  "props/d01_crypt/entrance_horn"
+ ],
+ "943117f188a2252f": [
+  "blocks/d01_lava/lavastruct_set_c"
+ ],
+ "95c3ef556470e797": [
+  "menu/splash"
+ ],
+ "95db7a0c0e5d370c": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "96399c5d85932a77": [
+  "equippables_icons/equipment"
+ ],
+ "965dc9490a86221e": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "9672d46ba4904323": [
+  "effects_ui/hud_counter_01"
+ ],
+ "96895266ccfdc006": [
+  "characters/grunt_shaman/shaman_staff"
+ ],
+ "96f39666fbee604e": [
+  "props/d01_crypt/dummy_target_01"
+ ],
+ "96fd209fd570f474": [
+  "ability_units/spawners/spawner_mortar_mine",
+  "ability_units/spawners/spawner_mortar_projectile"
+ ],
+ "980be7965b5ca65b": [
+  "menu/colosseum/arenas"
+ ],
+ "98716e8f70d2e8ae": [
+  "menu/level_select"
+ ],
+ "999caa5fdf166f71": [
+  "equippables_icons/equipment"
+ ],
+ "9a924eff74a6d139": [
+  "menu/colosseum/arenas"
+ ],
+ "9b472face61b02b9": [
+  "equipment/elf/cape_s05",
+  "equipment/necromagus/cape_s05",
+  "equipment/valkyrie/cape_s05",
+  "equipment/warrior/cape_s05",
+  "equipment/wizard/cape_s05"
+ ],
+ "9b6bd9a0a13e7b1a": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "9bfc3e9355f37145": [
+  "menu/colosseum/grades/grades"
+ ],
+ "9d6f45e92052fa9d": [
+  "core/rendering/env_materials",
+  "modules/d01_caves/resources",
+  "modules/d01_crypt/resources",
+  "modules/d01_hub_room/resources",
+  "modules/d01_lava/resources",
+  "modules/debug/resources",
+  "modules/menu/resources",
+  "resource_packages/menu"
+ ],
+ "9da7297554e3b18f": [
+  "hud/spells"
+ ],
+ "9dea72ef27415eee": [
+  "menu/level_select"
+ ],
+ "9dec6855a44d8151": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "9e3ba18a50a58667": [
+  "props/menu/titlescreen_background"
+ ],
+ "9efdd1ba4a009cf2": [
+  "characters/orc_juggernaut/orc_juggernaut_sword"
+ ],
+ "a000316d61066212": [
+  "menu/level_select"
+ ],
+ "a0120a5527d81708": [
+  "effects/gam_spawner_crypt_skeleton_wave_start"
+ ],
+ "a1e857deb18d18c3": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "a28fdd031b052f08": [
+  "menu/level_select"
+ ],
+ "a2beada3eefffcc7": [
+  "menu/colosseum/arenas"
+ ],
+ "a34b1a0e81c5c440": [
+  "hud/action_icons"
+ ],
+ "a4802698d6927ddf": [
+  "hud/spells"
+ ],
+ "a488e055b240840b": [
+  "hud/spells"
+ ],
+ "a48f99e2d8a9bf6d": [
+  "equipment/elf/cape_s01",
+  "equipment/necromagus/cape_s01",
+  "equipment/valkyrie/cape_s01",
+  "equipment/warrior/cape_s01",
+  "equipment/wizard/cape_s01"
+ ],
+ "a5b7cf4d58b6cfad": [
+  "effects/cha_lich_base",
+  "effects/cha_lich_shadowbolt",
+  "effects/cha_morak_death",
+  "effects/cha_morak_transform_human",
+  "effects/cha_necromancer_transform",
+  "effects/cha_skeleton_spawn",
+  "effects/gam_spawner_crypt_damage_03",
+  "effects/gam_spawner_crystal_glow",
+  "effects/obj_souleater_trail",
+  "effects/wep_mummy_priest_bolt"
+ ],
+ "a5f0d3774b0df614": [
+  "props/d01_lava/lava_redwizard_brazier_01",
+  "props/d01_lava/lava_skulloven"
+ ],
+ "a642c0ce67504922": [
+  "characters/cultist_armor/cultist_armor",
+  "characters/cultist_armor/cultist_armor_core"
+ ],
+ "a646daf61a6effe5": [
+  "gameobjects/spawners/spawner_beam",
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1",
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1",
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1",
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1",
+  "gameobjects/spawners/spawner_exploding",
+  "gameobjects/spawners/spawner_freeze_nova",
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1",
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1",
+  "gameobjects/spawners/spawner_mortar",
+  "gameobjects/spawners/spawner_poison_launcher",
+  "gameobjects/spawners/spawner_twister"
+ ],
+ "a6c107981bb4a3ce": [
+  "equipment/elf/cape_s01",
+  "equipment/elf/cape_s02",
+  "equipment/elf/cape_s03",
+  "equipment/elf/cape_s04",
+  "equipment/elf/cape_s05",
+  "equipment/elf/cape_s06",
+  "equipment/warrior/cape_s01",
+  "equipment/warrior/cape_s02",
+  "equipment/warrior/cape_s03",
+  "equipment/warrior/cape_s04",
+  "equipment/warrior/cape_s05",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s01",
+  "equipment/wizard/cape_s02",
+  "equipment/wizard/cape_s03",
+  "equipment/wizard/cape_s04",
+  "equipment/wizard/cape_s05",
+  "equipment/wizard/cape_s06"
+ ],
+ "a74ed6c3752e4df1": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "a85cc7d8f21c77f5": [
+  "menu/level_select"
+ ],
+ "a96dc967bda94847": [
+  "achievement_icons/achievement_icons"
+ ],
+ "a9ff42be93d20889": [
+  "hud/action_icons"
+ ],
+ "abeb9b52de9043ed": [
+  "decals/decal_caves_floor_03"
+ ],
+ "aec5665329076d51": [
+  "props/d01_lava/lava_redwizard_chair"
+ ],
+ "af0cd8ff14aab2d3": [
+  "effects_ui/level_select_node_hover_boss"
+ ],
+ "b0cf58efd208245e": [
+  "effects_ui/hud_counter_04"
+ ],
+ "b1646965117fe21b": [
+  "equippables_icons/equipment"
+ ],
+ "b25576cfebcabd92": [
+  "props/d01_caves/ground_ornament_02"
+ ],
+ "b287ac88731d1075": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "b2a5666e7a0a362b": [
+  "hud/spells"
+ ],
+ "b2b8945f0d509a10": [
+  "menu/level_select"
+ ],
+ "b2f14e67f7be3ece": [
+  "menu/colosseum/arenas"
+ ],
+ "b2f3e16c8530496b": [
+  "blocks/d01_crypt/d01_crypt_swatch",
+  "gameobjects/carry/carry_crypt_relic",
+  "gameobjects/doors/door_crypt_3keys",
+  "gameobjects/doors/door_lava_wallcrack"
+ ],
+ "b3221b624b69151c": [
+  "blocks/d01_caves/swamp_set",
+  "props/d01_caves/swamp_stone_overgrowth"
+ ],
+ "b4045ebc9601f4be": [
+  "gameobjects/dispensers/dispenser_barrel_lava",
+  "props/d01_lava/lava_redwizard_ritual"
+ ],
+ "b40edb53e2814216": [
+  "menu/colosseum/grades/grades"
+ ],
+ "b4965946c430185f": [
+  "menu/level_select"
+ ],
+ "b4ada849ffd9718a": [
+  "menu/level_select"
+ ],
+ "b515eb3da4117757": [
+  "effects/relic_sirens_lute_activate"
+ ],
+ "b5593cd3a2ee7b20": [
+  "props/menu/titlescreen_background"
+ ],
+ "b5fb5e09a8c45e49": [
+  "menu/level_select"
+ ],
+ "b61465cf404de905": [
+  "props/menu/titlescreen_background"
+ ],
+ "b61e8c79e886e2bf": [
+  "menu/level_select"
+ ],
+ "b6bfe9922b84a501": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "b6f1b25ec9ac9eac": [
+  "hud/spells"
+ ],
+ "b749df543ba75b9d": [
+  "decals/decal_redwizard_floor_01"
+ ],
+ "b76f336e6c80a227": [
+  "gameobjects/interactable/switch_lever"
+ ],
+ "b7ecc1ce00160ef6": [
+  "menu/level_select"
+ ],
+ "b7fd674ceadfde35": [
+  "characters/cultist_novice/cultist_novice",
+  "characters/cultist_sorcerer/cultist_sorcerer",
+  "characters/cultist_zealot/cultist_zealot"
+ ],
+ "b9fc1e1f8fac0956": [
+  "props/d01_lava/lava_redwizard_chair"
+ ],
+ "ba8b767a7105ad46": [
+  "gameobjects/doors/door_wall_01_lava"
+ ],
+ "bac06c4ddf8a9510": [
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1"
+ ],
+ "bb0ce9687ccf81fa": [
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1"
+ ],
+ "bbf84befad10b1ba": [
+  "props/d01_common/common_redwizard_table_02"
+ ],
+ "bcef7daa3a221c6c": [
+  "equippables_icons/equipment"
+ ],
+ "bcf6097d0377f503": [
+  "props/menu/sky_plane_titlescreen"
+ ],
+ "bd25aa4bd49cf85b": [
+  "effects/cha_cultist_sorcerer_beam_windup",
+  "effects/cha_cultist_sorcerer_shielding_beam",
+  "effects/cha_grunt_shaman_turbo_beam"
+ ],
+ "bd787fb94d5a3c34": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "bea8ad587db7b07a": [
+  "decals/decal_caves_floor_04"
+ ],
+ "bed0b7e319b0fc6f": [
+  "menu/colosseum/colosseum"
+ ],
+ "bed3e7a03984815b": [
+  "decals/decal_caves_floor_01"
+ ],
+ "bf0f22d0e86322a7": [
+  "menu/level_select"
+ ],
+ "bf6848f8e37f7287": [
+  "menu/colosseum/arenas"
+ ],
+ "bfcc23881d9d0ac3": [
+  "effects/obj_cryptrock_slam",
+  "effects/wep_wizard_ice_flash_fire"
+ ],
+ "c01c37816b794f76": [
+  "equipment/elf/cape_s03",
+  "equipment/necromagus/cape_s03",
+  "equipment/valkyrie/cape_s03",
+  "equipment/warrior/cape_s03",
+  "equipment/wizard/cape_s03"
+ ],
+ "c01cb0c8e91db552": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "c0a1917e0fd46589": [
+  "blocks/d01_lava/lavastruct_set"
+ ],
+ "c0edb422fc86e071": [
+  "blocks/d01_caves/stairs/roundstairs_01"
+ ],
+ "c292bb93ae4cac75": [
+  "decals/lava_cracks_ground"
+ ],
+ "c30ee006e3cd0469": [
+  "gameobjects/spawners/spawner_beam",
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1",
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1",
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1",
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1",
+  "gameobjects/spawners/spawner_exploding",
+  "gameobjects/spawners/spawner_freeze_nova",
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1",
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1",
+  "gameobjects/spawners/spawner_mortar",
+  "gameobjects/spawners/spawner_poison_launcher",
+  "gameobjects/spawners/spawner_twister"
+ ],
+ "c360e2facc448c23": [
+  "props/d01_lava/lava_redwizard_cage_01"
+ ],
+ "c3a31aafb1e7b8a0": [
+  "menu/level_select"
+ ],
+ "c3b7936b7b1f52ba": [
+  "equippables_icons/equipment"
+ ],
+ "c4b70bf182b0d924": [
+  "hud/action_icons"
+ ],
+ "c4cea2f8582c5025": [
+  "menu/colosseum/arenas"
+ ],
+ "c568ace66fa9ddff": [
+  "gameobjects/doors/door_wall_01_lava",
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1",
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1",
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1",
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1",
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1",
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1"
+ ],
+ "c5e26ef3008fc19c": [
+  "effects_ui/hero_coin_locked_wizard"
+ ],
+ "c6e178fe91aef431": [
+  "effects/meshes/spiral_1",
+  "effects/meshes/spiral_2_blue"
+ ],
+ "c78fc463e1223de5": [
+  "equipment/elf/cape_s06",
+  "equipment/necromagus/cape_s06",
+  "equipment/valkyrie/cape_s06",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s06"
+ ],
+ "c7e9ade4017781ca": [
+  "decals/decal_caves_floor_01"
+ ],
+ "c855cb3853706c1f": [
+  "effects/wep_elf_special_root_shot_trail"
+ ],
+ "c8a29522181ece69": [
+  "menu/colosseum/colosseum"
+ ],
+ "c97e1b82f42e3a71": [
+  "hud/spells"
+ ],
+ "cb211c96fc7981cd": [
+  "effects/cha_valkyrie_block",
+  "effects/gam_spawner_lava_spawn_demon",
+  "effects/hit_block",
+  "effects/wep_wizard_ice_orb_trail",
+  "effects/wep_wizard_lightning_shield_end",
+  "effects/wep_wizard_lightning_shield_start",
+  "effects/wep_wizard_ultimate_shield_end",
+  "effects_ui/hero_coin_hover",
+  "effects_ui/hero_coin_locked",
+  "effects_ui/hero_coin_locked_elf",
+  "effects_ui/hero_coin_locked_lizard",
+  "effects_ui/hero_coin_locked_necromagus",
+  "effects_ui/hero_coin_locked_valkyrie",
+  "effects_ui/hero_coin_locked_warrior",
+  "effects_ui/hero_coin_locked_wizard",
+  "effects_ui/hud_new_skull_coin",
+  "effects_ui/hud_skull_coin_ready",
+  "effects_ui/hud_skull_coin_ready_to_revive",
+  "effects_ui/level_select_node_hover",
+  "effects_ui/level_select_node_hover_adventure",
+  "effects_ui/level_select_node_unlocked_adventure",
+  "effects_ui/level_select_node_unlocked_arena",
+  "effects_ui/level_select_node_unlocked_boss",
+  "effects_ui/level_select_node_unlocked_procedural",
+  "effects_ui/scorescreen_coin_winner",
+  "effects_ui/scorescreen_coin_winner_small"
+ ],
+ "cb2b22a4395d0b49": [
+  "menu/level_select"
+ ],
+ "cb81cf0d6612bbd2": [
+  "modules/d01_caves/shading_environment",
+  "modules/d01_crypt/shading_environment",
+  "modules/d01_hub_room/shading_environment",
+  "modules/d01_lava/shading_environment"
+ ],
+ "cba7eaaf96f10e47": [
+  "ability_units/spawners/spawner_mortar_mine",
+  "ability_units/spawners/spawner_mortar_projectile"
+ ],
+ "cbb50c4defb18d66": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "cc4ce41613cabd3a": [
+  "props/d01_common/lava_redwizard_banner_01"
+ ],
+ "cccd18230541bb49": [
+  "menu/level_select"
+ ],
+ "cce90c38bbb54cd2": [
+  "effects/cha_demon_ranged_leap_trail",
+  "effects/cha_mummy_priest_activate_dust",
+  "effects/cha_orc_juggernaut_rush",
+  "effects/cha_valkyrie_foot_slide_dust",
+  "effects/cha_valkyrie_foot_slide_dust_short",
+  "effects/statuseffect_frozen_end",
+  "effects/statuseffect_frozen_enter",
+  "effects/statuseffect_frozen_wiggle"
+ ],
+ "ceac392fa9851f8b": [
+  "menu/level_select"
+ ],
+ "cfe707365608de26": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "d094fa11aac72249": [
+  "blocks/d01_lava/lavastruct_set_b"
+ ],
+ "d193432162722ed8": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "d1e14aa564c20776": [
+  "hud/preview",
+  "menu/colosseum/hero",
+  "menu/loadout_campaign",
+  "menu/loadout_colosseum",
+  "modules/menu/resources",
+  "resource_packages/menu"
+ ],
+ "d2e14e37eda483c3": [
+  "props/d01_common/lava_redwizard_banner_01"
+ ],
+ "d2fdd7dc68109f35": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "d341e607b04015b5": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "d38580863759e074": [
+  "equippables_icons/equipment"
+ ],
+ "d3a0852baf5ff389": [
+  "characters/cultist_armor/cultist_armor",
+  "characters/cultist_armor/cultist_armor_core"
+ ],
+ "d4cb1304a93bfdbe": [
+  "menu/colosseum/colosseum",
+  "menu/perk_screen/perk_screen",
+  "menu/shop"
+ ],
+ "d502c8db3771e614": [
+  "effects_ui/level_select_node_hover_procedural"
+ ],
+ "d50dbdbf1334190b": [
+  "menu/colosseum/arenas"
+ ],
+ "d5193c610974fbae": [
+  "menu/level_select"
+ ],
+ "d53accefc4e67c69": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "d5e06aaaebeba78b": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "d5e53155c5cc7c88": [
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1"
+ ],
+ "d5fd50b3dadc7726": [
+  "effects/wep_wizard_void_chain_hand"
+ ],
+ "d71036b6ec7f8cc9": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "d7c5132e91a6b3af": [
+  "menu/menu",
+  "menu/splash"
+ ],
+ "d832fe92f20f3823": [
+  "effects/cha_demon_heavy_spiral_projectile",
+  "effects/cha_grunt_shaman_projectile",
+  "effects/cha_grunt_shaman_projectile_split",
+  "effects/cha_grunt_shaman_projectile_windup",
+  "effects/cha_grunt_shaman_turbo_beam",
+  "effects/gam_spawner_exploding_marker_ball",
+  "effects/gam_spawner_exploding_timer",
+  "effects/gam_spawner_turbo",
+  "effects/relic_crystalized_chaos_destination",
+  "effects/relic_twister_windup",
+  "effects/statuseffect_charmed_enter",
+  "effects/wep_valkyrie_special_sweep",
+  "effects/wep_wizard_storm_bomb_fire_book",
+  "effects/wep_wizard_storm_bomb_trail",
+  "effects/wep_wizard_void_burst_fire"
+ ],
+ "d859d9f0fbfa668d": [
+  "effects/wep_wizard_lightning_burst",
+  "effects/wep_wizard_storm_bolt_trail",
+  "effects/wep_wizard_storm_bomb_hit"
+ ],
+ "d893c98c2e57eb87": [
+  "decals/decal_caves_floor_04"
+ ],
+ "da5a38682e4e2500": [
+  "menu/standard_elements"
+ ],
+ "da7211ee1a25a79a": [
+  "ability_units/spawners/spawner_mortar_mine",
+  "ability_units/spawners/spawner_mortar_projectile"
+ ],
+ "dda186d761ca0b90": [
+  "decals/lava_cracks_ground"
+ ],
+ "de495116ecf7424b": [
+  "effects/wep_elf_lazersight",
+  "effects/wep_valkyrie_spear_thrust_marker",
+  "effects/wep_warrior_rushaim"
+ ],
+ "deefcf77e4d1f5aa": [
+  "menu/level_select"
+ ],
+ "e0ae614d58986056": [
+  "equipment/elf/cape_s06",
+  "equipment/necromagus/cape_s06",
+  "equipment/valkyrie/cape_s06",
+  "equipment/warrior/cape_s06",
+  "equipment/wizard/cape_s06"
+ ],
+ "e0c1c4ab60bd6ade": [
+  "achievement_icons/achievement_icons"
+ ],
+ "e1e33a6ec9c994f5": [
+  "gameobjects/relics/vampire_heart_ring",
+  "gameobjects/relics/vampire_heart_ring_tier2",
+  "gameobjects/relics/vampire_heart_ring_tier3"
+ ],
+ "e21c473feddaf138": [
+  "props/d01_lava/lava_redwizard_cage_01"
+ ],
+ "e2b94d86f9d54bd1": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "e31ea4f409715e97": [
+  "gameobjects/spawners/spawner_ghost"
+ ],
+ "e3f3f720964af4c7": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "e45ed634797a3989": [
+  "menu/level_select"
+ ],
+ "e51c3432aa1d49e4": [
+  "decals/decal_caves_floor_02"
+ ],
+ "e549e905c4357a28": [
+  "props/d01_lava/lava_topfence"
+ ],
+ "e54b029e2b5eec98": [
+  "equipment/elf/cape_s02",
+  "equipment/necromagus/cape_s02",
+  "equipment/valkyrie/cape_s02",
+  "equipment/warrior/cape_s02",
+  "equipment/wizard/cape_s02"
+ ],
+ "e56b823515e461ed": [
+  "characters/orc_juggernaut/orc_juggernaut_sword"
+ ],
+ "e61597907db1fbe1": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "e75358920e2370f1": [
+  "menu/buttons/buttons"
+ ],
+ "e78afed98cd15bd7": [
+  "menu/icons"
+ ],
+ "e8b1c9101b48b6d3": [
+  "characters/grunt_shaman/shaman_staff"
+ ],
+ "eaf9d1c6e9e02d0c": [
+  "menu/level_select"
+ ],
+ "eb2f1c5bab938fc6": [
+  "menu/colosseum/arenas"
+ ],
+ "eceebae2879afffa": [
+  "props/d01_lava/lava_redwizard_brazier_01",
+  "props/d01_lava/lava_skulloven"
+ ],
+ "ed0da000d9e66a42": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "ed3b1cce9bd9b66d": [
+  "menu/level_select"
+ ],
+ "edba425be5829822": [
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1"
+ ],
+ "ee7749b9bd1dd5ec": [
+  "effects/wep_necromagus_skeleton_slash_left",
+  "effects/wep_necromagus_skeleton_slash_right"
+ ],
+ "f10c290b7078088d": [
+  "effects/units/fire_plane",
+  "effects/units/fire_plane_blue"
+ ],
+ "f11f063baaa2feb6": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "f17f111a61a08d02": [
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1"
+ ],
+ "f1b2a4d3b95faacc": [
+  "blocks/d01_caves/caverock_set",
+  "blocks/d01_caves/caverock_set_lava"
+ ],
+ "f2e912d172e5e87a": [
+  "equippables_icons/shop_action_icons",
+  "hud/spells"
+ ],
+ "f34d6a30e36dde68": [
+  "menu/shop"
+ ],
+ "f37bcd763335cb3a": [
+  "effects/env_lock_wall_glow"
+ ],
+ "f37f9206ab9a5002": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "f4870719d3c622cb": [
+  "equippables_icons/relics",
+  "equippables_icons/shop_action_icons",
+  "hud/relic_icons"
+ ],
+ "f5be9e297acb7d03": [
+  "hud/action_icons"
+ ],
+ "f5cc6e0095b5f9fb": [
+  "menu/level_select"
+ ],
+ "f705d302348b34f9": [
+  "effects/wep_warrior_ultimate_moreofthor_grow"
+ ],
+ "f8e4ff281c637169": [
+  "hud/hud"
+ ],
+ "f907440eb1ae5f3d": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "f952b5a5ef56ffed": [
+  "equippables_icons/equipment"
+ ],
+ "f989d93f6e7433dd": [
+  "menu/level_select"
+ ],
+ "fb0dcb48ec930ca5": [
+  "equippables_icons/shop_action_icons",
+  "hud/action_icons"
+ ],
+ "fb54dc334dba3dce": [
+  "blocks/d01_caves/swamp_civilization"
+ ],
+ "fb84d933dc9e924a": [
+  "gameobjects/gold/blood_money",
+  "gameobjects/gold/pile_large",
+  "gameobjects/gold/pile_medium",
+  "props/d01_lava/lava_metalbox"
+ ],
+ "fceb8f6ef22243ec": [
+  "gameobjects/carry/elemental_haste",
+  "gameobjects/carry/elemental_heal",
+  "gameobjects/carry/elemental_ice",
+  "gameobjects/carry/elemental_poison",
+  "gameobjects/carry/elemental_shockwave",
+  "props/d01_lava/corruption_01",
+  "props/d01_lava/corruption_shard_01"
+ ],
+ "fd7c4e9e6372dd49": [
+  "characters/avatar_necromagus/abilities/ultimate_remnant",
+  "characters/boss_morak/abilities/portal_caves",
+  "characters/boss_morak/abilities/portal_crypt",
+  "characters/boss_morak/abilities/portal_lava",
+  "effects_ui/hero_coin_hover",
+  "gameobjects/spawners/spawner_beam",
+  "gameobjects/spawners/spawner_caves_grunt",
+  "gameobjects/spawners/spawner_caves_grunt_t1",
+  "gameobjects/spawners/spawner_caves_orc",
+  "gameobjects/spawners/spawner_caves_orc_t1",
+  "gameobjects/spawners/spawner_crypt_mummy",
+  "gameobjects/spawners/spawner_crypt_mummy_t1",
+  "gameobjects/spawners/spawner_crypt_skeleton",
+  "gameobjects/spawners/spawner_crypt_skeleton_t1",
+  "gameobjects/spawners/spawner_exploding",
+  "gameobjects/spawners/spawner_freeze_nova",
+  "gameobjects/spawners/spawner_lava_cultist",
+  "gameobjects/spawners/spawner_lava_cultist_t1",
+  "gameobjects/spawners/spawner_lava_daemon",
+  "gameobjects/spawners/spawner_lava_daemon_t1",
+  "gameobjects/spawners/spawner_mortar",
+  "gameobjects/spawners/spawner_poison_launcher",
+  "gameobjects/spawners/spawner_twister"
+ ],
+ "fd8f9bdde9bbfde7": [
+  "effects_ui/hero_coin_locked_elf"
+ ],
+ "fe517ba905e0d3fe": [
+  "effects_ui/hero_coin_locked_necromagus"
+ ],
+ "fe67aeb5cff90f31": [
+  "blocks/d01_lava/lavastruct_set"
+ ]
+}
