@@ -28,7 +28,7 @@ HC = HERE.parent
 DIG = HC.parent / "GauntletGameDigging"
 CATALOGUE = DIG / "bundle_manifest" / "04_bundle_resources.csv"
 OVERLAY = DIG / "resource_name_overlay.json"
-REFS = DIG / "texture_refs.json"
+REFS = HC / "work" / "texture_refs.json"
 
 
 def main():

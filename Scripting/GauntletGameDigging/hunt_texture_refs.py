@@ -167,7 +167,7 @@ def main():
             print(f"  {h:016x}  <- {sorted(names)[:3]}")
         return
     if args.write:
-        out = HERE / "texture_refs.json"
+        out = HERE.parent / "hashcracker" / "work" / "texture_refs.json"
         out.write_text(json.dumps({f"{h:016x}": sorted(n) for h, n in refs.items()},
                                   indent=1, sort_keys=True))
         print(f"wrote {out}")
