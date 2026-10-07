@@ -5175,3 +5175,21 @@ INDEX-SIBLING AUTOMATION (an index implies its neighbours)          (+4 names)
   paid immediately on other families) but the quilt variant numbers are not a
   dense series: they follow the pieces that exist, not a counter.
 
+  THEN APPLIED TO EVERYTHING WE HAVE, RANGE 01-10 - still at fixpoint:
+
+    names we hold: 6,268  (2,291 of them already indexed in the leaf)
+      replace pass, 1-10, the 2,291 indexed names         ->    31,150 cands
+      append pass, 1-10, all 6,268 names                  ->   238,139 cands
+        (`decals/moss` -> `moss_01`..`moss_10`; `<mod>_<nn>` -> `<mod>_<nn>_01`..`_10`,
+         the nested quilt-piece form)
+      union                                               ->   268,539 cands
+      the same two passes at range 0-99                   -> 1,559,425 cands
+      both runs rewritten at once, 1-10 (`spider_02_1` -> `spider_03_2`) -> 367,208
+
+    ~2.2 M candidates across the three widths: 0 new names.  The index rule is
+    exhausted on everything we hold, and it stays wired in (phase 0b of
+    auto_run.sh) so the next recovered name gets its neighbours tried at once.
+    Yardstick for that conclusion: the *replacement* pass alone had already
+    yielded four names on its first run, so the empty result is a property of
+    the data, not of a rule we never ran.
+
