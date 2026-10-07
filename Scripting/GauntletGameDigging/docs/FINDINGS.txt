@@ -5201,3 +5201,70 @@ INDEX-SIBLING AUTOMATION (an index implies its neighbours)          (+4 names)
   first run, so the empty result is a property of the data, not of a rule we
   never ran.
 
+
+================================================================================
+38. READING A UNIT FOR ITS TEXTURES - demon_overlord_mini (0 NEW, BUT THE
+    QUESTION IS ANSWERED AND TWO NEW LEVERS FELL OUT)             (2026-10-06)
+================================================================================
+
+THE QUESTION: `characters/demon_overlord_mini/demon_overlord_mini` was recovered
+(e42cccf190760a24, resource_packages/d01_lava).  Where are its textures?
+
+ANSWER: it does not have its own.  It inherits them.
+
+  game-source/Gauntlet-SourceCode-LUA/lua/generated/units_with_settings.lua
+      ["characters/demon_overlord_mini/demon_overlord_mini"]
+          = "characters/demon_heavy/demon_heavy"
+  ... and the unit BODY itself references that same resource (c922dbbcc127583f,
+  the demon_heavy skin material) plus its Lua, its `audio/enemy_demon` bank and
+  the status-effect flows.  So the maps are
+
+      characters/demon_heavy/demon_heavy_diff
+      characters/demon_heavy/demon_heavy_normal          <- both already resolved
+
+  Verified against the bundle's own TOC (the depot `contents/<bundle-id>` file,
+  which is the same 771 entries as our catalogue rows, 771/771 + 142/142
+  unresolved included): there is NO `demon_overlord_mini_<suffix>` texture, no
+  `m_demon_overlord_mini` material, and no `<stem>_material` form.  Name-pattern
+  hunting could not have found its textures because they are not named after it.
+
+HOW TO DO THIS FOR ANY RESOURCE - `hunt_unit_textures.py` (new)
+
+    python3 hunt_unit_textures.py --bundle <contents/<bundle-id>> \
+        --name <resource> --type unit [--materials]
+
+  * picks the right entry when one name hash carries several types (bones vs
+    unit vs material - choose with `--type`)
+  * scans the body for 8-byte windows and matches them against the BUNDLE'S OWN
+    TOC, not just our name tables, so previously-unseen references show up
+  * names what it can by convention - including `m_<name>` for materials, which
+    is a real Stingray pattern (worth trying first, thanks for the tip)
+  * `--materials` decodes referenced materials for their texture slots
+
+WHAT IT FOUND THAT WE DID NOT HAVE: the unit references THREE unresolved
+`particles` resources -
+
+    57917968f6d293f5   ff8b0117dda5fe3b   bc99b94c8d93c478
+
+  They sit in the effects/particle block (indices 293 / 349 / 374, bodies
+  5,820 / 5,332 / 6,384 bytes) alongside `effects/cha_demon_heavy_*`,
+  `effects/gam_*`, `effects/hit_*`, and the character's own Lua names its
+  abilities (`ability_orboffire_explode/_start/_stop/_warning/_windup`,
+  `orboffire_explosion`, `demon_horror`, `barrel_explosion`, `explosion`,
+  `gib_head_left/lower/right/upper`, `j_body`, `j_eye`).  ~4.8 M convention
+  candidates (effects/{cha,wep,hit,gam,obj,env,statuseffect,relic}_ x 125 stems x
+  891 mined tails, plus the character's own words) have NOT named them yet, so
+  they are open targets for the particles family (131 unresolved).
+
+TWO LEVERS WORTH KEEPING
+
+  1. `units_with_settings.lua` is a generated unit -> settings map (256 entries)
+     that says which resource a unit's settings/skin come from.  When a unit has
+     no textures of its own, this is why - and it points at the ones it uses.
+     Same family of generated files: unit_paths.lua, settings_paths.lua,
+     unit_path_to_components.lua, unit_path_to_network_object.lua,
+     unit_paths_short_lookup.lua.
+  2. A depot `contents/<bundle-id>` file is the authoritative membership test for
+     a package: any candidate name can be checked against the bundle's TOC
+     directly, which is stronger than the catalogue (it also proves absence).
+
