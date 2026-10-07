@@ -6050,6 +6050,32 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `stone_pieces`, `candle_flame`), and 30.6 G candidates of the atlas patterns
   crossed with the 4.16 M extended leaves also added nothing beyond the 32 above.
 
+48.4 PER-ATLAS FAMILY RECOMBINATION (make_atlas_family.py)
+
+  Each referring atlas is a directory, and the icons in it are *members of a
+  family*, so the resolved leaves of that directory carry the whole grammar:
+
+    menu/level_select/level_button_adventure[_completed|_silver|_locked|_over]
+    menu/shop/shop_item_background_{normal,owned,equipped,over}
+    menu/shop/shop_relic_tier_{1,2,3}
+    menu/hero_coins/{warrior,elf,...}_{colored,over,standard}
+    menu/icons/padlock_locked
+
+  i.e. `<stem>[_<state>]`.  So for each of the 527 referring atlas directories:
+  take the stems and state suffixes seen in it (plus the global state set and the
+  environment/class/mode words), and enumerate the cross product
+  (54,372 words x 1,054 patterns, 372 M candidates) -> **+1**, and a telling one:
+
+    menu/icons/padlock_unlocked        (sibling of the padlock_locked found above)
+
+  A hint worth recording because it did *not* pan out: `hud/relics` and
+  `hud/talisman` are plausible UI atlas names, but this build has **zero** names
+  under either - only `hud/relic_icons`, which references a single unnamed
+  texture.  The relic art actually lives in `equippables_icons/relic_<item>`
+  (all resolved) and `menu/shop/shop_relic_tier_{1,2,3}`.  Their candidate
+  vocabularies (`gameobjects/relics/<item>`, `equipment/<class>/talisman01..03`)
+  were swept anyway -> 0.
+
 48.3 WHERE THAT LEAVES TEXTURES
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the

@@ -5734,6 +5734,7 @@
   "e76f89bd0669af28": "lua/managers/music_manager",
   "e77938c283195033": "elias/crypt_adventure/audio/4_0_10",
   "e783262b855f5135": "characters/avatar_warrior/animations/axe_idle_look_right",
+  "e78afed98cd15bd7": "menu/icons/padlock_unlocked",
   "e79662d2d840a31c": "gameobjects/level_editor/player_spawn_marker",
   "e7b38ba3648e91d3": "gameobjects/arena_wave/arena_wave",
   "e7b63a1ae6bf3b06": "characters/mummy_risen/animations/knockdown_flip",
