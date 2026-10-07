@@ -6144,6 +6144,42 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   substitute engine, re-crack the atlas families - *every* batch, because each
   one only pays off against the newest names.
 
+==========================================================================
+49. TWINS, AND THE VARIANT TOKENS THEY REVEALED
+==========================================================================
+
+  Almost everything left looks like a *derived* variant of a name we hold, and
+  two fingerprints locate the name it derives from (`tools/twin_by_refs.py`):
+
+  * **size + bundle** - a body size is nearly a function of the name (§43), so
+    the resolved resources adjacent to an unnamed one *in the same bundle* are
+    its family.  Needs only the catalogue; found a twin for 886 of 1,229 targets.
+  * **reference graph** (`hunt_ref_graph.py`) - decompress each bundle once and
+    match every 8-byte window of every *named* body against the named resources
+    of the same bundle, giving 2,708 referrer sets.  A resource's referrer set is
+    a near-unique fingerprint, so the twin is the resolved resource whose
+    referrers overlap most.  Found a twin for 665-719 targets at similarity
+    0.5-0.2 -> **0**, an honest negative.
+
+  The size twins did land, and taught the shape of what is left:
+
+    gameobjects/traps/trap_spikeplate_caves_diff   (twin trap_spikeplate_diff)
+    gameobjects/traps/spikeplate_caves_1c_1c       (twin spikeplate_1c_1c)
+    props/d01_common/torch_floor_blue_01           (twin torch_floor_01)
+
+  i.e. **environment, colour and state variants** of known assets.  That generalises
+  past the twins, so the same edit space is now applied to *every* name we hold -
+  `<name>_<variant>`, `<variant>_<name>`, one token swapped, one token inserted,
+  a token pair swapped, over 51 variant tokens (environments, colours, creature
+  groups, states, sizes) - 2.46 M candidates, which found:
+
+    blocks/d01_lava/railings/lavastruct_railing_broken_2c        (_broken)
+    props/d01_common/torch_floor_blue_01_diff                    (a map of a
+                                                                  name just found)
+
+  The second is the engine feeding itself again (§48.7), so this is re-run after
+  every batch like the others.
+
 48.3 WHERE THAT LEAVES TEXTURES
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
