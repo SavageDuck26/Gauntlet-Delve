@@ -84,10 +84,12 @@ def suffixes(names):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refs", default=str(REFS))
+    ap.add_argument("--type", default="texture")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
-    refs = json.loads(pathlib.Path(args.refs).read_text())
+    ref = args.refs if args.refs != str(REFS) else str(HC / "work" / f"refs_{args.type}.json")
+    refs = json.loads(pathlib.Path(ref).read_text())
     un = unresolved_textures()
     names = resolved_textures()
     suf, by_dir = suffixes(names)

@@ -97,6 +97,8 @@ def pairs(bundle_path, prefix, sample=20):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--type", default="texture",
+                    help="resource type to look for references to")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--pairs", help="bundle path, to print referrer->referenced name pairs")
     ap.add_argument("--prefix", default="", help="only referrers whose name starts with this")
@@ -119,12 +121,12 @@ def main():
             by_bundle[b]["targets"][int(r["name_hash"], 16)] = r["type"]
 
     bundles = [(b, v) for b, v in by_bundle.items()
-               if any(t == "texture" for t in v["targets"].values())]
+               if any(t == args.type for t in v["targets"].values())]
     bundles.sort(key=lambda kv: -sum(1 for t in kv[1]["targets"].values()
-                                     if t == "texture"))
+                                     if t == args.type))
     if args.limit:
         bundles = bundles[:args.limit]
-    print(f"bundles with unresolved textures {len(bundles)}")
+    print(f"bundles with unresolved {args.type} {len(bundles)}")
 
     refs = collections.defaultdict(set)          # texture hash -> {referrer name}
     for b, v in bundles:
@@ -135,7 +137,7 @@ def main():
         _sig, _uz, data = L.decompress_bundle(path.read_bytes())
         _count, toc = L.parse_toc(data)
         entries, _end, _ok = L.parse_resources(data, toc)
-        todo = {h for h, t in v["targets"].items() if t == "texture"}
+        todo = {h for h, t in v["targets"].items() if t == args.type}
         if not todo:
             continue
         want = np.array(sorted(todo), dtype=np.uint64)
@@ -167,7 +169,8 @@ def main():
             print(f"  {h:016x}  <- {sorted(names)[:3]}")
         return
     if args.write:
-        out = HERE.parent / "hashcracker" / "work" / "texture_refs.json"
+        out = (HERE.parent / "hashcracker" / "work" /
+               f"refs_{args.type}.json")
         out.write_text(json.dumps({f"{h:016x}": sorted(n) for h, n in refs.items()},
                                   indent=1, sort_keys=True))
         print(f"wrote {out}")

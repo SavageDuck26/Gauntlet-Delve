@@ -6076,6 +6076,31 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   vocabularies (`gameobjects/relics/<item>`, `equipment/<class>/talisman01..03`)
   were swept anyway -> 0.
 
+48.5 THE MACHINERY IS TYPE-GENERIC
+
+  Nothing in the by-reference method is texture-specific, so
+  `hunt_texture_refs.py --type T` writes `hashcracker/work/refs_<T>.json` and
+  `gen_texture_candidates.py --type T` reads it: the same edge-driven candidate
+  generation now covers material, animation and unit as well.
+
+  What it found for textures, one more layer in:
+
+    * referrer *parent* directories (and their `textures/` subdirectory) crossed
+      with the universal vocabulary -> 3, in a convention we had not seen:
+        effects_ui/textures/map_caustics
+        effects_ui/textures/map_gold_glitter
+        effects_ui/textures/additive_glow_strip
+      i.e. `effects_ui/` has its own `textures/` tree with `map_*` / `additive_*`
+      kinds - and it is self-feeding: regenerating the family from those names
+      added `effects_ui/textures/additive_glow_ring`.
+    * referrer directories x the 4.16 M extended leaves (5 G candidates) -> 0.
+    * the whole `effects/textures/` number range `<kind>_<descriptor>_{01..99}`
+      (418 k candidates) -> 0, so the missing effect textures are not simply
+      further numbers of the ones we hold.
+    * material candidates `<effect-name>_<phase>` over every unit/particle/material
+      name we hold x 60 phase words (`marker`, `trail`, `windup`, `explode`, ...; the tails
+      resolved materials actually use) -> 0.
+
 48.3 WHERE THAT LEAVES TEXTURES
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the

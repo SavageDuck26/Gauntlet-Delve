@@ -5711,3 +5711,7 @@ b2a5666e7a0a362b	hud/spells/storm_bolt
 2618ae87f2476443	hud/spells/void_chain
 c97e1b82f42e3a71	hud/spells/void_shield
 e78afed98cd15bd7	menu/icons/padlock_unlocked
+316f56c1c9e967f3	effects_ui/textures/additive_glow_strip
+38c784fafe139251	effects_ui/textures/map_caustics
+36e6f8f1c5a0f5bf	effects_ui/textures/map_gold_glitter
+cb211c96fc7981cd	effects_ui/textures/additive_glow_ring
