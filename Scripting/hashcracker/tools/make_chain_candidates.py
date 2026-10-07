@@ -70,9 +70,36 @@ def main():
             fh.write(":".join(parts) + "\n")
             n += 1
 
+        # pairs of flags that co-occur in some chain we hold: a legal two-flag step
+        pair_seen = collections.Counter()
+        for c in chains:
+            fs0 = c.split(":")[1:]
+            for i in range(len(fs0)):
+                for j in range(i + 1, len(fs0)):
+                    pair_seen[(fs0[i], fs0[j])] += 1
+        top_pairs = [p2 for p2, _ in pair_seen.most_common(4000)]
+        techs_all = sorted(techs)
+
         for c in chains:
             parts = c.split(":")
             tech, fs = parts[0], parts[1:]
+            for a, b in top_pairs:                             # two-flag insert
+                if a in fs or b in fs:
+                    continue
+                i = 0
+                while i < len(fs) and fs[i] < a:
+                    i += 1
+                j = i
+                while j < len(fs) and fs[j] < b:
+                    j += 1
+                new = fs[:i] + [a] + fs[i:j] + [b] + fs[j:]
+                emit([tech] + sorted(new))
+            if len(fs) > 3:                                    # drop two
+                for i in range(len(fs) - 1):
+                    emit([tech] + fs[:i] + fs[i + 2:])
+            for tech2 in techs_all[:40]:                        # technique swap
+                if tech2 != tech:
+                    emit([tech2] + fs)
             for f in fl:                                   # insert (sorted)
                 if f in fs:
                     continue

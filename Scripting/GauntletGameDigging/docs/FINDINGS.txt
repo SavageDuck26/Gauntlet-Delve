@@ -6101,6 +6101,30 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       name we hold x 60 phase words (`marker`, `trail`, `windup`, `explode`, ...; the tails
       resolved materials actually use) -> 0.
 
+48.6 WIDENING THE TWO PROVEN LEVERS
+
+  Two levers were already proven and simply needed their ranges widened now that
+  many more names are seeds:
+
+  * **shader chains, two flags at a time.**  `make_chain_candidates.py` gained a
+    two-flag insert (pairs that co-occur in a chain we hold, 4,000 of them), a
+    two-flag drop and a technique swap (118 techniques): 5.08 M candidates ->
+    +3, then fixpoint on a re-run.
+  * **index siblings, 0-99 instead of 1-10** (`derive_number_siblings.py
+    --range 0-99 [--pairs]`): 1.65 M candidates -> +2, then the two-index-run
+    (`--pairs`) pass -> +1 more, and the fixpoint re-run reproduced a family the
+    narrow range could never reach:
+
+      characters/avatar_valkyrie/animations/character_select_pos03_var1
+      characters/avatar_valkyrie/animations/character_select_pos03_var2
+      characters/avatar_valkyrie/animations/character_select_pos03_var3
+
+    i.e. `_varN` families run past N=1, which is exactly the kind of tail the
+    1-10 default truncates.
+
+  Both are cheap enough to re-run after every batch, which is now the standing
+  procedure: merge, re-derive, re-crack, repeat.
+
 48.3 WHERE THAT LEAVES TEXTURES
 
   453 -> 421 unnamed.  418 of them are still referenced, so the edges remain the
