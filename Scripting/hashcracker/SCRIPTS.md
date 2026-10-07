@@ -6,12 +6,18 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 
 ## tools/ — targets and vocabularies
 
+**Always start the binary through `tools/hc.sh`** (wraps it in `flock` so only one
+hashcracker ever runs — two at once halve each other's GPU/CPU throughput).
+
 | script | purpose |
 | --- | --- |
+| `hc.sh` | `flock` wrapper around `./target/release/hashcracker`; same arguments, queues instead of racing. Every sweep calls this, never the binary. |
 | `build_targets.py` | Reads `bundle_manifest/04_bundle_resources.csv` and writes `data/vocab/targets_<type>.txt` + `unresolved_targets.txt`. **Targets = rows whose catalogue `name` column is empty** (or whose hash our overlay lacks) — never "absent from the overlay alone". |
 | `merge_matches.py` | Folds `matches.tsv` into `../GauntletGameDigging/resource_name_overlay.json`. |
 | `make_tex_vocab.py` | `tex_{dir,leaf,suf,root}.txt` — texture/material sweep (`%d/%l%s`). |
 | `make_level_vocab.py` | `lvl_*.txt` — quilt code alphabet under the `len(up)==len(down)` / `len(right)==len(left)` rule from `quilt_builder.lua`. |
+| `make_level_full.py` | `data/vocab/lvl/*` — the whole `.level` grammar (`FINDINGS.txt` §37): env/subdir/shape/cells/nn/mod vocabularies, the **exhaustive** per-side cell-group lists (`g1`/`g2`/`g3`/`g5`), themes mined from the dungeon Lua (`floor_type`, layout filenames) and the game's creature list as mod bases. |
+| `mine_lua_modules.py` | Reassembles resource names out of the decompiled Lua tree: bare table keys are written **relative to the `path = "modules/…"` field in scope**, so they must be re-joined. Writes one candidate per line for `crack --candidates`. |
 | `make_particles_vocab.py` | `par_*.txt` — `effects/<pre>_<subject>_<verb>[_<mod>]`. |
 | `make_unit_vocab.py` | `unit_*.txt` — block piece grammar `<root>/d01_<env>/<cat>/<style>_<part>…`. |
 | `make_unit_vocab_big.py` | `ub_*.txt` — the same with vocabularies mined from resolved names. |
@@ -54,6 +60,11 @@ merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
 | `unit_big.sh [rounds]` | The wide unit grammar sweep. |
 | `unit_medium.sh [rounds]` | Medium unit sweep: grammar + double widths + modifiers, edit-1 and unit<->texture derivation, looped (`FINDINGS.txt` §22). |
 | `level_phase2.sh [rounds]` | Quilt `start_`/`NN 01-24`/mod patterns. |
+| `level_full.sh [rounds]` | The whole `.level` family, tier by tier (`FINDINGS.txt` §37): schema → 1-char cell neighbourhood → legal codes → other families (tiles/arena/colosseum) → rooms/prefabs → mutate, plus a **deep tier** that enumerates every cells code with 1-3 cell sides in full (4 locked slots, no huge word list). `DEEP=n` controls how many rounds get the deep tier. |
+| `pack_sweep.sh <pack> [rounds]` | Hyper-targeted sweep of ONE resource package: mutate inside its own names + dir×token + token pairs/triples, looped to fixpoint (`FINDINGS.txt` §36). |
+| `pack_sweep_all.sh [rounds]` | `pack_sweep.sh` over the 20 packs with the most unresolved hashes, biggest first. |
+| `big_mutate.sh [cycles]` | Loop `hashcracker mutate` over the whole corpus, escalating the token budget every 4th cycle (80k→400k) — status in `work/bigmutate/status.log` (`FINDINGS.txt` §34). |
+| `audio_hunt.sh` | The quad-pattern audio bank hunt (`FINDINGS.txt` §36, closed: the bank names need Arrowhead's Wwise metadata). |
 | `context_sweep.sh [rounds]` | Lua-derived candidates (derive/anim/ability). |
 
 ## legacy/ — superseded, kept for reference
