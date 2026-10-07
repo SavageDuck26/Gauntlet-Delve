@@ -6356,8 +6356,9 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 52.3 THE HAUL
 
-  **+6**, every one of them the `dir x 2 tokens` shape - exactly the space the
-  single-slot sweeps could not reach:
+  **+6**, in two shapes the single-slot sweeps could not reach - `dir x 2 tokens`
+  (four of them) and `dir + the directory's own basename + 2 tokens` (the
+  blackbox block, whose leaf restates its directory):
 
     blocks/d01_crypt/d01_crypt_blackbox_secret
     blocks/d01_lava/stairs/morak_platform
@@ -6387,3 +6388,60 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   the next round's merge.  Lesson: when a run is suspiciously fast, measure the
   tier directly rather than either trusting or discarding it.
 
+==========================================================================
+53. POSITIONAL TOKENS: FOUR, FIVE, SIX TOKENS DEEP
+==========================================================================
+
+53.1 WHAT THE DEEP TIERS OF SECTION 52 ACTUALLY PAID
+
+  The overnight run finished the two tiers section 52 called affordable, and they
+  were the best single result of the project so far:
+
+    base3  <dir><basename>_%a_%b_%c   +4
+    dir3   <dir>%a_%b_%c              +47
+    ----- **+51** in one round (round 2 was a clean fixpoint)
+
+  Overlay 6,359 -> 6,411.  Every one of the 51 has a *known* directory, ends in a
+  token from the tail vocabulary, and 47 have **three**-token leaves - i.e. exactly
+  the shape `dir x token^3` reaches and nothing else here did.
+
+53.2 THE NEXT SHAPE, AND WHY IT IS NOT `token^4`
+
+  Four- and five-token leaves are the bulk of what is left, but `dir x token^4` is
+  368 x 1958^4 = 5.4e15 - out of reach.  The way in is that a leaf's token is not
+  drawn uniformly: the *position* has its own vocabulary.  Measured over the
+  resolved leaves:
+
+    len 4   |pos| = 131  245  334  283            -> 1.1e12 x 368 dirs ~ 10 min
+    len 5   |pos| =  59   80  126  170  144       -> 5.4e12          ~ 48 min
+    len 6   |pos| =  16   20   29   34   38   36  -> 0.16e12         ~  2 min
+    len 7   |pos| =   4    6    7    6    8   10   9 -> 0.0003e12    ~  0 s
+
+  so the tier that paid for three tokens extends to four, five, six and seven for
+  a few GPU-hours.  `make_token_position_vocab.py` builds, per length: the
+  positional lists, the plain tier (`<dir>` + one token per position), the
+  basename tier (`<dir><basename>_` + positions 1..L-1), a `postail` variant whose
+  last slot is the whole 1,300-token tail vocabulary instead of the position's
+  own, and a `wide` variant drawing every slot from a frequency-ranked list - the
+  guard against a token that is plausible in a position but has never been seen
+  there.  It also emits `tiers.tsv`, a manifest the sweep walks cheapest-first,
+  and the sweep caps a tier by size (default 7e12, which drops `postail5` at
+  48e12).
+
+  This is genuinely new space: the substitute engine does positional shapes
+  inside one package and a three-slot cross-type pass, but nothing has crossed
+  four *corpus-wide positional* slots.
+
+53.3 CONTROLS, AND A CHECKER THAT HAD TO BE FIXED TWICE
+
+  `tools/check_token_tiers.py` turns each tier's first matching pattern into a
+  regex with one group per slot, finds a **resolved** name that matches *and*
+  whose token at each position really is in that position's list, then runs the
+  real crack against that name's hash with one-word lists.  All 13 tiers within
+  the cap reproduced their own control byte-exact.
+
+  The checker itself failed twice before passing, both times because its *search*
+  was too narrow, not because of a tier: it first tried only the pattern file's
+  first line (one specific directory), then its directory index could not reach a
+  pattern that opens with a slot (the free-form tier).  Worth recording: a
+  control that reports FAIL is a claim about the checker as much as the tier.
