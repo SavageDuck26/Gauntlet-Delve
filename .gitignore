@@ -139,3 +139,6 @@ Stingray-Web-Mine/
 
 # Big-run scratch (mutate seeds/tokens/logs - regenerated constantly)
 Scripting/hashcracker/work/
+
+# transfer bundles (tools/make_transfer_bundle.sh)
+hashcracker-state-*.tar.gz
