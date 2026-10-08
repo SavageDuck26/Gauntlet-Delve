@@ -142,3 +142,7 @@ Scripting/hashcracker/work/
 
 # transfer bundles (tools/make_transfer_bundle.sh)
 hashcracker-state-*.tar.gz
+
+# current game install, copied in for a self-contained transfer archive
+# (do NOT commit: ~1.5 GB of shipped game data)
+Gauntlet-install/
