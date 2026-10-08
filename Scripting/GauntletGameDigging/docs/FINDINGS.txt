@@ -6676,3 +6676,86 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `postail5top` (11e12) exists precisely because of that budget, and its 6-token
   counterpart `postail6` paid +2 on the last run.  On a card two or three times
   faster, `postail5` becomes an overnight run rather than a day.
+
+==========================================================================
+57. THE LAST STRUCTURAL HOPE, SIX TARGETED HUNTS, AND A CORRECTION
+==========================================================================
+
+57.1 THE SHIPPED DATABASE HOLDS NO NAMES
+
+  `contents/bundle_database.data` (756 KB, the file the game itself loads) was the
+  last place a readable name table could have been hiding.  It is not: its strings
+  are bundle ids and their `.stream` markers (`0164ad48615ba9ed`,
+  `0164ad48615ba9ed.stream`, repeated per entry) and nothing else.  Probed with
+  five names we know exist - `mummy_priest`, `bombardier`, `mummy_priest_scepter`,
+  `achievement_icons`, `spawner_daemon` - it returns **0 hits for every one**.
+
+  So the database maps packages to bundle ids and holds resource *hashes*; the
+  names are not in it.  That closes the structural question: there is no readable
+  name table anywhere in the shipped data.
+
+57.2 SIX TARGETED HUNTS, ALL ZERO
+
+  Driven by the twin/referrer evidence of the previous round, each cheap and each
+  aimed at a name family whose shape we could see:
+
+    collision geometry     <resolved block/prop> + _collision/_collisionbox/...   93,926  -> 0
+    achievement icons      every id/string/identifier in the achievement UI Lua  8,324  -> 0
+    cross-character clips  every clip of the other 44 animation dirs + direction,
+                           angle and spelling swaps                             26,016  -> 0
+    clip grammar           weapon x verb x direction x turn-angle x offset, over
+                           all 45 character animation dirs                   3,519,165  -> 0
+    icon atlases           every equipment stem x equippables_icons/shop/hud
+                           prefix and _set01..07                           128,837  -> 0
+
+  (plus, in the same round: audio vocabulary 11,160 -> 0, `m_<name>` materials -> 0,
+  shader flag combinations k<=4 159.4 M -> 0.)
+
+  The clip-grammar failure is the informative one: the unresolved clips sit 0-6
+  bytes from resolved clips of the same kind, so the grammar is right, but the
+  *words* are not in it - `die_decapitated` on the elf versus `death_decapitated`
+  on the necromagus and valkyrie, `legs_turn_left30`, `idle_squat_right`,
+  `blend`-style ability names like `chainlightning` and `shroudshot`.  The game is
+  internally inconsistent, and its ability vocabulary is not in the Lua we hold.
+
+57.3 CORRECTION: SIZE IS NOT DISCRIMINATING FOR TEXTURES
+
+  Section 55's twin reasoning leaned on body size, and for most types that holds -
+  but not for textures.  **124 `achievement_icons/`, 90 `equippables_icons/`, 89
+  `effects/textures/`, 27 `hud/action_icons/` and 21 `hud/spells/` all sit at
+  exactly 43,836 bytes**, because an icon's size follows its resolution.  So "the
+  80 textures that are size-adjacent to achievement icons" was weaker evidence
+  than it looked, and the 62%-size-identical figure for textures should be read as
+  "same resolution class", not "same family".
+
+  What *is* discriminating: the **referrer**.  A texture's referrer is the atlas
+  material, and it names the atlas outright - 16 of those unresolved are referenced
+  by `equippables_icons/equipment`, 9 by `equippables_icons/shop_action_icons`, 9
+  by `menu/colosseum/arenas`, 8 by `hud/action_icons`, 6 by
+  `achievement_icons/achievement_icons`.  Atlas membership is therefore knowable;
+  it is the icon *word* that is not.
+
+57.4 WHAT THE ATLASES DO TELL US
+
+  Reading `menu/how_to_play/` (38 resolved icons) exposes the game's own
+  per-class ability vocabulary, which is exactly what the missing ability icons
+  need:
+
+    <class>_<category>, where the categories DIFFER per class:
+    elf/necromagus/valkyrie: defensive heavy light potion relic special
+    wizard:                  cast conjure fire ice lightning potion relic
+    warrior:                 potion relic rush slash smash special
+    misc:                    explosives food gold keys orbs potions
+
+  So the game names abilities with class-specific words (`rush`, `slash`, `smash`
+  for the warrior; `conjure`, `ice`, `lightning` for the wizard), and the icons
+  that are missing are the ones whose ability word we have never seen.
+
+57.5 THE LAST TIER IS RUNNING
+
+  `postail5` - the five-token positional tier with its last slot drawn from the
+  whole 1,300-token tail vocabulary rather than the position's own 144 - is the
+  only tier of the family never to have run.  Widening the last slot has a track
+  record (postail4 +3, postail6 +2, pos5 +5) while the narrowed middle ground
+  postail5top was 0, so this is the honest last bet: **51.5e12 candidates, about
+  eleven hours** on the RX 6600 XT, or a fraction of that on a faster card.
