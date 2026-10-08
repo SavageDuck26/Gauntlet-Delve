@@ -6618,3 +6618,61 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `harvest_dir_sweep.sh` now capture each tier's output, log a loud `!!` line with
   the error, and **abort** rather than reporting a fixpoint when a tier failed.
   A sweep that can only say "+0" is not evidence of anything.
+
+==========================================================================
+56. MOVING THE WORK TO ANOTHER MACHINE
+==========================================================================
+
+  Porting this comes down to two questions, and each has a tool.
+
+56.1 WHAT STATE DOES NOT TRAVEL IN GIT
+
+  The repo is the vehicle: every script, the docs, the catalogue
+  (`04_bundle_resources.csv`), the recovery overlay and `matches.tsv` are tracked,
+  so a clone carries the whole pipeline.  What does not travel is the gitignored
+  state, and almost all of it regenerates in seconds from the tracked catalogue -
+  the big generated vocabularies (`work/chains` 931 MB, `work/audio` 538 MB,
+  `work/level` 523 MB, `work/variants*.txt` 411 MB, `data/vocab/{qcodes,lvl,leaves}`
+  213 MB) are rebuilt by the sweeps themselves every round.
+
+  Four things cannot be regenerated cheaply, because they come from *big* inputs:
+  the depot harvest (`work/harvest2/raw.txt`, 14 MB - input to every leaf, dir and
+  universal vocabulary, and it needs the depot), the per-type reference sets and
+  the referrer graph (from the bundle bodies), the old-build name/rename files
+  (from the older snapshots), and the shipped Lua tree (`game-source/`, 7.5 MB).
+  `tools/make_transfer_bundle.sh` packs those plus the portable release binary and
+  the tier manifests: **11 MB**, against 2.5 GB of `work/` and 6.5 GB of snapshots.
+  `--with-snapshots` adds the current snapshot for harvest/reference work.
+
+56.2 WILL THE GPU PATH WORK ON A DIFFERENT CARD
+
+  `src/gpu.rs` requests `wgpu::Backends::VULKAN` **explicitly** and requires
+  `wgpu::Features::SHADER_INT64` (MurmurHash64A needs 64-bit multiplies).  Both are
+  available from NVIDIA's Vulkan driver, so a port should be uneventful - but the
+  failure mode would otherwise be discovered after a five-hour sweep, so
+  `tools/gpu_smoke_test.sh` answers it in five seconds: it generates a *known* name
+  from two one-word lists and requires the engine to find it with `--gpu`, which
+  means the adapter exists, advertises SHADER_INT64, the pattern plumbing works and
+  the GPU's reported index re-hashes to the same name on the CPU.
+
+    control characters/mummy_priest/mummy_priest -> 01322d9d265d043f  PASS
+
+  If it fails it is the driver, not the code: a missing or mis-selected Vulkan
+  ICD/loader (`vulkan-tools`, `mesa-vulkan-drivers`, or the vendor driver).
+  Dropping `--gpu` always still works, 20-50x slower, and `tools/hc.sh` serialises
+  it either way.
+
+56.3 SIZING A RUN ON A NEW CARD
+
+  Measured here (RX 6600 XT): 1.87 G/s on free-form token combinations, ~1.3 G/s on
+  directory-anchored tiers (368 `--pattern`s means 368 pipeline restarts), 350-750
+  M/s on the mixed sweeps.  Each generator prints a candidate count and a time
+  estimate per tier, so a new machine only needs its own speed number to plan.
+
+  And a faster card is worth more than a faster repeat: the one tier in the
+  positional family we have never been able to afford is `postail5` - the 5-token
+  tier with the last slot drawn from the whole 1,300-token tail vocabulary instead
+  of the position's own 144 - at 48e12, about ten hours here.  Its narrowed sibling
+  `postail5top` (11e12) exists precisely because of that budget, and its 6-token
+  counterpart `postail6` paid +2 on the last run.  On a card two or three times
+  faster, `postail5` becomes an overnight run rather than a day.
