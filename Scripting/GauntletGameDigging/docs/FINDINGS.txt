@@ -6537,3 +6537,84 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   closed.  The shapes that keep paying are the *positional* tiers of section 53;
   the shapes that do not are the ones `mutate`, the map/number derivations and the
   atlas families already cover.
+
+==========================================================================
+55. THE DIRECTORIES THAT ARE NOT IN OUR DIR SET, AND WHAT CLOSED
+==========================================================================
+
+55.1 A DIRECTORY IS INVISIBLE UNTIL ONE OF ITS RESOURCES IS NAMED
+
+  Every token sweep so far used the 368 directories that appear in *resolved*
+  names.  But a directory only enters that set once one of its resources is
+  named, so a directory whose resources are **all** still unresolved is invisible
+  - and stays invisible, because the sweeps that could name those resources are
+  exactly the ones that would have needed the directory.
+
+  The depot harvest prints those directories (`data/vocab/leaves/
+  dirs_harvested.txt`, 15,322 of them).  Most are glue artefact, because the
+  harvest's runs have no delimiters - `acharacters/avatar_elf/animations/` is `a`
+  + a real path - but anchoring each harvested string on a known dir and taking
+  the suffix cleans them, and artefacts that survive cost only GPU time: a hit
+  means the directory was real.  That yields **213 directories we have never
+  tested** (`tools/make_harvest_dir_vocab.py`), e.g.
+
+    characters/dragon/abilities/        characters/grunt_wretch/animations/
+    characters/grunt_brute/animations/  characters/ghost_mother/animations/
+    characters/avatar_elf/elf_itemsets/set01/  blocks/d01_crypt/corridor/
+
+  Four tiers (`sweeps/harvest_dir_sweep.sh`): `<dir>%m`, `<dir>%a_%b`,
+  `<dir>%a_%b_%c` with the last from the tail vocabulary, and the positional four.
+  Two controls pass (a known dir with a known 2-token leaf and a known 3-token
+  leaf ending in `scepter`, both found byte-exact).
+
+55.2 MOST OF IT IS CONTENT THAT WAS CUT BEFORE RELEASE
+
+  Worth recording, because it explains a zero: `characters/dragon/dragon` hashes
+  to **no catalogue row at all** - it is not a resource in the shipped build - and
+  `characters/dragon/` has zero resolved names.  Crucially there is no way for it
+  to exist as a hash *without* being a row, so this is proof rather than
+  inference.  The harvest's extra directories are largely cut content
+  (dragon, hydra, grunt_wretch, grunt_brute, ghost_mother, lake_dweller, larva,
+  spider_spitter, illusion_warrior).
+
+  So the two sets are different things and should not be confused: our 1,101
+  unresolved are **shipped** rows whose names we lack, while the harvest's extra
+  directory space is largely content that never shipped - it cannot name our
+  targets however good the vocabulary.  This is the first hard evidence for the
+  "authored content we cannot read" conclusion of section 50.3.
+
+55.3 WHAT CLOSED THIS ROUND
+
+  * **audio / timpani_bank** - 11,160 hand-built candidates over the audio
+    vocabulary (creatures, classes, environments, music words, both separator
+    orders, +_01 variants): 0.  The 37 unresolved banks sit in three bundles of
+    ten plus five hero bundles holding exactly one resolved
+    `audio/heroes_<class>` each, and nothing in that shape hits.
+  * **the Stingray `m_<name>` material convention** - both directions over 865
+    particles + 1,540 materials: 0.  (Those 1,540 material rows are mostly the
+    *same names* as particles, confirming section 48's effect = particle +
+    material pair.)
+  * **shader chains** - the grammar is settled: `<technique>[:<flag>]*` with
+    flags **`:`-separated and alphabetically sorted**, underscores living inside a
+    flag name, over 39 techniques and 100 flags.  Sorted means *combinations*,
+    not permutations, so the whole space is C(100,k): k<=3 (6.5 M) 0, and k<=4
+    (159.4 M in 801 s) 0.  `tools/chain_combo_hunt.py` runs it on the CPU, which
+    is why it could run while a GPU sweep held the lock.
+  * **new tokens from the harvest** - 154 tokens the resolved names lack, of which
+    34 are candidate units, crossed with every known convention: 71,089 -> 0.
+
+55.4 A SILENT +0 THAT WAS NOT A SEARCH
+
+  `wide5` had **never actually run**.  The tier references `top40.txt`,
+  `top60.txt` and `top80.txt`, and `make_token_position_vocab.py` only ever wrote
+  top50/100/150/200/300/500 - so the crack exited with "no such file", and the
+  driver piped stderr into the `new matches` grep and logged a clean `+0` in 12 s
+  for a 9.19e12 space.  Twelve seconds is the tell: 9.19e12 cannot finish in 12 s
+  at 1.3 G/s, so a suspiciously fast tier had to be measured directly (section
+  52.4 says the same thing the other way round, where 20 s turned out to be
+  genuine).
+
+  Fixed on both sides: the lists are generated, and `token_combo_pos.sh` and
+  `harvest_dir_sweep.sh` now capture each tier's output, log a loud `!!` line with
+  the error, and **abort** rather than reporting a fixpoint when a tier failed.
+  A sweep that can only say "+0" is not evidence of anything.
