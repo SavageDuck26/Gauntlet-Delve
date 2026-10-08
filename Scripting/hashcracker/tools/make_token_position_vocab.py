@@ -40,7 +40,7 @@ OVERLAY = DIG / "resource_name_overlay.json"
 
 SPLIT = re.compile(r"[^a-z0-9]+")
 MAXLEN = 7
-TOP = (50, 100, 150, 200, 300, 500)
+TOP = (40, 50, 60, 80, 100, 150, 200, 300, 500)
 
 
 def resolved():
@@ -153,6 +153,23 @@ def main():
         tiers.append((f"wide{L}", prod * len(dirs), f"patterns_wide{L}.txt",
                       [f"top{n}.txt" if isinstance(n, int) else "tailall.txt"
                        for n in spec]))
+
+    # 5-token positional with ONLY the last slot widened to a frequency list:
+    # pos5's last position holds 144 tokens, the full tail holds 1,300, and the
+    # full widen (postail5, 48e12) is a 10-hour tier.  This is the middle ground.
+    if 5 in pos:
+        sl = "abcdefghij"[:5]
+        pat = "".join(f"%{c}" + ("_" if i < 4 else "") for i, c in enumerate(sl))
+        (out / "patterns_postail5top.txt").write_text(
+            "\n".join(f"{d}{pat}" for d in dirs) + "\n")
+        prod = 1
+        for i in range(4):
+            prod *= len(pos[5].get(i, ()))
+        n = prod * len(freq_sorted[:300]) * len(dirs)
+        tiers.append(("postail5top", n, "patterns_postail5top.txt",
+                      [f"pos5_{i}.txt" for i in range(4)] + ["top300.txt"]))
+        print(f"  postail5top: pos5_0..3 x top300  x {len(dirs)} dirs = {n:,}")
+        total += n
 
     if 4 in pos:
         seps = ["___", "__/", "_/_", "_//", "/__", "/_/", "//_", "///"]
