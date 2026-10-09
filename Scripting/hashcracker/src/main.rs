@@ -476,6 +476,47 @@ fn mutate(argv: &[String]) -> Result<()> {
     }
     let tset = TargetSet::new(targets.iter().copied());
 
+    // --- chains: names of the form `technique:flag:flag` (shader libraries).  The
+    // engine sorts a chain's flags alphabetically, so every candidate here is emitted
+    // sorted - that is the only order worth hashing.  Flags are atomic: they contain
+    // `_` themselves, so the leaf is split on `:` and nothing else.  The flag pool is
+    // the flags of every known chain plus whatever `--tokens` adds (the
+    // render_config `shader_pass_flags` belong there, FINDINGS 60.14).
+    let mut chain_ents: Vec<(Vec<u8>, Vec<Vec<u8>>)> = Vec::new();
+    let mut techniques: Vec<Vec<u8>> = Vec::new();
+    let mut chain_flags: Vec<Vec<u8>> = Vec::new();
+    for line in read_lines(&names_path)? {
+        if !line.contains(&b':') {
+            continue;
+        }
+        let parts: Vec<&[u8]> = line.split(|&b| b == b':').collect();
+        if parts.len() < 2 {
+            continue;
+        }
+        let tech = parts[0].to_vec();
+        let flags: Vec<Vec<u8>> = parts[1..].iter().map(|p| p.to_vec()).collect();
+        if !techniques.contains(&tech) {
+            techniques.push(tech.clone());
+        }
+        for f in &flags {
+            if !chain_flags.contains(f) {
+                chain_flags.push(f.clone());
+            }
+        }
+        chain_ents.push((tech, flags));
+    }
+    for t in &tokens {
+        if !chain_flags.contains(t) {
+            chain_flags.push(t.clone());
+        }
+    }
+    println!(
+        "chains       : {} names, {} techniques, {} flags",
+        chain_ents.len(),
+        techniques.len(),
+        chain_flags.len()
+    );
+
     let matches_path = args.one_or("matches", "matches.tsv");
     let matches = Mutex::new(Matches::open(&matches_path)?);
     let new_hits = AtomicU64::new(0);
@@ -576,8 +617,101 @@ fn mutate(argv: &[String]) -> Result<()> {
         );
     });
     let secs = t0.elapsed().as_secs_f64();
+
+    // --- chain mutation (shader libraries): drop / replace / add N / swap flags,
+    // always emitting the chain sorted, plus technique substitution.
+    let t1 = std::time::Instant::now();
+    if !chain_ents.is_empty() {
+        let depth: usize = args.one_or("chain-depth", "2").parse().unwrap_or(2);
+        fn emit(buf: &mut Vec<u8>, tech: &[u8], flags: &mut Vec<Vec<u8>>) {
+            flags.sort();
+            buf.clear();
+            buf.extend_from_slice(tech);
+            for f in flags.iter() {
+                buf.push(b':');
+                buf.extend_from_slice(f);
+            }
+        }
+        #[allow(clippy::too_many_arguments)]
+        fn walk(
+            depth: usize,
+            start: usize,
+            tech: &[u8],
+            cur: &mut Vec<Vec<u8>>,
+            pool: &[Vec<u8>],
+            buf: &mut Vec<u8>,
+            check: &dyn Fn(&[u8]),
+        ) {
+            if depth == 0 {
+                emit(buf, tech, cur);
+                check(buf);
+                return;
+            }
+            for i in start..pool.len() {
+                if cur.contains(&pool[i]) {
+                    continue;
+                }
+                cur.push(pool[i].clone());
+                walk(depth - 1, i + 1, tech, cur, pool, buf, check);
+                cur.pop();
+            }
+        }
+        println!("chain depth  : {depth} added flags");
+        pool.install(|| {
+            chain_ents
+                .par_iter()
+                .for_each_init(Vec::new, |buf: &mut Vec<u8>, (tech, flags)| {
+                    let check = |c: &[u8]| {
+                        let h = murmur::hash_bytes(c);
+                        if tset.contains(h) {
+                            record(h, c);
+                        }
+                    };
+                    let mut f2 = flags.clone();
+                    // add N flags (sorted subsets, so no order is wasted)
+                    walk(depth, 0, tech, &mut f2, &chain_flags, buf, &check);
+                    // replace one or two flags
+                    for i in 0..flags.len() {
+                        let mut f2 = flags.clone();
+                        f2.remove(i);
+                        emit(buf, tech, &mut f2);
+                        check(buf);
+                        for t in &chain_flags {
+                            if &flags[i] == t {
+                                continue;
+                            }
+                            let mut f2 = flags.clone();
+                            f2[i] = t.clone();
+                            emit(buf, tech, &mut f2);
+                            check(buf);
+                            for j in i + 1..flags.len() {
+                                for u in &chain_flags {
+                                    if &flags[j] == u || u == t {
+                                        continue;
+                                    }
+                                    let mut f3 = f2.clone();
+                                    f3[j] = u.clone();
+                                    emit(buf, tech, &mut f3);
+                                    check(buf);
+                                }
+                            }
+                        }
+                    }
+                    // technique substitution
+                    for tech2 in &techniques {
+                        if tech2 == tech {
+                            continue;
+                        }
+                        let mut f2 = flags.clone();
+                        emit(buf, tech2, &mut f2);
+                        check(buf);
+                    }
+                });
+        });
+    }
+    let chain_secs = t1.elapsed().as_secs_f64();
     println!(
-        "\ndone in {secs:.1}s\nnew matches  : {}\nmatches file : {matches_path} ({} total)",
+        "\ndone in {secs:.1}s (+{chain_secs:.1}s chains)\nnew matches  : {}\nmatches file : {matches_path} ({} total)",
         new_hits.load(Ordering::Relaxed),
         matches.lock().unwrap().len()
     );

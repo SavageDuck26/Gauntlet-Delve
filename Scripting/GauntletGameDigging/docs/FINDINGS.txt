@@ -7467,6 +7467,36 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   a brute-force pass can be told apart at a glance, and so the progress report can say
   how much of the remainder is inference-reachable at all.
 
+  Result of the pass-flag shader sweep, run the way the project normally runs these -
+  generate a candidate list, hash it on the local GPU (`tools/hc.sh crack --gpu
+  --targets data/vocab/targets_shader_library.txt --candidates F`, 165 shader targets):
+
+      top-14 pool + 13 pass/texture flags   40,655,888 candidates   0 hits   (0.3 s)
+      top-20 pool + same flags, de-duplicated   19,093,745 candidates   0 hits   (0.2 s)
+
+  and then the same idea inside the cracker itself, which is the better shape for this:
+  `mutate` now understands chains.  Given the 366 chains we have named, the 39
+  techniques among them, and a 109-flag vocabulary (every flag seen in a chain plus the
+  render_config pass flags), it drops a flag, replaces one or two, adds N, or swaps the
+  technique - and it **always emits the chain with its flags sorted**, because that is
+  the only order the engine ever writes, so no permutation is wasted.  Runs:
+
+      --chain-depth 2     0 hits   (0.2 s)
+      --chain-depth 3     0 hits   (1.7 s)
+      --chain-depth 4     0 hits  (21.0 s)
+
+  So the chains are *not* sorted subsets of the flags we can name, even with the pass
+  flags, and they are not within four flags of any chain we already have.  That is a
+  real answer rather than a shrug: the remaining 165 use flags or techniques that
+  appear nowhere in our vocabulary, which is why every enumeration route keeps
+  returning zero.  Two things bound how far enumeration can go from here: the flag pool
+  cannot simply be widened (the pattern space over a full 60-flag vocabulary at 6-9
+  flags is 1e13-1e18 candidates, which is why the size model and the frequency ranking
+  exist), and a self-test on held-out known chains shows the enumeration only recovers
+  what its vocabulary covers.  For these 165 the remaining source is not in any shipped
+  text - it is what the engine actually binds at runtime, i.e. a GPU frame capture
+  (RenderDoc) of the game.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat

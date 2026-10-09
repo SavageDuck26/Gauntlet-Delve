@@ -43,8 +43,20 @@ def main():
                     help='flags per technique to draw subsets from (default 20)')
     ap.add_argument('--tolerance', type=float, default=0.15,
                     help='allowed size error when matching a flag count')
+    ap.add_argument('--extra-flags', default=None,
+                    help='file of flags to add to every pool - the render_config '
+                         'shader_pass_flags live here (FINDINGS 60.14)')
+    ap.add_argument('--out', default=None,
+                    help='write the candidates here instead of hashing them locally; '
+                         'then feed the file to the GPU with '
+                         'tools/hc.sh crack --gpu --candidates FILE')
     ap.add_argument('--write', action='store_true', help='append hits to matches.tsv')
     args = ap.parse_args()
+    extra = set()
+    if args.extra_flags:
+        extra = {l.strip() for l in pathlib.Path(args.extra_flags).read_text().splitlines()
+                 if l.strip()}
+        print(f'extra flags: {len(extra)}', flush=True)
 
     ov = json.loads((HERE / 'resource_name_overlay.json').read_text())
     rows = list(csv.DictReader((MANIFEST / '04_bundle_resources.csv').open(
@@ -78,27 +90,47 @@ def main():
 
     tested = 0
     hits = []
-    for h, size in sorted(unres.items(), key=lambda kv: kv[1]):
-        for tech, band in bands.items():
-            lo, hi = min(band), max(band)
-            if not (lo * (1 - args.tolerance) <= size <= hi * (1 + args.tolerance)):
-                continue
-            tab = table.get(tech)
-            if not tab:
-                continue
-            k = min(tab, key=lambda k: abs(tab[k] - size))
-            if abs(tab[k] - size) / max(1, size) > args.tolerance:
-                continue
-            pool = [f for f, _c in flags_of[tech].most_common(args.top)]
-            for kk in {k - 1, k, k + 1}:
-                if kk < 0 or kk > len(pool):
+    seen = set()
+    out_fh = pathlib.Path(args.out).open('w') if args.out else None
+    try:
+        for h, size in sorted(unres.items(), key=lambda kv: kv[1]):
+            for tech, band in bands.items():
+                lo, hi = min(band), max(band)
+                if not (lo * (1 - args.tolerance) <= size <= hi * (1 + args.tolerance)):
                     continue
-                for combo in itertools.combinations(sorted(pool), kk):
-                    name = f'{tech}:' + ':'.join(combo)
-                    tested += 1
-                    if murmur(name) == h:
-                        hits.append((h, name))
-                        print(f'  HIT {h:016x}  {name}', flush=True)
+                tab = table.get(tech)
+                if not tab:
+                    continue
+                k = min(tab, key=lambda k: abs(tab[k] - size))
+                if abs(tab[k] - size) / max(1, size) > args.tolerance:
+                    continue
+                pool = sorted(set(f for f, _c in flags_of[tech].most_common(args.top))
+                              | extra)
+                for kk in {k - 1, k, k + 1}:
+                    if kk < 0 or kk > len(pool):
+                        continue
+                    for combo in itertools.combinations(sorted(pool), kk):
+                        name = f'{tech}:' + ':'.join(combo)
+                        if name in seen:            # the same chain recurs for every
+                            continue                # shader solved by this technique
+                        seen.add(name)
+                        tested += 1
+                        if out_fh:
+                            out_fh.write(name + '\n')
+                        elif murmur(name) == h:
+                            hits.append((h, name))
+                            print(f'  HIT {h:016x}  {name}', flush=True)
+            if out_fh and tested % 500000 < 50000:
+                print(f'  ... {h:016x}  unique written {tested:,}', flush=True)
+    finally:
+        if out_fh:
+            out_fh.close()
+    if out_fh:
+        print(f'\nwrote {tested:,} candidates to {args.out}')
+        print('now hash them on the GPU:')
+        print(f'  tools/hc.sh crack --gpu --targets data/vocab/targets_shader_library.txt \\')
+        print(f'      --candidates {args.out} --matches matches.tsv')
+        return
     print(f'\ntested {tested:,} candidates -> {len(hits)} hits')
     if hits and args.write:
         with (HERE.parent / 'hashcracker' / 'matches.tsv').open('a') as fh:
