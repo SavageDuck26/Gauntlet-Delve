@@ -1,3 +1,8 @@
 [build]
-# Optimise for the host CPU (the cracker is CPU-bound; run it on the build host).
-rustflags = ["-C", "target-cpu=native"]
+# PORTABILITY: default must run on any x86-64-v3 machine (AVX2/BMI2), not
+# only the build host.  A native build (znver3 here) emits instructions an
+# Intel Raptor Lake lacks; the engine then died with SIGILL (exit 132, "Illegal
+# instruction, core dumped") the moment it touched the GPU path - a crash with
+# no error message.  For a local-only build override it:
+#   RUSTFLAGS="-C target-cpu=native" cargo build --release
+rustflags = ["-C", "target-cpu=x86-64-v3"]
