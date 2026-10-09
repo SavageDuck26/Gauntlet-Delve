@@ -14,7 +14,9 @@ the name carries (one name legitimately covers several - a unit, its bones, its
 material and its lua share a hash, because the hash *is* the name).
 
 By default only names from the recovery overlay are listed - i.e. names *we*
-recovered.  `--all` also includes names the game's own database already carried.
+recovered.  `--all` also merges whatever the catalogue's own `name` column holds;
+that normally changes nothing, because `list_game_bundles.py` builds that column
+from this same overlay (it matters for a catalogue built without it).
 
     python3 make_name_index.py                 # -> bundle_manifest/05_, 06_
     python3 make_name_index.py --all           # include the database's own names

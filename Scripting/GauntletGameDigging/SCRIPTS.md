@@ -97,11 +97,38 @@ python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
 `bundle_manifest/` (generated catalogue), `example_mod/`, `test_mod/`,
 `crane_mod/`.
 
+## The name indexes (`bundle_manifest/05_`, `06_`)
+
+`make_name_index.py` writes two readable views of the recovered names alongside the
+catalogue, which is keyed by hash and therefore the wrong way round for reading:
+
+```bash
+python3 make_name_index.py                 # 05_names_by_name.txt  (alphabetical by name)
+                                           # 06_names_by_type.txt  (grouped by type)
+python3 make_name_index.py --mode type     # only the grouped index
+python3 make_name_index.py --stdout        # print instead of writing
+python3 make_name_index.py --all           # see below
+```
+
+One row per name: `name<TAB>hash<TAB>type`, where the type column lists every type
+that name carries - a unit, its bones, its material, its lua and its state machine
+all share a hash, because the hash *is* the name.
+
+`--all` merges in whatever the catalogue's own `name` column holds as well as the
+overlay.  In practice that changes nothing, because `list_game_bundles.py` builds
+that column *from* this same overlay; it exists for a catalogue built fresh from
+the game without it.
+
+It reads only `04_bundle_resources.csv` and `resource_name_overlay.json`, so it
+needs neither the game installed nor any of the mining state, and it can be
+regenerated after every batch of new names.
+
 ## Regenerating the catalogue after recovery work
 
 ```bash
 python3 ../hashcracker/tools/merge_matches.py ..   # matches.tsv -> overlay
 python3 list_game_bundles.py --only resources      # overlay -> 03_txt + 04_csv
+python3 make_name_index.py                         # 04_csv + overlay -> 05_/06_ indexes
 python3 ../hashcracker/tools/build_targets.py      # catalogue -> targets_*.txt
 ```
 
