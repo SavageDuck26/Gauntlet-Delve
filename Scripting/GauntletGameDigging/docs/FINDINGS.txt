@@ -7052,6 +7052,52 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   which live asset is which in-game enemy, which is exactly what the referrer hunts of
   section 60.5 could not settle.
 
+60.8 THE OLD SPAWNERS: COLOUR NAMES, AND A LIVE TABLE THAT STILL POINTS AT THEM
+
+  Spawners were named by colour and by group, and the shape survives in the shipped
+  strings as one subdirectory per group:
+
+      gameobjects/spawners/spawner_swamp_red/spawner_swamp_red_t1        (+ _01 _02 _diff _norm _spec _var01)
+      gameobjects/spawners/spawner_swamp_red/spawner_swamp_red_t2        (+ the same set)
+      gameobjects/spawners/spawner_swamp_red/spawner_swamp_red_t3        (+ the same set)
+      gameobjects/spawners/spawner_swamp_swamp/spawner_swamp_swamp_t1..t3
+      gameobjects/spawners/spawner_swamp_corruption/spawner_swamp_corruption_t1..t3
+      gameobjects/gold/goldspawner                                       (+ the same set)
+
+  Exactly one of those is a live resource: `gameobjects/gold/goldspawner`, named since
+  2014-10-10 - the gold spawner.  Every swamp/red name has no row in any of the three
+  builds, and no other colour appears: there is no blue/green/black spawner, and
+  `crown` never occurs in a spawner name in any build (the crown strings are treasure
+  and HUD - `gameobjects/treasures/crown/crown`, `crown_bonus`,
+  `add_crown_knocked_off`).
+
+  What makes these names interesting is where they come from.  `lua/generated/
+  spawners_unit_path` is a live, already-named Lua resource and its body *is* the
+  spawner manifest: 23 unit paths.  Eighteen resolve - `spawner`, `spawner_beam`,
+  `spawner_caves_grunt`, `spawner_caves_orc`, `spawner_crypt_mummy(_t1)`,
+  `spawner_crypt_skeleton(_t1)`, `spawner_exploding`, `spawner_freeze_nova`,
+  `spawner_invisible`, `spawner_lava_cultist`, `spawner_lava_daemon`,
+  `spawner_mortar`, `spawner_poison_launcher`, `spawner_trap`, `spawner_twister`,
+  `goldspawner` - and five do not:
+
+      gameobjects/spawners/spawner_swamp_red/spawner_swamp_red_t1   no row in any build
+      gameobjects/spawners/spawner_swamp_red/spawner_swamp_red_t2   no row in any build
+      gameobjects/spawners/spawner_teleport                         no row in any build
+      gameobjects/spawners/spawner_tutorial                         no row in any build
+
+  So the shipped build's own generated spawner table still points at spawners cut
+  before the earliest snapshot we hold, complete with their variant sets
+  (`spawner_teleport` and `spawner_tutorial` each have seven spellings in the
+  strings).  Same pattern as `demon_imp` (60.7) and `treant_branch_trap` (60.6): the
+  name is kept alive by live code or a live table, which is exactly what makes a cut
+  thing look recoverable, and the hash test is what settles it.
+
+  No names were added - all 447 `gameobjects/spawners/*` and `gameobjects/gold/*`
+  strings were hashed and not one is an unresolved row - but
+  `lua/generated/spawners_unit_path` is worth remembering as a *witness list*: it is
+  the one place where a cut spawner's exact path is still spelled out in full, so any
+  future spawner work should start from it.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
