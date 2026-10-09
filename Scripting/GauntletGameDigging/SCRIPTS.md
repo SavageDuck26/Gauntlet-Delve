@@ -39,6 +39,18 @@ always needs `check_build_liveness.py` (or `hunt_old_names.py`) behind it. Keep 
 control name in every batch: `characters/gator_brute/gator_brute` should read live in
 2014 and 2015-01 and absent in 2015-08.
 
+## Runtime name capture (GauntletModLoader)
+
+| script | purpose |
+| --- | --- |
+| `hunt_runtime_names.py` | Turns a `runtime_names.tsv` capture from the loader's name mining into three classes — **KNOWN** (the hash is a row we had already named: the control that proves the capture-and-hash chain end to end), **RECOVERED** (a previously unresolved row, now named by the engine itself) and **NEW** (no catalogue row at all). Reads the catalogue and `10_unresolved_master.tsv` read-only and writes its report *next to the capture*, so a session can be gone over before anything is folded into the overlay. `--list known|recovered|new`, `--out`. |
+
+The loader writes its own log (`binaries/name_mining.log`) and its own dump
+(`binaries/runtime_names.tsv`); `modloader.log` keeps one line pointing at them. The
+engine's string hasher for this build is at RVA `0xBCD0` (`HashNameAbi=3`) — see
+FINDINGS 60.15 for how it was located.
+
+
 ## Bundle inspection / analysis
 
 `analyze_bundle.py`, `analyze_bundles.py`, `analyze_bundle_db.py`,

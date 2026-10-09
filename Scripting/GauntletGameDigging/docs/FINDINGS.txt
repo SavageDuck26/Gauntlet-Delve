@@ -7509,3 +7509,82 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       builds is the second way in.  Both are worth a pass before the next 200-name
       tier.
 
+60.15 THE NAME->HASH FUNCTION, FOUND BY DISASSEMBLY (AND WHY THE RUNTIME SCAN COULD NOT)
+
+  The runtime capture project (GauntletModLoader) set out to locate the engine's
+  name->hash function from *inside* the process: scan the loaded game image for the
+  MurmurHash64A multiplier (0x5bd1e995 / 0xc6a4a793), then look for the 47/33-bit
+  shifts nearby.  Three scan revisions (v1 byte pair, v2 constant plus the code that
+  references it, v3 a wider +/-0x400 window scoring shr/shrd/shld) all failed the
+  same way:
+
+      murmur constant at 0 site(s), 0 code reference(s) to it
+      (immediate-form fallback: 4 candidate(s)) - every candidate scored 2, refused
+
+  The scan was not wrong about the neighbourhood, only about its *shape*.  Reading
+  the executable with a disassembler instead (`objdump -D -M intel gauntlet.exe`)
+  settles it in one shot: the two halves of the 64-bit constant are never adjacent.
+
+      4061a4:  69 c0 95 e9 d1 5b    imul eax,eax,0x5bd1e995
+      4061aa:  69 c9 95 e9 d1 5b    imul ecx,ecx,0x5bd1e995
+      4061b7:  69 d2 95 e9 d1 5b    imul edx,edx,0x5bd1e995
+      4061e6:  69 c0 95 e9 d1 5b    imul eax,eax,0x5bd1e995
+      4061ec:  8b c8 / c1 e9 0d     mov ecx,eax / shr ecx,0xd
+      4061f3:  69 c9 95 e9 d1 5b    imul ecx,ecx,0x5bd1e995
+      4061fb:  c1 e8 0f             shr  eax,0xf
+      406202:  c3                   ret
+
+      406210:  53 55 56 57          push ebx / ebp / esi / edi   <- 64-bit core entry
+      406214:  8b 7c 24 18          mov  edi,[esp+0x18]          <- 2nd stack argument
+      406218:  68 93 a7 a4 c6       push 0xc6a4a793              <- high half of M
+      406220:  68 95 e9 d1 5b       push 0x5bd1e995              <- low half of M
+      406227:  e8 a4 9e 1f 00       call 0x6000d0                <- 64x64 multiply helper
+
+  A single `imul r32, r32, imm32` cannot hold a 64-bit constant, so no contiguous
+  eight-byte copy of M exists anywhere in the image.  That is the whole reason a
+  byte-pattern scan can only ever return coincidences: the four score-2 "candidates"
+  it kept reporting at RVA 0x626C-0x6328 were inside the right function, scored on
+  the wrong evidence.  Two lessons worth keeping: the constant is *split across
+  instructions*, and the tool for finding it is a disassembler, not a memory scan.
+
+  The function actually worth hooking is a string wrapper.  Following the callers of
+  the 64-bit core finds one clean hasher:
+
+      40bcd0:  83 ec 08 / 53 / 56  sub esp,0x8 / push ebx / push esi
+      40bcd5:  8b 74 24 18          mov  esi,[esp+0x18]   <- the string, 2nd argument
+      40bcd9:  8b ce / 8d 51 01     mov ecx,esi / lea edx,[ecx+1]
+      40bce0:  8a 01 / 41 / 84 c0 / 75 f9
+                                    byte-at-a-time strlen loop
+      40bce7:  6a 00 / 6a 00       push 0 / push 0       <- seed = 0
+      40bce9:  2b ca                sub  ecx,edx          <- length
+      40bced:  51 / 56 / e8 1c a5 ff ff
+                                    push ecx / push esi / call 0x406210
+      40bcf4:  8b 5c 24 30 / 89 44 24 08 / 89 54 24 0c
+                                    stores the 64-bit result (eax:edx)
+
+  So `hash_string` at RVA 0x40BCD0 is __cdecl, takes the name as its *second* stack
+  argument, and returns the hash in edx:eax - i.e. exactly MurmurHash64A(0, name,
+  strlen(name)), the convention the catalogue has assumed all along.
+
+  The core's own argument order is visible in its callers: 0x4042a3 and 0x40bcef
+  both call it as `(data, len, 0, 0)`, while 0x43340f calls it as `(ptr, 4, 0x10, 0)`
+  and then feeds the previous result (edx:eax) back in as the seed for the next
+  field, a chained hash over struct members at +0x34/+0x2c.  So the core is
+  `hash(const void* data, uint32_t len, seedLo, seedHi)`, and the string hasher is
+  simply its seed-0, strlen-driven case.  Other callers, for the record: 0x404250
+  (entered via 0x404240, which folds the result with `xor eax,edx`) builds a string
+  into a 0x100-byte stack buffer through the `ds:0x746164` import and hashes it.
+
+  Consequence for the capture project: [NameMining] now supports `HashNameAbi=3`
+  (a two-argument __cdecl whose second argument is the string), and this build's
+  settings are `HashNameAddress=0xBCD0`, `HashNameAbi=3`, `AutoHookHash=1`,
+  `ScanHashFunction=0`.  The in-process image scan is retired: it could only have
+  found the split immediates by luck.
+
+  (Method note, and the third time this project has paid for the same lesson: a
+  grep or byte scan over a *build artifact* answers only the question it was asked.
+  The other two instances this session were `_names.txt` treated as a live resource
+  list, and registry table names treated as resource names.  When a scan keeps
+  returning "present but unnamed", read the consumer, not the bytes.)
+
+
