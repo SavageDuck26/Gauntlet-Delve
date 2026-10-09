@@ -17,10 +17,24 @@ Read first: [`docs/FINDINGS.txt`](docs/FINDINGS.txt) (master format document,
 | `make_family_vocab.py` | Per-family token/dir vocabularies (used by the older sweeps). |
 | `mine_localization.py` | Mines the localization bundle (English block) into a name dictionary. |
 | `scan_binaries.py` | Path-like strings from `binaries/*.exe|dll` → `bin_strings.txt`. |
-| `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. |
+| `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
 | `extract_anim_refs.py` | Maps unresolved animation resources to their owning unit via `state_machine` bodies. |
 | `catalog_bundles.py`, `add_bundle_to_db.py`, `bundle_database_manager.py` | Bundle catalogue + `bundle_database.data` bookkeeping. |
 | `render_config_tools.py` | `render_config` resource handling. |
+
+## Cross-build hunting (deprecated and renamed content)
+
+| script | purpose |
+| --- | --- |
+| `hunt_old_names.py` | Mines a snapshot's own harvested strings against that snapshot's *own* resource hashes → `work/old_names_<snap>.json` (2014: 2,785 names, 2015-01: 3,102). |
+| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename — → `work/renames_<snap>.json` (341 moves 2015-01→2015-08). |
+| `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. Caches per-snapshot hash sets in `.liveness_cache/`. |
+| `tools/apply_renames.py` (hashcracker) | Joins the two above: old name → new name, and a token-translation pass over the old corpus. |
+
+A harvest (`_names.txt`) is evidence of a *string*, never of a live resource, so it
+always needs `check_build_liveness.py` (or `hunt_old_names.py`) behind it. Keep a
+control name in every batch: `characters/gator_brute/gator_brute` should read live in
+2014 and 2015-01 and absent in 2015-08.
 
 ## Bundle inspection / analysis
 

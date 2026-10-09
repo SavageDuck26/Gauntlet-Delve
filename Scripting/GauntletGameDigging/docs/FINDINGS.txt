@@ -6996,6 +6996,62 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `loc_enemy_beast_of_orox` is the game's own user-facing name for that unit, so the
   entity really was billed as the Beast of Orox.
 
+60.7 THE DEMON IMP IS `demon_ranged`; THE TREANT'S TRAP IS A BORROWED `enemy_type`
+
+  The imp strings are identical in all three harvests - `demon_imp` plus
+  `_01`/`_02`/`_diff`/`_norm`/`_spec`/`_var01` (the texture-set shape) and the loc key
+  `loc_enemy_demon_imp` - and the new `check_build_liveness.py` settles it: not one
+  spelling is a live resource in 2014-10-10, 2015-01-21 or 2015-08-11, and none has a
+  row in the shipped catalogue.  Two controls ran in the same batch, so the verdict is
+  trustworthy: `characters/gator_brute/gator_brute` reads LIVE in 2014 and 2015-01 and
+  gone in 2015-08 (the rename we already proved), and `characters/lizard_base` reads
+  absent, absent, LIVE - a name added *by* the shipped build.
+
+  The name has not left the shipped build, though: it is in **live Lua**.  A
+  `--grep demon_imp|treant` pass over every resource body (173,664 distinct strings)
+  finds it in exactly three entries, all `lua`, all already named:
+
+      characters/demon_ranged/demon_ranged            contains loc_enemy_demon_imp, demon_imp
+      characters/relic_gargoyle/relic_gargoyle        contains loc_enemy_demon_imp, demon_imp
+      characters/cultist_armor/cultist_armor_corpse   contains treant_branch_trap
+
+  and the context is a unit-definition table - the fields the lua gives the unit:
+
+      name        = loc_enemy_demon_imp
+      enemy_type  = demon_imp
+
+  So the enemy the game calls *Demon Imp* is the unit whose assets are named
+  `demon_ranged`.  The same readout maps the whole demon family, because that lua
+  bundle declares `enemy_type` for 53 units:
+
+      characters/demon_ranged/demon_ranged            enemy_type = demon_imp
+      characters/demon_melee/demon_melee              enemy_type = demon_fiend
+      characters/demon_heavy/demon_heavy              enemy_type = demon_horror
+      characters/demon_overlord_mini/...              enemy_type = demon_horror
+      characters/relic_gargoyle/relic_gargoyle        enemy_type = demon_imp
+      characters/boss_orox/boss_orox                  enemy_type = beast_of_orox
+
+  i.e. the three dead loc names map onto the three live demon units (imp = ranged,
+  fiend = melee, horror = heavy), which is why no spelling of `demon_imp`,
+  `demon_fiend` or `demon_horror` is a resource: they were *gameplay* names, never
+  asset names.  `boss_orox` declaring `beast_of_orox` is 60.2 again, from the code
+  side.
+
+  `treant_branch_trap` is the other kind of survivor: it is not a display name for its
+  own unit but an `enemy_type` *borrowed* by `cultist_armor_corpse`, so the trap
+  archetype outlived the treant.  `enemy_type` is an archetype id and not a rename
+  record - `characters/cultist_armor/cultist_armor` and `characters/living_statue/...`
+  both declare `orc_juggernaut`, and `characters/boss_morak_sword/...` declares
+  `tyrfing` - so it maps a unit to a *behaviour* and only sometimes coincides with the
+  unit's own name.
+
+  Practical value: this is a second, independent channel for the "cut, or merely
+  unnamed?" question, and it produced the whole `asset -> enemy_type` map for 53
+  units.  It adds no *names* - the strings inside those bodies hash to no unresolved
+  target, which `scan_bundle_strings.py` reports as `DIRECT HITS: 0` - but it says
+  which live asset is which in-game enemy, which is exactly what the referrer hunts of
+  section 60.5 could not settle.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat

@@ -9,6 +9,11 @@ plus writes the plausible candidates for the Rust hashcracker to expand.
 
 Usage:
     python3 scan_bundle_strings.py [--out candidates.txt]
+    python3 scan_bundle_strings.py --grep 'demon_imp|treant' --out /tmp/recheck.txt
+
+`--grep` reports *where* a string lives - which bundle and which entry hash - which
+is how a cut resource's name is told apart from a name some live resource still
+references (FINDINGS 60.7).  It does not change the default behaviour.
 """
 import argparse
 import csv
@@ -21,10 +26,19 @@ STR = re.compile(rb"[ -~]{4,120}")
 PLAUSIBLE = re.compile(r"^[a-z0-9][a-z0-9_./-]{3,110}$")
 
 
+def fmt_hash(h):
+    if isinstance(h, int):
+        return f"{h:016x}"
+    return str(h)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="bundle_strings.txt")
+    ap.add_argument("--grep", help="report the bundle and entry hash of strings "
+                                  "matching this regex")
     args = ap.parse_args()
+    grep_re = re.compile(args.grep) if args.grep else None
 
     root = L.find_install_root()
     contents = root / "contents"
@@ -40,6 +54,7 @@ def main():
 
     strings = set()
     hits = []
+    where = []
     bundles = sorted(p for p in contents.iterdir()
                      if p.is_file() and L.classify_bundle_file(p.name))
     for i, p in enumerate(bundles, 1):
@@ -60,6 +75,9 @@ def main():
                 if not PLAUSIBLE.match(s):
                     continue
                 strings.add(s)
+                if grep_re and grep_re.search(s):
+                    where.append((p.name, fmt_hash(e.get("name_hash")),
+                                  fmt_hash(e.get("type_hash")), s))
                 h = L.murmur_hash64(s)
                 if h in targets:
                     hits.append((s, targets[h]))
@@ -71,6 +89,18 @@ def main():
     print(f"DIRECT HITS: {len(hits)}")
     for s, t in hits[:40]:
         print(f"  [{t}] {s}")
+    if args.grep:
+        seen = set()
+        print(f"\nwhere /{args.grep}/ appears ({len(where)} occurrences):")
+        for b, nh, th, s in where:
+            key = (nh, s)
+            if key in seen:
+                continue
+            seen.add(key)
+            print(f"   bundle={b}  entry={nh}  type={th}  {s!r}")
+            if len(seen) >= 60:
+                print("   ... (truncated at 60)")
+                break
 
 
 if __name__ == "__main__":
