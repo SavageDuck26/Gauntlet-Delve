@@ -27,7 +27,7 @@ Read first: [`docs/FINDINGS.txt`](docs/FINDINGS.txt) (master format document,
 | script | purpose |
 | --- | --- |
 | `hunt_old_names.py` | Mines a snapshot's own harvested strings against that snapshot's *own* resource hashes → `work/old_names_<snap>.json` (2014: 2,785 names, 2015-01: 3,102). |
-| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename — → `work/renames_<snap>.json` (341 moves 2015-01→2015-08). |
+| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename — → `work/renames_<snap>.json` (341 moves 2015-01→2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
 | `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. Caches per-snapshot hash sets in `.liveness_cache/`. |
 | `tools/apply_renames.py` (hashcracker) | Joins the two above: old name → new name, and a token-translation pass over the old corpus. |
 

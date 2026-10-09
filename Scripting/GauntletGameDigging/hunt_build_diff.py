@@ -72,6 +72,10 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--dump-renames",
                     help="write clean 1:1 content moves (old hash -> new hash) here")
+    ap.add_argument("--report-changed", action="store_true",
+                    help="also report resources that exist in BOTH builds under the "
+                         "same name hash but with different bytes - i.e. the same "
+                         "asset re-exported or re-modelled (FINDINGS 60.9)")
     args = ap.parse_args()
 
     old_b, new_b = bundles_of(args.old), bundles_of(args.new)
@@ -88,6 +92,7 @@ def main():
     todo = [args.bundle] if args.bundle else shared
     totals = collections.Counter()
     all_examples = []
+    changed_named = []
     for b in todo:
         if b not in old_b or b not in new_b:
             continue
@@ -120,6 +125,16 @@ def main():
                        if oh in name_of and nh in name_of]
         named_new = [name_of[nh] for oh, nh in examples if nh in name_of]
         named_old = [name_of[oh] for oh, nh in examples if oh in name_of]
+        old_bodies = {h: hashlib.md5(body).hexdigest()
+                      for _i, h, _t, body in oe if h and body}
+        new_bodies = {h: hashlib.md5(body).hexdigest()
+                      for _i, h, _t, body in ne if h and body}
+        changed = [h for h in set(old_bodies) & set(new_bodies)
+                   if old_bodies[h] != new_bodies[h]]
+        totals["same_hash_changed"] += len(changed)
+        for h in changed:
+            if h in name_of:
+                changed_named.append(name_of[h])
         totals["bundles"] += 1
         totals["old_only"] += len(only_old)
         totals["new_only"] += len(only_new)
@@ -131,9 +146,12 @@ def main():
               f"old-only {len(only_old):>5} new-only {len(only_new):>5} | "
               f"same-content-different-hash {moved:>5} "
               f"(both-named {len(named_pairs)}, new-named {len(named_new)}, "
-              f"old-named {len(named_old)})")
+              f"old-named {len(named_old)}) | "
+              f"same-hash-new-bytes {len(changed):>4}")
         for a, c in named_pairs[:6]:
             print(f"        RENAME  {a}   ->   {c}")
+        for h in sorted(changed)[:4]:
+            print(f"        CHANGED {name_of.get(h, f'{h:016x}')}")
         all_examples.extend(examples)
     if args.dump_renames:
         import json
@@ -142,6 +160,13 @@ def main():
                                    for o, n in all_examples], indent=0))
         print(f"wrote {len(all_examples)} clean content moves -> {out}")
     print("TOTALS:", dict(totals))
+    if args.report_changed:
+        print(f"\n=== same name, different bytes: {len(changed_named)} of them are "
+              f"resources we can name ===")
+        for n in changed_named[:60]:
+            print(f"   {n}")
+        if len(changed_named) > 60:
+            print(f"   ... and {len(changed_named) - 60} more")
 
 
 if __name__ == "__main__":

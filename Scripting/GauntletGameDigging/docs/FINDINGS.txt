@@ -7098,6 +7098,68 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   the one place where a cut spawner's exact path is still spelled out in full, so any
   future spawner work should start from it.
 
+60.9 THE PRE-SLAYER BUILD IS A DIFFERENT GAME'S WORTH OF CONTENT, AND IT IS ALL ON DISK
+
+  The rename hunt (60.2) turned up something bigger than renames.
+  `hunt_build_diff.py --old 2014 --new 2015-08` reports, across the 47 bundles the two
+  snapshots share:
+
+      old_only             2,619   existed in 2014-10-10, gone from the shipped build
+      new_only             4,704   added by the shipped build
+      content_moved          339   same bytes, different name (a rename)
+      same_hash_changed    4,298   SAME NAME, DIFFERENT BYTES - reworked in place
+                                   (3,750 of them are resources whose names we hold)
+
+  `--report-changed`, added for this, lists the reworked ones.  Narrowed to the cast,
+  the picture is unmistakable: of 130 unit candidates (26 units x body, `_diff`,
+  `_norm`, `_spec`, idle), 37 exist in 2014 and 57 in the shipped build; of those,
+  10 are byte-identical, 27 changed and 20 are new.  The ones whose *body and
+  animation* changed are the models:
+
+      characters/demon_heavy/demon_heavy        changed   (its idle and _diff changed too)
+      characters/demon_ranged/demon_ranged      changed   (idle and _diff changed too)
+      characters/demon_melee/demon_melee        changed
+      characters/mummy_priest/mummy_priest      changed
+      characters/mummy_risen/mummy_risen        changed   (in 2014 it was byte-identical to mummy_giant)
+      characters/orc_juggernaut/orc_juggernaut  changed
+      characters/cultist_novice/cultist_novice  changed   (cultist_novice_diff is byte-identical)
+      characters/cultist_sorcerer/...           changed
+      characters/lich/lich                      changed   (lich_diff byte-identical)
+      characters/lake_dweller/...               changed
+      characters/grunt_shaman/...               changed
+      characters/ghost/ghost                    changed   (ghost_diff and ghost_norm byte-identical)
+
+  Two things follow.  The PreSlayer units are **not** the shipped units under an older
+  name: the same names carry different geometry, and the diffuse map was often kept
+  while the mesh and animation were redone - which is exactly what a re-model looks
+  like.  And `demon_overlord_mini` is the only overlord in any build (shipped, and
+  named); `characters/demon_overlord/*` and `characters/overlord/overlord` have no row
+  anywhere, and "overlord" appears in neither the 2014 nor the 2015-01 strings - so the
+  full-size overlord is older than every snapshot we hold, and would have to come from
+  an earlier depot manifest.
+
+  Which is the real point: the old content is still on disk.  We hold
+  `Gauntlet-PreSlayer-2014-10-10` (5,489 live resource hashes), `...-2015-01-21`
+  (6,224) and `...-2015-08-11` (7,804) alongside the shipped install, so the pre-Slayer
+  models, textures and animations are all readable, and the depot harvests still carry
+  names from builds we do not have (that is where `lizard_archer`, `treant_branch_trap`
+  and `demon_imp` come from), so older manifests remain reachable.
+
+  That makes *restoring* the old content possible.  The toolchain already knows how to
+  build and inject custom packages - §16 documents the custom unit/material/texture
+  chain that loads in-game - so an old resource could be repacked under its own name
+  and loaded, or referenced from a custom unit, and the PreSlayer look would come back:
+  the original demon models, the lizard units, `gator_brute` as it looked before it
+  became Orox, the treant, and the `spawner_swamp_*` family.  That is a
+  content-restoration project rather than a name-recovery one, and it is **out of scope
+  here**; it is written down so the lead is not lost.  Same licensing caution as §58.4 -
+  reading and modding locally is one thing, redistributing shipped assets is not.
+
+  Starting points if it is ever picked up: the three snapshot directories; this tool
+  with `--report-changed` for the re-modelled resources and `--dump-renames` for the
+  renamed ones; `check_build_liveness.py` to say which build holds any given name; and
+  the `_names.txt` harvests for names whose build we no longer have at all.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
