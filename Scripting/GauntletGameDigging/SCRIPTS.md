@@ -18,6 +18,7 @@ Read first: [`docs/FINDINGS.txt`](docs/FINDINGS.txt) (master format document,
 | `mine_localization.py` | Mines the localization bundle (English block) into a name dictionary. |
 | `scan_binaries.py` | Path-like strings from `binaries/*.exe|dll` → `bin_strings.txt`. |
 | `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
+| `make_progress_report.py` | The overall progress view → `bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the sweep history from `work/*/status.log`, the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its "Unresolved 3,444" is the static `hash_database.json` metric, not ours. |
 | `extract_anim_refs.py` | Maps unresolved animation resources to their owning unit via `state_machine` bodies. |
 | `catalog_bundles.py`, `add_bundle_to_db.py`, `bundle_database_manager.py` | Bundle catalogue + `bundle_database.data` bookkeeping. |
 | `render_config_tools.py` | `render_config` resource handling. |
