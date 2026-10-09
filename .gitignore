@@ -148,3 +148,8 @@ hashcracker-state-*.tar.gz
 # current game install, copied in for a self-contained transfer archive
 # (do NOT commit: ~1.5 GB of shipped game data)
 Gauntlet-install/
+
+# Shell drivers are LOCAL-ONLY: they carry machine/host specifics and are never
+# published (see .clinerules - "personal data in a tool must never be pushed").
+# The Python tools + their data are the repo; the .sh plumbing runs on the machine.
+*.sh

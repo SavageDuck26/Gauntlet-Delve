@@ -1,5 +1,11 @@
 # hashcracker scripts
 
+> **The `.sh` drivers are LOCAL-ONLY and are not in this repo** (`*.sh` is
+> gitignored).  They carry machine/host specifics, so they stay on the machine
+> that runs them — the Python tools and their data are what the repo ships.  This
+> file is the offline index for whoever *has* the `.sh` set: every `sweeps/*.sh`,
+> `tools/*.sh` and `legacy/*.sh` below is expected to exist locally, not in git.
+
 Everything that drives the brute-forcer. **Workflow:** build targets →
 build/flatten vocabularies → generate candidates → `hashcracker crack` →
 merge hits. Run `./sweeps/*.sh` to loop that to a fixpoint.
