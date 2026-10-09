@@ -7212,6 +7212,96 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   third class of false lead alongside cut content (60.6-60.9) and harvest-only strings
   (60.4), and this is the check that tells the three apart.
 
+60.11 THE 57 UNRESOLVED `unit` ROWS: IDENTIFIED, BUT NOT NAMEABLE BY CONVENTION
+
+  The level-`unit` cluster was the one hole that looked like characters, so it got a
+  full investigation.  There are 70 such rows and 57 distinct hashes, all inside five
+  level-module packages - `modules/d01_caves/resources` (24), `d01_lava` (18),
+  `d01_crypt` (6), `menu` (5), `d01_hub_room` (4) - and their bodies are the meshes
+  themselves, from 903 bytes to 3.63 MB.  What the investigation established:
+
+  1. *They are not copies of anything named.*  Walking every bundle and comparing
+     content hashes against all 57 target bodies gives **zero matches**, named or
+     unnamed.  So they are unique level-local assets: unlike the level's props, which
+     are copies of global `props/...` assets, these exist once.
+
+  2. *Eleven of them name their own subject through what they reference.*  An aligned
+     u64 scan of each body against our 6,709 named resources mostly comes up empty
+     (these units reference their materials by thin hash, not by full name), but it
+     did find the ones below.  That is enough to say what they are, even where the
+     name is out of reach:
+
+         94c4e8676a6b9668  876 B   lavarock_floor_01_norm, lavarock_rock_01_norm,
+                                   lavarock_wall_01_norm, lavarock_floor_border_01_norm,
+                                   lava_tile_blend_mask, props/d01_lava/lava_geyser_norm
+                                   -> a multi-tile terrain stamp blending four lava rocks
+          db79169660ed9629  324 B   lavastruct_stairs_norm, lavastruct_borders_01_norm
+         135ab7fc557b0e7b 23 KB    blocks/d01_caves/caverock_set
+         eda3b17372d851e4 16 KB    blocks/d01_caves/caverock_set
+        5171038d70d672d0 10 KB    blocks/d01_caves/caverock_set
+         5b6437107c269db5  8 KB    blocks/d01_caves/swamp_set
+         e55b8a5ce3a58d36  7 KB    blocks/d01_caves/swamp_set
+         05b95a956d2b2f06 650 KB   blocks/d01_lava/lavastruct_set
+         1b53f5adcfff1461 647 KB   blocks/d01_lava/lavastruct_set
+         93f1d4141e624ab2 492 B    props/d01_lava/lava_tile_blend_mask   (menu module)
+         69d0416658f5f934 376 B    blocks/d01_caves/caves_water_01_norm
+                                   (crypt module)
+
+     So the small ones are terrain tiles/stamps and the large ones are the
+     corresponding tile meshes; the rest (the 46 with no named reference) are props
+     whose materials are referenced only by thin hash.
+
+  3. *Every convention-based route is closed.*  The evidence, in the order it was
+     tried: the bodies contain no name strings (binary mesh data, and
+     `scan_bundle_strings.py` reports `DIRECT HITS: 0` build-wide); content identity
+     matches nothing; the nearest-size named neighbours are props and blocks from
+     *every* level rather than the unit's own (the closest coincidence anywhere is
+     78,099 bytes against `blocks/d01_caves/walls/caverock_wall_4c` - same size,
+     different bytes); sibling and single/double-axis mutation of all 713 named
+     `props/d01_*` and `blocks/d01_*` seeds, including directory moves between flat
+     and `floors`/`walls`/`borders`/`rocks`/`pillars`/`stairs`/`railings`, ran
+     532,500 candidates for nothing; and the module namespace is the wrong *type* -
+     `modules/.../prefabs/**`, `quilts/**` (497 names), `dungeon_tiles/**`, `rooms`,
+     `colosseum` and `arena` are all `level` resources, not `unit`, so the prefab
+     naming convention (`prefab_<env>_<descriptors>[_NN|_Nc]`, discovered while
+     looking) cannot name a unit.  Pattern sweeps over that prefab space - 4.4e10
+     candidates two-word, 2.84e10 three-word - returned zero as well.
+
+  4. *And the generic sweeps had already been here.*  The positional token tiers
+     (pos4-pos7, postail4-postail7, widetail, postail5 still running) cover exactly
+     this `dir%a_%b_%c_%d` space for props/blocks/gameobjects, and `big_mutate`
+     mutates 49,156 seeds against an 80,000-token vocabulary.  Both are `+0` here.
+
+  5. *The purpose-built twin-naming tool ran too, and found twins but no names.*
+     `generators/effect_transplant.py` (nearest known body of the same type by byte
+     similarity, then substitute one or two tokens from the family vocabulary,
+     accepting a candidate only if the hash matches) was run for `--type unit`
+     across all five bundles.  It found real twins for 16 of the 57 - the closest
+     being `b24d44becaece1d5` against `blocks/d01_caves/walls/caverock_wall_4c` at
+     100 % similarity and the same 78,099 bytes, then
+     `blocks/d01_caves/floors/cavestruct_floor_4c_4c` (67.6 %),
+     `props/d01_common/fog_plane` (62.5 %) and `blocks/common/invisible_wall_2c`
+     (46.3 %) - but named none of them.  A follow-up sweep of 2,724 candidates
+     centred on those twins (suffix and variant sets, rock/part/size token swaps,
+     and level/directory moves) was empty as well.  A body that is near-identical
+     to a named asset under a name that is *not* a variant of it is precisely what
+     an authored, per-level copy looks like.
+
+  Conclusion: these 57 are **authored, level-local unit names whose text exists
+  nowhere in the shipped build and which no naming convention reaches** - the same
+  kind of wall as the shader leaves (§17.9), but for 57 resources instead of 407.
+  They are identified in substance (terrain tiles, tile meshes, and the props that
+  use the terrain materials) without being nameable, and no sweep - GPU tiers,
+  mutate passes, prefab patterns, or the generator in
+  `hashcracker/generators/level_units.py` - moves them.  Recorded as closed rather
+  than pending, so no future pass spends GPU on them again.
+
+  Side result worth keeping: the module namespace has its own naming grammar -
+  `modules/d01_<env>/prefabs/<category>/prefab_<env>_<descriptors>[_<NN>|_<Nc>]`,
+  `modules/d01_<env>/quilts/<category>/<env>_quilt_<size>__<grid-code>__<NN>[_<descriptor>]`,
+  `modules/d01_<env>/dungeon_tiles/<rock>_<dims>_<quad>_<quad>_<quad>_<quad>_<NN>[_corridor]`,
+  plus `rooms`, `colosseum` and `arena` - all `level`-typed.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
