@@ -6,8 +6,8 @@ The catalogue (`04_bundle_resources.csv`) is keyed by hash, which is the only ke
 the game uses - so it is the wrong way round for reading.  Two indexes are written
 alongside it, regenerated on demand:
 
-    05_names_by_name.txt   every recovered name, ALPHABETICAL BY NAME
-    06_names_by_type.txt   the same, grouped by resource type
+    06_names_by_name.txt   every recovered name, ALPHABETICAL BY NAME
+    07_names_by_type.txt   the same, grouped by resource type
 
 One row per name: `name<TAB>hash<TAB>type`, where the type column is every type
 the name carries (one name legitimately covers several - a unit, its bones, its
@@ -91,7 +91,7 @@ def main():
 
     made = []
     if args.mode in ("both", "name"):
-        made.append(("05_names_by_name.txt", fmt(entries)))
+        made.append(("06_names_by_name.txt", fmt(entries)))
     if args.mode in ("both", "type"):
         body = []
         if not args.stdout:
@@ -100,7 +100,7 @@ def main():
         for t in sorted(by_type):
             body.append(f"\n### {t}  ({len(by_type[t])} names)")
             body += [f"{n}\t{h}" for n, h in by_type[t]]
-        made.append(("06_names_by_type.txt", "\n".join(body) + "\n"))
+        made.append(("07_names_by_type.txt", "\n".join(body) + "\n"))
 
     if args.stdout:
         for name, text in made:

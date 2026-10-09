@@ -97,14 +97,14 @@ python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
 `bundle_manifest/` (generated catalogue), `example_mod/`, `test_mod/`,
 `crane_mod/`.
 
-## The name indexes (`bundle_manifest/05_`, `06_`)
+## The name indexes (`bundle_manifest/06_`, `07_`)
 
 `make_name_index.py` writes two readable views of the recovered names alongside the
 catalogue, which is keyed by hash and therefore the wrong way round for reading:
 
 ```bash
-python3 make_name_index.py                 # 05_names_by_name.txt  (alphabetical by name)
-                                           # 06_names_by_type.txt  (grouped by type)
+python3 make_name_index.py                 # 06_names_by_name.txt  (alphabetical by name)
+                                           # 07_names_by_type.txt  (grouped by type)
 python3 make_name_index.py --mode type     # only the grouped index
 python3 make_name_index.py --stdout        # print instead of writing
 python3 make_name_index.py --all           # see below
@@ -128,7 +128,7 @@ regenerated after every batch of new names.
 ```bash
 python3 ../hashcracker/tools/merge_matches.py ..   # matches.tsv -> overlay
 python3 list_game_bundles.py --only resources      # overlay -> 03_txt + 04_csv
-python3 make_name_index.py                         # 04_csv + overlay -> 05_/06_ indexes
+python3 make_name_index.py                         # 04_csv + overlay -> 06_/07_ indexes
 python3 ../hashcracker/tools/build_targets.py      # catalogue -> targets_*.txt
 ```
 
