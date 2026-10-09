@@ -110,9 +110,14 @@ python3 make_name_index.py --stdout        # print instead of writing
 python3 make_name_index.py --all           # see below
 ```
 
-One row per name: `name<TAB>hash<TAB>type`, where the type column lists every type
-that name carries - a unit, its bones, its material, its lua and its state machine
-all share a hash, because the hash *is* the name.
+One row per name: the name, the hash, and every type the name carries - a unit, its
+bones, its material, its lua and its state machine all share a hash, because the
+hash *is* the name.
+
+Output is column-aligned for reading.  `--tsv` gives tab-separated rows instead,
+for `grep`/`cut`/`sort`.  The name column is sized to the 90th percentile of name
+lengths rather than the longest name, because one 150-character shader chain would
+otherwise pad most of the file into blankness.
 
 `--all` merges in whatever the catalogue's own `name` column holds as well as the
 overlay.  In practice that changes nothing, because `list_game_bundles.py` builds

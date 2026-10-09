@@ -9,19 +9,25 @@ alongside it, regenerated on demand:
     06_names_by_name.txt   every recovered name, ALPHABETICAL BY NAME
     07_names_by_type.txt   the same, grouped by resource type
 
-One row per name: `name<TAB>hash<TAB>type`, where the type column is every type
-the name carries (one name legitimately covers several - a unit, its bones, its
-material and its lua share a hash, because the hash *is* the name).
+One row per name: the name, its hash, and every type the name carries (one name
+legitimately covers several - a unit, its bones, its material and its lua share a
+hash, because the hash *is* the name).
+
+Output is aligned into columns for reading; `--tsv` switches to tab-separated rows
+for grep/cut/sort.  The name column is sized to the bulk of the data (90th
+percentile, capped) rather than to the longest name, because a single 150-character
+shader chain would otherwise leave most of the file blank.
 
 By default only names from the recovery overlay are listed - i.e. names *we*
 recovered.  `--all` also merges whatever the catalogue's own `name` column holds;
 that normally changes nothing, because `list_game_bundles.py` builds that column
 from this same overlay (it matters for a catalogue built without it).
 
-    python3 make_name_index.py                 # -> bundle_manifest/05_, 06_
+    python3 make_name_index.py                 # -> bundle_manifest/06_, 07_
     python3 make_name_index.py --all           # include the database's own names
     python3 make_name_index.py --mode type     # only the by-type index
-    python3 make_name_index.py --stdout       # print instead of writing
+    python3 make_name_index.py --tsv           # machine-readable rows
+    python3 make_name_index.py --stdout        # print instead of writing
 """
 import argparse
 import collections
@@ -60,13 +66,36 @@ def build(include_all):
     return out, len(rows)
 
 
-def fmt(entries, header=True):
+def name_width(entries):
+    """Column width for the name, sized to the bulk of the data rather than the
+    worst case: the longest name here is a 150-character shader chain, and padding
+    every row to that would leave most of the file blank."""
+    lens = sorted(len(n) for n, _h, _t in entries) or [40]
+    cap = lens[min(len(lens) - 1, int(len(lens) * 0.90))] + 2
+    return max(40, min(cap, 80))
+
+
+def fmt(entries, header=True, tsv=False):
+    """Readable aligned text by default; --tsv for machines."""
+    if tsv:
+        lines = [f"{n}\t{h}\t{t}" for n, h, t in entries]
+        if header:
+            lines = [f"# {len(entries):,} names, alphabetical by name "
+                     f"(generated {time.strftime('%Y-%m-%d %H:%M')})",
+                     "# name\thash\ttype"] + lines
+        return "\n".join(lines) + "\n"
+
+    nw, tw = name_width(entries), max((len(t) for _n, _h, t in entries), default=5)
     lines = []
     if header:
-        lines.append(f"# {len(entries):,} names, alphabetical by name "
-                     f"(generated {time.strftime('%Y-%m-%d %H:%M')})")
-        lines.append("# name\thash\ttype")
-    lines += [f"{n}\t{h}\t{t}" for n, h, t in entries]
+        lines += [f"{'name':<{nw}}  {'hash':<16}  types",
+                  f"{'-' * nw}  {'-' * 16}  {'-' * min(tw, 40)}", ""]
+    for n, h, t in entries:
+        lines.append(f"{n:<{nw}}  {h:<16}  {t}" if len(n) < nw
+                     else f"{n}  {h}  {t}")
+    if header:
+        lines += ["", f"{len(entries):,} names",
+                  f"generated {time.strftime('%Y-%m-%d %H:%M')}"]
     return "\n".join(lines) + "\n"
 
 
@@ -76,6 +105,8 @@ def main():
                     help="include names the game's database already carried")
     ap.add_argument("--mode", choices=("both", "name", "type"), default="both")
     ap.add_argument("--stdout", action="store_true")
+    ap.add_argument("--tsv", action="store_true",
+                    help="tab-separated instead of aligned columns (for grep/cut)")
     ap.add_argument("--out-dir", default=str(MANIFEST))
     args = ap.parse_args()
 
@@ -91,16 +122,21 @@ def main():
 
     made = []
     if args.mode in ("both", "name"):
-        made.append(("06_names_by_name.txt", fmt(entries)))
+        made.append(("06_names_by_name.txt", fmt(entries, tsv=args.tsv)))
     if args.mode in ("both", "type"):
+        nw = name_width(entries)
         body = []
-        if not args.stdout:
-            body.append(f"# {len(entries):,} names in {len(by_type)} type groups "
-                        f"(generated {time.strftime('%Y-%m-%d %H:%M')})")
         for t in sorted(by_type):
-            body.append(f"\n### {t}  ({len(by_type[t])} names)")
-            body += [f"{n}\t{h}" for n, h in by_type[t]]
-        made.append(("07_names_by_type.txt", "\n".join(body) + "\n"))
+            body.append(f"{'' if body else ''}### {t}  ({len(by_type[t])} names)")
+            body.append("-" * (len(t) + 20))
+            for n, h in by_type[t]:
+                body.append(f"{n:<{nw}}  {h}" if len(n) < nw else f"{n}  {h}")
+            body.append("")
+        head = (f"{len(entries):,} names in {len(by_type)} type groups, "
+                f"alphabetical within each (generated "
+                f"{time.strftime('%Y-%m-%d %H:%M')})\n")
+        made.append(("07_names_by_type.txt", (head if not args.stdout else "") +
+                     "\n".join(body) + "\n"))
 
     if args.stdout:
         for name, text in made:
