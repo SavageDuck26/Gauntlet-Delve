@@ -7349,6 +7349,57 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   against its *status in the shipped catalogue* is the cheapest way to prove what an
   update removed, and the hub room is the demo - 106 paths in, zero rows out.
 
+60.13 WHERE NAMES ARE NOT: THE SOURCE TREE, THE STREAMS, THE CONFIGS, THE DUMP
+
+  The shipped install carries several things we had never mined, so each was checked
+  for names.  All are dead ends, and recording that saves re-checking:
+
+  * `Gauntlet-Source-DO_NOT_EDIT/` - 927 shipped **Lua source files** with real
+    filenames (lua/ 363, foundation/ 173, gameobjects/ 123, gui/ 108, characters/ 108,
+    equipment/ 44, ability_units/ 5, props/ 3).  Every one of the 927 paths is already
+    a *named* resource (0 wins, 0 unknown), and the file contents yield 1,870
+    path-like strings that add nothing.  The tree is the same name set we already
+    have, not a bigger one.
+  * `contents/*.stream` (11 files, 1-33 MB) - compressed payloads; the only readable
+    markers are embedded `OggS` audio.  No headers to harvest.
+  * `contents/settings*.ini`, `test.ini`, `bundle_database.data`, `ClientRegistry.blob`
+    - zero path-like strings between them.
+  * `binaries/bitsquid_win32_release_*_crash_2015_5_21*.mdmp` - a shipped engine crash
+    dump, 31 KB of stripped stack data, no path-like strings.
+  * `binaries/*.dll|exe` (`bin_strings.txt`, already mined) - contains the engine's own
+    scripting API names (`load_bank`, `soundbank`, `timpani_bank`, `timpani_world`,
+    `trigger_timpani_event`, `update_banks`) but no asset names.  That is where our
+    `timpani_bank` *type* comes from.
+  * `shader_library_group` bodies (47 resources, all named) - binary; they do not
+    enumerate their members' flags, so the 165 unresolved shader chains cannot be
+    completed from them.
+
+  Combined with §57.1 (the shipped database holds no names), §58.1 (every readable
+  artifact class is mined) and the build-wide `DIRECT HITS: 0` from
+  `scan_bundle_strings.py`, this settles it: **there is no unmined header, table or
+  manifest left in the shipped build that carries resource names.**  The remaining
+  1,096 have to come from grammar + vocabulary, or not at all.
+
+  Where the 1,096 actually are, counting each hash once by dominant type (the
+  per-type table in section 59.2 counts a hash under every type it carries, so it
+  sums higher than 1,096):
+
+      352  texture        atlas and map-sibling rules already mined per bundle
+      330  animation      per-unit clip grammar; owners bind via state machines
+                          (`extract_anim_refs.py`), verb+number grammar mined
+      203  shader_library + shader   the `technique:[flags]` wall - a *flag vocabulary*
+                          gap rather than a brute-force gap, since
+                          `generators/shader_chains.py` can mix an outside flag
+                          vocabulary (`--extra-flags`); the lever is to mine flags out
+                          of the 1,131 shader rows we already name
+      111  material + particles   per-family generators saturated
+       52  unit           authored, proven unreachable (60.11)
+       37  timpani_bank   rigid `audio/enemy_<unit>` / `audio/heroes_<hero>` grammar,
+                          but a 2,411-candidate sweep missed - it needs its
+                          per-package context read rather than more guessing
+       10  level          tiles/quilts, closed with 60.11
+        1  flow
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
