@@ -207,11 +207,16 @@ impl Gpu {
         let ai = adapter.get_info();
         let info = format!("{} ({:?}, {:?})", ai.name, ai.device_type, ai.backend);
 
+        // Ask for what the adapter actually supports rather than wgpu's conservative
+        // defaults: a sweep with a large word list (several million directory prefixes,
+        // say) needs a storage binding well past the default 128 MiB, and silently
+        // failing at create_bind_group is a bad way to find that out.
+        let limits = adapter.limits();
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: Some("hashcracker"),
                 required_features: wgpu::Features::SHADER_INT64,
-                required_limits: wgpu::Limits::default(),
+                required_limits: limits,
                 ..Default::default()
             },
             None,
