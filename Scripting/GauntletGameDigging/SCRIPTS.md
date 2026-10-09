@@ -19,6 +19,8 @@ Read first: [`docs/FINDINGS.txt`](docs/FINDINGS.txt) (master format document,
 | `scan_binaries.py` | Path-like strings from `binaries/*.exe|dll` → `bin_strings.txt`. |
 | `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
 | `make_progress_report.py` | The overall progress view → `bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the sweep history from `work/*/status.log`, the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its "Unresolved 3,444" is the static `hash_database.json` metric, not ours. |
+| `reachability_audit.py` | Walks every bundle body, records which resources reference which (8-byte-aligned catalogue hashes), and reports per unresolved hash how many **named** resources point at it → `bundle_manifest/09_reachability.tsv`. 1,044 of the 1,096 are referenced; 52 are orphaned (FINDINGS 60.14). |
+| `hunt_shader_subsets.py` | Shader chains scoped by body size: each technique has its own size band and, within a technique, size predicts the flag count (`base` 1 flag ≈ 68.6 KB … 9 flags ≈ 131.4 KB), so the sorted-subset enumeration is bounded. Pair it with the `shader_pass_flags` mined out of `render_config` (FINDINGS 60.14). |
 | `extract_anim_refs.py` | Maps unresolved animation resources to their owning unit via `state_machine` bodies. |
 | `catalog_bundles.py`, `add_bundle_to_db.py`, `bundle_database_manager.py` | Bundle catalogue + `bundle_database.data` bookkeeping. |
 | `render_config_tools.py` | `render_config` resource handling. |
