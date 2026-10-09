@@ -310,7 +310,7 @@ def _self_test(contents_dir: str) -> None:
 if __name__ == '__main__':
     import sys
     contents = sys.argv[1] if len(sys.argv) > 1 else \
-        '/home/<user>/.local/share/Steam/steamapps/common/Gauntlet/contents'
+        os.path.expanduser('~/.local/share/Steam/steamapps/common/Gauntlet/contents')
 
     print("=== render_config_tools self-test ===")
     _self_test(contents)

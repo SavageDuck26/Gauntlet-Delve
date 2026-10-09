@@ -5,7 +5,7 @@ Output: Exports/samples/<type_hash>_<name_hash>.<type>
 """
 import struct, zlib, os, sys
 
-GAME = '/home/<user>/.local/share/Steam/steamapps/common/Gauntlet/contents/'
+GAME = os.path.expanduser('~/.local/share/Steam/steamapps/common/Gauntlet/contents/')
 OUT  = 'Exports/samples/'
 
 TYPES = {

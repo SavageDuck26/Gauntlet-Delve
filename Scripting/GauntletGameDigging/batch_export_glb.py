@@ -13,7 +13,7 @@ Usage:
 import struct, zlib, os, sys, tempfile, argparse
 from pathlib import Path
 
-GAME    = '/home/<user>/.local/share/Steam/steamapps/common/Gauntlet/contents/'
+GAME    = os.path.expanduser('~/.local/share/Steam/steamapps/common/Gauntlet/contents/')
 UNIT_TH = 0xE0A48D0BE9A7453F
 BONE_TH = 0x18DEAD01056B72E9
 HERE    = Path(__file__).parent

@@ -16,7 +16,7 @@ import re
 import sys
 import unicodedata
 
-sys.path.insert(0, '/home/<user>/Documents/Coding/Gauntlet-Reverse-Engineering/Scripting/GauntletGameDigging')
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from hunt_unit_textures import murmur                                   # noqa: E402
 
 E = pathlib.Path.home() / 'Documents/Coding/Gauntlet-Export'
