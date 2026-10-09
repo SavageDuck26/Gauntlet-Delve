@@ -12,9 +12,9 @@ for the project rules, solved/unsolved state, and conventions.
 
 ```
 Gauntlet-Reverse-Engineering/
-├── .clinerules                  ← project rules (READ FIRST)
-├── .gitignore                   ← what is NOT tracked (venv, outputs, downloads…)
-├── .vscode/                     ← editor settings
+├── .clinerules                  ← project rules (READ FIRST; local-only, not published)
+├── .gitignore                   ← what is NOT tracked (venv, outputs, *.sh, downloads…)
+├── .vscode/                     ← editor settings (local-only)
 ├── .venv/                       ← Python virtualenv (untracked, do not edit)
 │
 ├── Scripting/GauntletGameDigging/   ← Python RE toolchain (the main work area)
@@ -38,19 +38,20 @@ Gauntlet-Reverse-Engineering/
 ├── Scripting/hashcracker/           ← Rust MurmurHash64A name brute-forcer (billions of candidates/s)
 │   ├── src/                             ← Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
 │   ├── tools/                           ← build_targets.py, make_*_vocab.py, merge_matches.py
+│   │   └── (*.sh local-only)            ← hc.sh, status.sh, pull-gpu.sh, guard …
 │   ├── generators/                      ← targeted_*.py (per-family candidate generators)
-│   ├── sweeps/                          ← auto_run.sh + per-family pipelines
-│   ├── legacy/                          ← superseded cartesian scripts
+│   ├── sweeps/                          ← per-family driver scripts (LOCAL-ONLY, *.sh)
+│   ├── legacy/                          ← superseded cartesian scripts (LOCAL-ONLY, *.sh)
 │   ├── data/vocab/                      ← vocabularies + targets (see data/README.md)
 │   ├── matches.tsv                      ← append-only hit log (tracked)
 │   └── README.md, SCRIPTS.md
 │
-├── game-source/Gauntlet-SourceCode-LUA/   ← game Lua source (927 files)
-├── reference/                             ← reference projects (downloads)
+├── game-source/Gauntlet-SourceCode-LUA/   ← game Lua source (927 files; local-only)
+├── reference/                             ← reference projects (downloads; local-only)
 │   ├── Loremasters-Armoury-main/
 │   ├── Vermintide-Mod-Framework-master/
 │   └── Alloy/
-└── assets/                                ← *.glb models + exported samples
+└── assets/                                ← *.glb models + exported samples (local-only)
 ```
 
 ## Key entry points
@@ -65,12 +66,14 @@ Gauntlet-Reverse-Engineering/
 - **Recover names (current workflow)**: build targets →
   `Scripting/hashcracker/tools/build_targets.py`; generate candidates →
   `Scripting/hashcracker/tools/make_*_vocab.py` /
-  `make_atlas_patterns.py` / `make_chain_candidates.py`; run the GPU sweeps →
-  `Scripting/hashcracker/sweeps/auto_run.sh` plus the per-lever sweeps
-  (`subst_run.sh`, `leaf_sweep.sh`, `chain_sweep.sh`, `num_derive.sh`); fold hits
-  back with `tools/merge_matches.py` then re-run
-  `list_game_bundles.py --only resources`.  Every engine is driven by the names
-  we hold, so **re-run them after each batch** — see §48.7.
+  `make_atlas_patterns.py` / `make_chain_candidates.py`; **crack on the GPU**
+  (≈20–50× the CPU path) via the `*.sh` drivers `sweeps/auto_run.sh` +
+  `subst_run.sh` / `leaf_sweep.sh` / `chain_sweep.sh` / `num_derive.sh`, always
+  through `tools/hc.sh` (the `flock` wrapper — one hashcracker at a time); fold
+  hits back with `tools/merge_matches.py`, then re-run
+  `list_game_bundles.py --only resources`.  Every engine is driven by the names we
+  hold, so **re-run them after each batch** — see §48.7.  *(The `*.sh` drivers are
+  local-only — see below; the `.py` builders they call are in this repo.)*
 - **Script indexes**: `Scripting/hashcracker/SCRIPTS.md` and
   `Scripting/GauntletGameDigging/SCRIPTS.md` (every tool, grouped by purpose).
 - **Findings / current state**: `Scripting/GauntletGameDigging/docs/FINDINGS.txt`
@@ -95,18 +98,38 @@ git status            # tracked files (venv/outputs/downloads are ignored)
 git add -A && git commit -m "…"
 ```
 
-Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, the generated
-catalogue (`bundle_manifest/`), `reference/` downloads, and `wwise-unpacker-revamped/`
-binaries.
+Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, **every `*.sh`**,
+the generated catalogue (`bundle_manifest/`), `reference/` downloads, and
+`wwise-unpacker-revamped/` binaries.
 
 **Game-derived exports/assets are NOT versioned** (copyright + repo size) — they
 stay on disk but are excluded from git: `assets/`, `Exports/`, `crane_mod/`,
 `example_mod/`, `test_mod/`, `decoded_materials/`, `database_extractor/`,
 `.unit orig/`, and the test/extract output dirs.
 
-Versioned here: all tooling (`*.py`, `resource_tools/`), `docs/` (findings),
-the name/hash databases (`hash_database.*`, `*_overlay.json`) and the game
-**Lua** source (`game-source/`).
+Versioned here: all tooling (`*.py`, `resource_tools/`), `docs/` (findings), the
+name/hash databases (`hash_database.*`, `*_overlay.json`) and the resource
+catalogue.  The game **Lua** source (`game-source/`) is **local-only**
+(game-derived), like `reference/` and `assets/`.
+
+## Shell scripts & privacy
+
+**No shell script is published.** Every `*.sh` — the `sweeps/*` drivers, the
+`tools/*.sh` helpers (`hc.sh`, `status.sh`, `pull-gpu.sh`, `setup-gpu-ssh.sh`,
+`harden-box.sh`) and the personal-info guard — is **gitignored and local-only**
+(`git ls-files '*.sh'` is empty). Shell drivers carry machine/host specifics
+(absolute paths, ssh aliases, LAN addresses), so this repo ships the **Python**
+tools and their data; the `.sh` plumbing lives on the machine that runs it.
+`hashcracker/SCRIPTS.md` stays as the offline index for whoever has that `.sh` set.
+
+The same rule keeps `.clinerules`, `.vscode/` and `.githooks/` local, and it is why
+**no personal data is committed**: local **pre-commit and pre-push** hooks run a
+guard that refuses any commit or push carrying a private IPv4 range, a VPN
+service/interface, the host name, a hardcoded `/home/<user>` path, key material or
+a secret.  Write tools so the personal part simply **isn't there** — a placeholder,
+not redaction: `$HOME` / `os.path.expanduser('~/…')`, `"$(dirname "$0")"` for the
+tool's own location, an env var for anything machine-specific (`GPU_HOST`,
+`GPU_REPO`), or discovery.  A tool that can't be genericised stays off the repo.
 
 ## License
 
