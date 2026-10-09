@@ -6962,7 +6962,14 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       `resource_packages/{morak, cave_boss, crypt_boss}` and 2 `material` rows in
       `resource_packages/all_effects`.  The old name is not the same shape, so these
       are the same content reused under a new name - a subject clue for resources
-      that also appear in the live boss packages.
+      that also appear in the live boss packages.  Re-running
+      `tools/apply_renames.py --snap 2015-01` against the finished catalogue gives
+      `rename examples 103  rename targets 1` and `history-translation candidates
+      19,482  MATCHES 0`, i.e. the rename avenue holds no names we do not already
+      have - and it also shows why the *translation* table must never be trusted
+      blind: identical content under two unrelated names (say a shared impact effect
+      used by two bosses) reads out as a bogus token translation like
+      `wep -> cha`, so translations stay hypotheses, never names.
 
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
