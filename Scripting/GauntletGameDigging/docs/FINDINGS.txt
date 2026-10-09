@@ -7302,6 +7302,53 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `modules/d01_<env>/dungeon_tiles/<rock>_<dims>_<quad>_<quad>_<quad>_<quad>_<NN>[_corridor]`,
   plus `rooms`, `colosseum` and `arena` - all `level`-typed.
 
+60.12 THE HUB ROOM: REMOVED, WITH ITS REFERENCES STILL IN THE LUA
+
+  The hub room is the cleanest example of a *removed area* in the whole project, and
+  the harvest-per-build comparison shows it precisely.  Extracting every hub-room path
+  from each build's `_names.txt` gives:
+
+      2014-10-10   106 paths      2015-01-21   106 paths      2015-08-11    42 paths
+
+  and of the 106 distinct paths across all three builds, **not one has a row in the
+  shipped build** - they are all gone, including `blocks/d01_hub_room/entrances/
+  hub_level_doorway_01*`, `modules/d01_hub_room/hub_room`, `..._hub_room_v2`,
+  `..._hub_room_v3`, `..._hub_room_old_environments`, `props/d01_hub_room/
+  merchant_placeholder*` and the `tutorial_room` siblings.  What the shipped build
+  keeps of that area is the module skeleton and the shop furniture:
+
+      modules/d01_hub_room/shading_environment, tutorial_room,
+                          tutorial_room_sandplane, tutorial_room_walls,
+                          hub_room_teleport
+      shaders/hubroom_logo_pow
+      props/d01_hub_room/gauntlet_logo_outer, merchant_barrel, merchant_box,
+                         merchant_rug
+      plus 4 unit resources still unresolved: e1fbae1cb7a59595 (28,584 B),
+           cff5c6316b30bf53 (112,539 B), 2e5618907cc69809 (173,857 B),
+           57a38789f2c4baa5 (793,565 B)
+
+  The Lua still points at the removed area, which is what makes it reachable at all:
+  `lua/generated/unit_paths_short_lookup` (the live short-name -> path registry) maps
+  `merchant_barrel`, `merchant_box` and `gauntlet_logo_outer` to their
+  `props/d01_hub_room/...` paths, and `lua/generated/flow_events` still lists
+  `hub_room_intro_started`, `hub_room_intro_stopped`, `hubroom_sequence`,
+  `hub_entering_vo_done` and `barrel_died` - i.e. the hub-room intro sequence and the
+  destructible barrel are still events in the shipped build even though the room is
+  not.  (The "crate" in that memory is `merchant_box`; "crate" itself appears nowhere
+  in the shipped Lua.)
+
+  Naming the four leftovers failed the same way as the rest of the cluster: a
+  45,260-candidate hub/merchant sweep (ten hub directories x the merchant, crate,
+  barrel, logo, teleport and tutorial vocabulary, with suffix sets and two-word
+  combinations) returned nothing, all 106 old paths have no row, and these bodies
+  have no twin at all - the twin search reports 0 % similarity to every known
+  resource, against 100 % for some of the dungeon-tile units in 60.11.  They are
+  unique hub-room meshes whose names appear in no shipped text.
+
+  Method worth reusing: comparing a name's *presence per build* from the harvests
+  against its *status in the shipped catalogue* is the cheapest way to prove what an
+  update removed, and the hub room is the demo - 106 paths in, zero rows out.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
