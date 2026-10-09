@@ -64,6 +64,22 @@ FINDINGS 60.15 for how it was located.
 and the scratch `_check_db.py`, `_check_entry_table.py`, `_compare_db.py`,
 `_deep_compare.py`.
 
+## Dumping the whole game
+
+| script | purpose |
+| --- | --- |
+| `export_all_resources.py` | Walks every bundle and writes each resource body to a file named after it, with the type name as its extension (`named/<resource path>.unit`, `named/lua/managers/x.lua`, …). Rows we could not name go to `unresolved/<type>/<hash>.<ext>`, one file per distinct hash — the gaps, kept visible. Also writes `index.tsv` (every catalogue row: status, type, name, hash, package, size, bundle, index, path) and `summary.txt`. `--dds-view` adds `view/dds/**`, a hardlink per texture whose body really is a DDS, so image viewers open them at no disk cost. `--only TYPE`, `--limit N`, `--named-only`, `--view-only`. |
+
+What the dump actually contains, learned the hard way: `.texture` bodies begin with
+`DDS `, so they are real DDS files; `.lua` bodies are **LuaJIT bytecode** behind a
+12-byte resource header, not source (the chunk name is embedded, which is why the
+runtime capture named Lua so well); `.shader_library` names carry the chain form
+(`base:…:diffuse_map:normal_map:static_lighting`); only 40 catalogue rows have a
+`.stream` sidecar, so the dump is otherwise self-contained. 8,692 of the 17,435 named
+rows are distinct resources — the rest are the same resource shipped in more than one
+package — and the 2,565 unnamed rows are 1,096 distinct resources.
+
+
 ## Extraction / decoding
 
 `extract_all_textures.py`, `extract_textures.py`, `extract_textures_named.py`,
