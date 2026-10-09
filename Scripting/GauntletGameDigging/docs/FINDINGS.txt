@@ -6828,3 +6828,141 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   resumable `rsync`, **`tmux` so a dropped connection cannot kill a ten-hour
   sweep**, bring `matches.tsv` back and merge - is written up in
   `hashcracker/REMOTE-GPU.md`.
+
+==========================================================================
+59. THE CATALOGUE IS HASH-KEYED; THE INDEXES MAKE IT READABLE
+==========================================================================
+
+59.1 WHY A SECOND VIEW EXISTS
+
+  `04_bundle_resources.csv` is keyed by hash, because that is the only key the
+  game uses.  That is the right shape for the sweeps and the wrong shape for
+  reading, so `make_name_index.py` renders the same table the other way round,
+  from the catalogue plus `resource_name_overlay.json` alone - no game copy and no
+  run state needed:
+
+      bundle_manifest/06_names_by_name.txt   every recovered name, A-Z by name
+      bundle_manifest/07_names_by_type.txt   the same, grouped by resource type
+
+  Both are column-aligned for reading; `--tsv` emits tab-separated rows instead,
+  for grep/cut/sort.  The name column is sized to the **90th percentile** of name
+  lengths, not to the longest name: a single 150-character shader chain would
+  otherwise pad most of the file into blankness.  Names longer than the column
+  simply push their hash to the right instead of aligning.  The numbers 05 and 06
+  were already taken by `list_game_bundles.py` (`05_summary.txt`), hence 06 and 07.
+
+  A name can carry several types - a unit, its bones, its material and its lua
+  share a hash, because the hash *is* the name - so the type column is a set,
+  written `a+b+c`.
+
+59.2 WHERE THE REMAINING 1,096 SIT
+
+  Counting *rows* (a hash can appear in several bundles, so 2,565 rows are
+  unresolved but only 1,096 are distinct hashes):
+
+      texture          951      unit              70
+      animation        566      shader            69
+      shader_library   407      timpani_bank      37
+      material         261      level             12
+      particles        188      flow               4
+
+  By package, the largest single concentration is `resource_packages/all_effects`
+  (203 rows - the effects bundle), then `resource_packages/menu` (171), and the
+  three `core/rendering/*` bundles, which between them hold all 407 shader_library
+  rows.  The 70 unresolved `unit` rows are the one cluster that is character-shaped
+  and still open (section 60.5), and no deprecated character name has a row in the
+  shipped build at all (section 60.2).
+
+==========================================================================
+60. HUNTING A DEPRECATED UNIT: `gator_brute` IS `boss_orox`
+==========================================================================
+
+60.1 THE QUESTION, AND WHY THE CATALOGUE CANNOT ANSWER IT
+
+  `characters/gator_brute/...` appears in the depot strings, but no gator unit has
+  a row in the shipped catalogue - and neither do the six `lizard_*` units those
+  strings mention.  A name that is not in the build has no row, so the catalogue is
+  silent by construction.  Two other sources can answer: the older snapshots (which
+  do name resources) and content identity (bytes do not care what a resource is
+  called).
+
+60.2 THE ANSWER: IT WAS RENAMED, NOT CUT
+
+  `hunt_old_names.py --snap 2015-01` mines the 2015-01 build's own strings against
+  that build's own hashes (3,102 names recovered, seven of them `gator_brute`).
+  `hunt_build_diff.py --old 2015-01 --new 2015-08 --dump-renames` pairs resources
+  whose **bytes are identical while their hashes differ** - which can only mean the
+  name changed.  All seven `gator_brute` resources appear, one to one:
+
+      characters/gator_brute/gator_brute                   -> characters/boss_orox/boss_orox
+      characters/gator_brute/gator_brute_diff              -> characters/boss_orox/boss_orox_diff
+      characters/gator_brute/gator_brute_norm              -> characters/boss_orox/boss_orox_norm
+      characters/gator_brute/gator_brute_spec              -> characters/boss_orox/boss_orox_spec
+      characters/gator_brute/beastoforox_fallingrock       -> characters/boss_orox/abilities/fallingrock
+      characters/gator_brute/beastoforox_fallingrock_tell  -> characters/boss_orox/abilities/fallingrock_tell
+      characters/gator_brute/beastoforox_leap_marker       -> characters/boss_orox/abilities/leap_marker
+
+  The old names say it themselves: the effect leaves were already called
+  `beastoforox_*` - "*beast of Orox*" - before the rename, so the vfx team's
+  internal name for the creature is the one that survived into the shipped build.
+  "Gator Brute" was a working title; the boss shipped as **Orox**.  Re-running the
+  same diff reproduces the same 341 moves, and a direct hash check confirms that
+  neither the 7 old hashes nor 169 spelled-out variants of them has a row in the
+  shipped build.
+
+60.3 WHY NO SWEEP COULD HAVE FOUND IT
+
+  Every sweep substitutes one *token* and keeps the shape.  This rename changed the
+  shape: a unit-prefixed leaf (`beastoforox_fallingrock`) became a directory
+  (`abilities/fallingrock`), and the unit directory itself changed name.  A
+  per-component dictionary over all 3,102 old names therefore returns nothing, and
+  more vocabulary cannot close that gap.  Only content identity can.
+
+60.4 THE LIZARDS: ALREADY GONE BEFORE 2015-01
+
+  2014-10-10 and 2015-01-21 both name `characters/lizard_guardian/lizard_guardian`
+  and `characters/lizard_warlord/lizard_warlord`; 2015-08-11 does not.  Its strings
+  offer `characters/lizard_archer/lizard_archer` and a *flat* `characters/lizard_base`
+  with `_diff`/`_norm`/`_spec`/`_var01` siblings instead.  In the shipped build
+  exactly one lizard-shaped resource exists and it is already named:
+  `characters/lizard_base`.  Everywhere else "lizard" survives only as media - a
+  hero coin (`menu/hero_coins/lizard_*`), an action-bar icon
+  (`effects_ui/hud_action_ready_lizard`), a roar (`effects/wep_lizard_roar`), a
+  locked-coin icon (`effects_ui/hero_coin_locked_lizard`) - which is exactly why the
+  name looked recoverable when it was not.  `gator` likewise survives only as
+  `audio/enemy_gator`.
+
+60.5 THE RENAME GLOSSARY, AND TWO LEADS IT LEAVES
+
+  The 341 moves amount to a translation glossary, and the Slayer rename is
+  systematic:
+
+      characters/mummy_boss/*              -> characters/boss_mummy/*
+      characters/morak_sword/*             -> characters/boss_morak_sword/*
+      characters/skeleton_bandit/*         -> characters/skeleton_soldier/*
+      gameobjects/story/morak_sword_shards -> gameobjects/story/boss_morak_sword_shards
+      equipment/elf/wep_bow01_*            -> equipment/elf/weapon01_*
+      characters/gator_brute/*             -> characters/boss_orox/*
+
+  i.e. bosses were hoisted to a `boss_` prefix, and a few units were renamed
+  outright.  Two bounded leads come out of it:
+
+  (a) *Shared content, not renames.*  20 unresolved current resources are
+      byte-identical to a pre-Slayer resource: 18 `animation` rows in
+      `resource_packages/{morak, cave_boss, crypt_boss}` and 2 `material` rows in
+      `resource_packages/all_effects`.  The old name is not the same shape, so these
+      are the same content reused under a new name - a subject clue for resources
+      that also appear in the live boss packages.
+
+  (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
+      the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
+      `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
+      across modules (`1f01e19947211248` in both crypt and menu), the signature of
+      one definition placed in more than one level.  Named `unit` rows in those same
+      modules are level-placed props, blocks, spawners, traps and character
+      placements, so these are most likely run-of-the-level geometry - but they are
+      not all named, and their bodies are the one place left where the shipped build
+      may still carry a name in plain text.  Content identity against the pre-Slayer
+      builds is the second way in.  Both are worth a pass before the next 200-name
+      tier.
+
