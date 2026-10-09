@@ -101,14 +101,21 @@ def sources(kind):
 
 
 def main():
+    global EXPORT, VIEW
+
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--kind", action="append", choices=sorted(KINDS),
                     help="convert only this kind (repeatable; default all)")
+    ap.add_argument("--export", default=str(EXPORT),
+                    help=f"export folder to convert (default: {EXPORT})")
     ap.add_argument("--limit", type=int, help="stop after N files per kind")
     ap.add_argument("--jobs", type=int, default=6, help="parallel conversions (default 6)")
     ap.add_argument("--overwrite", action="store_true", help="redo files that exist")
     args = ap.parse_args()
+
+    EXPORT = pathlib.Path(args.export).expanduser()
+    VIEW = EXPORT / "view"
 
     if not EXPORT.exists():
         sys.exit(f"no export at {EXPORT}")
