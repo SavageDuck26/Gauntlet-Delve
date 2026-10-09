@@ -7400,6 +7400,56 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
        10  level          tiles/quilts, closed with 60.11
         1  flow
 
+60.14 THE REACHABILITY AUDIT, AND THE SHADER FLAG SOURCE
+
+  Two things were missing from the picture: nobody had measured *whether* an
+  unresolved name is reachable, and the shader chains had never been given the flag
+  vocabulary the renderer itself declares.  Both are now done.
+
+  **Reachability** (`reachability_audit.py` -> `bundle_manifest/09_reachability.tsv`).
+  For every resource it walks all bundle bodies, collects the 8-byte-aligned values
+  that are catalogue hashes (Stingray references resources by hash), and counts who
+  references whom.  Result over the 1,096 unresolved:
+
+      1,044  referenced by at least one NAMED resource
+         52  referenced by nothing named at all
+
+      animation  330/0   shader_library 165/0   unit 57/0   texture 316/36
+      particles   83/8   shader 36/2            timpani 34/3
+      material    14/1   level 8/2              flow 1/0     (reachable / orphaned)
+
+  So reachability is not the bottleneck - 95 % of the remainder is pointed at by
+  something we can read.  The bottleneck is the *mapping* from a referrer's name to
+  the referent's name, which for authored content does not exist (60.11).  The 52
+  orphans are the ones where even the subject is unknown; the most-referenced
+  unresolved resources are the level-unit cluster (the crypt quilt that places
+  `1f01e19947211248` 99 times) and effects textures reached by `effects/*hit*` names
+  (349 references into one 43,836-byte texture).
+
+  **The shader flag source.**  The `render_config` resources are the renderer's own
+  manifest, and they list both the shader libraries and - crucially - the
+  `shader_pass_flags` the engine can set:
+
+      forward_lighting_disabled, forward_lighting_one_light,
+      forward_lighting_two_lights, forward_lighting_three_lights,
+      forward_lighting_four_lights, dev_wireframe
+      (plus the texture-channel flags we already knew: diffuse_map, normal_map,
+       material_map, height_map, self_illumination_map, reflection_map)
+
+  Six of those are **pass** flags and none of them appears in any chain we have
+  already named, which is exactly why `generators/shader_chains.py` could not finish
+  the job: it can only combine flags the technique was *seen* with.  Feeding the pass
+  flags into the pool is the fix, and `hunt_shader_subsets.py` does that alongside a
+  size filter - within a technique, body size predicts the flag count (`base`:
+  1 flag 68.6 KB ... 9 flags 131.4 KB, 423 samples), and each technique has its own
+  size band, so an unresolved shader's size says which technique it is and roughly
+  how many flags it carries.
+
+  A self-test of the enumeration on held-out *known* chains is part of the story: with
+  the full vocabulary it recovers what it should, but it misses chains whose flags are
+  rare in the corpus, which is why the pass-flag list above matters more than any
+  amount of extra subset enumeration.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
