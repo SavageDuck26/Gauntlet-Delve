@@ -402,6 +402,9 @@ impl Gpu {
         let mut base: u64 = 0;
         let mut buf: Vec<u8> = Vec::with_capacity(256);
         let mut slow_batches = 0u32;
+        let mut raw_reported: u64 = 0;
+        let mut confirmed: u64 = 0;
+        let mut rehash_mismatch: u32 = 0;
         while base < total {
             let n = (iters * nthreads).min(total - base).max(1);
             let it = n.div_ceil(nthreads).max(1) as u32;
@@ -437,6 +440,7 @@ impl Gpu {
             {
                 let data = slice.get_mapped_range();
                 let count = u32::from_le_bytes([data[0], data[1], data[2], data[3]]) as usize;
+                raw_reported += count as u64;
                 for i in 0..count.min(MAX_RESULTS as usize) {
                     let idx = u64::from_le_bytes(data[4 + i * 8..12 + i * 8].try_into().unwrap());
                     if idx >= total {
@@ -447,7 +451,12 @@ impl Gpu {
                     pat.build(lists, idx, &mut buf);
                     let h = hash_bytes(&buf);
                     if targets.contains(&h) {
+                        confirmed += 1;
                         on_match(h, &buf);
+                    } else if rehash_mismatch < 5 {
+                        rehash_mismatch += 1;
+                        eprintln!("  (gpu: index {idx} rebuilt to {:?} hashing {h:016x} - not a target)",
+                                  String::from_utf8_lossy(&buf));
                     }
                 }
             }
@@ -464,6 +473,8 @@ impl Gpu {
         if slow_batches > 0 {
             eprintln!("  (gpu: {slow_batches} over-long batch(es) - watchdog margin thin)");
         }
+        eprintln!("  (gpu diag: {} indices reported by the shader, {confirmed} confirmed by re-hash, \
+                   {rehash_mismatch}+ rebuild mismatches)", raw_reported);
         Ok(total)
     }
 }
