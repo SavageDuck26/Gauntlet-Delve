@@ -7160,6 +7160,58 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   renamed ones; `check_build_liveness.py` to say which build holds any given name; and
   the `_names.txt` harvests for names whose build we no longer have at all.
 
+60.10 "CLEAVE": THE ANIMATIONS AND ABILITIES ARE NOT RESOURCES AT ALL
+
+  Looking for cleave animations and abilities turns out to be a good test of the whole
+  method, because almost none of them exist as resources.  We hold exactly one
+  cleave-named resource in the shipped build, and it is the HUD icon:
+
+      hud/action_icons/warrior_action_demoncleave    texture, LIVE only in 2015-08, named
+
+  Everything else cleave is a *value inside a live resource*.  The animations are
+  animation **event names**, registered in `lua/generated/animation_events` - a live,
+  named Lua resource, 475 strings, 93 of them `attack_*` events:
+
+      attack_demoncleave_execute
+      attack_demoncleave_windup, attack_demoncleave_windup_done
+      attack_demonslash, attack_slash, attack_slash_windup, attack_fast_slash, ...
+
+  Those events fire on animations we already hold - the warrior's own
+  `characters/avatar_warrior/animations/axe_*` - so there is no animation resource to
+  find and no hash to match.  ~5,000 candidate spellings were tried anyway
+  (weapon-prefixed, per-unit, per-directory, with the usual `_01`/`_02`/`_diff`/`_norm`/
+  `_spec`/`_var01` suffix sets): **0 hits**.
+
+  The abilities are the same story.  Cleave is a table inside the *weapon* Lua, not a
+  standalone ability resource:
+
+      equipment/warrior/weapon04   demon cleave - ui_info warrior_action_demoncleave,
+                                   event_name attack_demoncleave_*, damage_type cleave,
+                                   backup_unit_path special_demoncleave_projectile
+      equipment/warrior/weapon11   plain cleave - ui_info warrior_action_cleave
+
+  Both weapons are live and named, as are the Lua scripts that drive them.  Two names
+  inside them are dangling, with no row in any build: `warrior_action_cleave` (the plain
+  cleave's icon, referenced by weapon11) and `special_demoncleave_projectile` (absent
+  from the unit-path registries too).  So the icon the *plain* cleave asks for never
+  shipped - only the demon-cleavage icon did.
+
+  The old naming is visible in the strings as `warrior_axe_cleave_heavy` and
+  `loc_control_warrior_cleave_attack` (a control-binding localization key), present in
+  all three builds, plus the 2014/2015-01 family `anim_attack_cleave`,
+  `cleave_collision_origin`, `cleave_collision_half_extents` and `cleave_exit` (state
+  fields of the old ability), and `hit_cleave_armor`/`_bone`/`_flesh`/`_ethereal`/`_hero`
+  (hit-react and damage-type values).  None of them is a resource in any build.
+
+  The general lesson is worth keeping.  `lua/generated/*` is a family of **registries** -
+  fourteen of them, including `animation_events`, `flow_events`, `unit_paths`,
+  `unit_paths_short_lookup`, `spawners_unit_path`, `characters_unit_path`,
+  `network_messages`, `network_object_types` and `units_with_settings` - and they spell
+  names out in full.  A name that lives in one of those registries but hashes to no row
+  was never a resource name: it is an event, a flow, a field or a path alias.  That is a
+  third class of false lead alongside cut content (60.6-60.9) and harvest-only strings
+  (60.4), and this is the check that tells the three apart.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
