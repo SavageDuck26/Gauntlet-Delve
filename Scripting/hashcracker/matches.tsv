@@ -2215,6 +2215,7 @@
 62d35a827611e322	lua/managers/party_lead_manager
 62d47224333de47b	effects/cutscene_beast_water
 62d4f6baf60effea	characters/skeleton_warrior/animation/block_break_exit
+62e2c47102d79e0c	hud/action_icons/elf_ultimate_dryadssong
 62e59160f0df7e5f	effects/hit_urn_destroy
 62f82a2238bf41a1	gameobjects/spawn_field/spawn_field_dormant
 62fc268cd0a26e66	effects/cha_demon_heavy_super_nova
@@ -2767,6 +2768,7 @@
 7a434d6b38febc88	characters/avatar_warrior/animations/die_decapitate
 7a49a03e46c32293	modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e_06_civilization
 7a4a37da21b4f580	equipment/wizard/cape_s05_r02
+7a752de1038b596b	hud/action_icons/wizard_ultimate_barrier
 7a95637ba9cf5271	effects/cha_skeleton_warrior_whirlwind
 7a96ce6fe2e852d0	characters/orc_melee/orc_melee_weapon
 7aa3e573c5c83b5c	blend:screen
@@ -3113,6 +3115,7 @@
 89975d7125a99911	characters/avatar_elf/abilities/special_firebomb_bomb
 899fd89be57baf69	characters/mummy_priest/animations/move_walk_right
 89aa432eac4d4c9c	billboard:diffuse_map:disable_lighting:external_rotation:rotation:vertex_color
+89b44afbce158907	hud/action_icons/necromagus_ultimate_resurrect
 89b5f8da1b9b2d53	effects/cha_grunt_shaman_projectile_split_hit
 89cd5b992fbf4dbd	effects/env_wall_burst_minor
 89d0df636a7a870f	props/d01_lava/corruption_01
@@ -5563,6 +5566,7 @@ f0e62ba3360425de	ao_cone_trace
 f0eef2d74876a845	gui/pause_menu_css
 f0f1045900ce954f	characters/boss_mummy/animations/turn_left_90
 f10c53a671208fe8	blocks/d01_crypt/walls/crypt_wall_4c_var02
+f11f063baaa2feb6	hud/action_icons/valkyrie_ultimate_aegis
 f12abdd2b92d65f0	effects/cha_demon_heavy_explode
 f13c0d286482a690	lua/ui/player_hud
 f146eb9eb18f9d27	effects/cha_boss_mummy_heart
