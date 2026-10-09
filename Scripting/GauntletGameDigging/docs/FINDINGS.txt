@@ -7450,6 +7450,23 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   rare in the corpus, which is why the pass-flag list above matters more than any
   amount of extra subset enumeration.
 
+  The audit also produces the **master list**, `bundle_manifest/10_unresolved_master.tsv`
+  - one row per unresolved resource with an explicit status:
+
+      status        count   types
+      reachable     1,044   animation 330, texture 316, shader_library 165, particles 83,
+                            unit 57, shader 36, timpani_bank 34, material 14, level 8, flow 1
+      UNREACHABLE      52   texture 36, particles 8, timpani_bank 3, level 2, shader 2,
+                            material 1     (50 "nothing references it", 2 "no named
+                            referrer" - members of an unresolved-only cluster)
+
+  "UNREACHABLE" means no *named* resource points at it, so its name cannot be derived by
+  inference - not that it is hopeless: it stays in the sweep targets
+  (`data/vocab/unresolved_targets.txt` is built from the catalogue, never from this
+  file), so the engines keep guessing it.  The marking exists so an inference pass and
+  a brute-force pass can be told apart at a glance, and so the progress report can say
+  how much of the remainder is inference-reachable at all.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat

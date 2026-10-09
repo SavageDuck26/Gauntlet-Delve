@@ -117,9 +117,30 @@ def main():
                 w.writerow([f'{h:016x}', v['type'], v['pkg'], v['bundle'], v['size'],
                             edges[h], edges_unres[h], sample.get(h, '')])
         print(f'\nwrote {out} ({len(unres):,} rows)', flush=True)
-        print('  columns: named_refs >= 1 means a NAMED resource points at it, so the')
-        print('  name is reachable by inference; 0 with 0 unres_refs means nothing in')
-        print('  the build references it at all.')
+
+        # The master list: every unresolved resource with an explicit status, so the
+        # sweeps keep trying them but we know which ones no inference can reach.
+        master = MANIFEST / '10_unresolved_master.tsv'
+        with master.open('w', newline='') as fh:
+            w = csv.writer(fh, delimiter='\t')
+            w.writerow(['status', 'hash', 'type', 'package', 'bundle', 'size',
+                        'named_refs', 'unres_refs', 'reason', 'sample_named_referrer'])
+            def key(h):
+                return (0 if not edges[h] else 1, bucket(h), -info[h]['size'])
+            for h in sorted(unres, key=key):
+                v = info[h]
+                status = 'reachable' if edges[h] else 'UNREACHABLE'
+                reason = ('no named referrer' if edges_unres[h] else
+                          'nothing references it')
+                w.writerow([status, f'{h:016x}', v['type'], v['pkg'], v['bundle'],
+                            v['size'], edges[h], edges_unres[h], reason,
+                            sample.get(h, '')])
+        un = sum(1 for h in unres if not edges[h])
+        print(f'wrote {master} ({len(unres):,} rows, {un:,} marked UNREACHABLE)', flush=True)
+        print('  UNREACHABLE = no NAMED resource references it, so its name cannot be')
+        print('  derived by inference.  The engine keeps guessing them anyway: they stay')
+        print('  in the sweep targets (data/vocab/unresolved_targets.txt is built from')
+        print('  the catalogue, not from this file).')
 
 
 if __name__ == '__main__':

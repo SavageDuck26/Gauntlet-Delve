@@ -156,6 +156,14 @@ def main():
     w(f'  names in the overlay          {len(ov):>9,}')
     w(f'  hits in matches.tsv (ever)    {len(mt):>9,}')
     w(f'  sweeps with a status log      {len(sw):>9,}')
+    master = MANIFEST / '10_unresolved_master.tsv'
+    if master.exists():
+        with master.open(newline='', encoding='utf-8') as fh:
+            rows_m = list(csv.DictReader(fh, delimiter='\t'))
+        un = sum(1 for r in rows_m if r['status'] == 'UNREACHABLE')
+        orphan = sum(1 for r in rows_m if r['status'] == 'UNREACHABLE'
+                     and r['reason'] == 'nothing references it')
+        w(f'  unreachable (no named ref)    {un:>9,}   of which orphans {orphan}')
     w()
     w('  note: 05_summary.txt reports "Unresolved 3,444" - that is counted against the')
     w('  static hash_database.json, not against this overlay, which is why it never moves')
@@ -217,6 +225,8 @@ def main():
             ('bundle_manifest/06_names_by_name.txt', 'recovered names, A-Z'),
             ('bundle_manifest/07_names_by_type.txt', 'recovered names grouped by type'),
             ('bundle_manifest/08_progress.txt', 'this file'),
+            ('bundle_manifest/09_reachability.tsv', 'per unresolved hash: named refs, unresolved refs, sample referrer'),
+            ('bundle_manifest/10_unresolved_master.tsv', 'THE MASTER LIST: every unresolved resource with status reachable / UNREACHABLE'),
             ('../hashcracker/matches.tsv', 'every hit ever, hash<TAB>name'),
             ('../hashcracker/work/*/status.log', 'per-sweep logs (current run only)'),
             ('../hashcracker/tools/status.sh', 'live score + what is running right now'),
