@@ -6971,6 +6971,31 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       used by two bosses) reads out as a bogus token translation like
       `wep -> cha`, so translations stay hypotheses, never names.
 
+60.6 THE TREANT: THE ONE ENEMY THAT LEAVES NOTHING BUT A STRING
+
+  `treant` appears in exactly one place - the 2015-08 depot strings - and only as
+  `treant_branch_trap` (with `_01`/`_02`/`_diff`/`_norm`/`_spec`/`_var01` siblings and
+  the localization key `loc_enemy_treant_branch_trap`).  It is in neither 2014-10-10
+  nor 2015-01-21, it is not in the game binary's strings, and no spelling of it - 349
+  precise candidates across the plausible trap/prop/character/effects directories -
+  hashes to any row of the shipped build, whether already named or still unresolved.
+  The asset name behind the cut enemy is likely
+  `characters/ent_treespirit/ent_treespirit`, which is also a dangling string with no
+  row.  So a tree enemy with one ability ("branch trap") was cut, and what survives is
+  *text*, not a resource: `treant_branch_trap` does occur in `bundle_strings.txt`,
+  i.e. inside a shipped bundle, but nothing in the build is *named* it.
+
+  The useful by-product is the vocabulary source that exposed it.  `loc_enemy_*` is a
+  localization namespace for enemy abilities: 224 keys, 32 distinct stems, 16 enemy
+  unit stems.  Fifteen of the sixteen are live - `mummy`, `skeleton`, `cultist`,
+  `demon`, `spider`, `grunt`, `orc`, `beast`, `ghost`, `lake`, `lich`, `morak`,
+  `necromancer`, `spawner`, `tyrfing` - and **`treant` is the only one that is not**,
+  which is exactly what makes a cut unit look recoverable.  Those 32 stems were also
+  tried as resource names in every plausible ability/trap directory: 0 hits.  The same
+  namespace independently confirms 60.2 from the other direction:
+  `loc_enemy_beast_of_orox` is the game's own user-facing name for that unit, so the
+  entity really was billed as the Beast of Orox.
+
   (b) *The 70 unresolved `unit` rows are the character-shaped hole.*  They sit in
       the level modules - `modules/d01_caves/resources` (29), `d01_lava` (23),
       `menu` (7), `d01_crypt` (6), `d01_hub_room` (5) - and several hashes repeat
