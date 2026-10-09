@@ -6759,3 +6759,72 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   record (postail4 +3, postail6 +2, pos5 +5) while the narrowed middle ground
   postail5top was 0, so this is the honest last bet: **51.5e12 candidates, about
   eleven hours** on the RX 6600 XT, or a fraction of that on a faster card.
+
+==========================================================================
+58. THE ARTIFACT SWEEP IS COMPLETE; WHAT IS LEFT IS THROUGHPUT
+==========================================================================
+
+58.1 EVERY READABLE ARTIFACT CLASS IS NOW MINED
+
+  Going through the install by class, rather than by hypothesis:
+
+  * **the shipped source tree** (`Gauntlet-Source-DO_NOT_EDIT/`, 927 `.lua`, 7.5 MB)
+    is **byte-identical** to the Lua tree already being mined (`cmp` on samples,
+    same file count) - no new vocabulary there.
+  * **the binaries** (`gauntlet.exe` 3.9 MB, `elias.dll` 262 KB - Bitsquid's UI
+    system) contain **no resource names**: five known-existing names (`mummy_priest`,
+    `bombardier`, `achievement_icons`, `spawner_daemon`, `unit_path`) return 0 hits
+    each; the only hit at all is the *type* name `shader_library`, twice.  The
+    executables are a thin launcher; the game is data.
+  * **the `.stream` companions** to every bundle are compressed/opaque - not one
+    printable string, and no audio names (the 37 `timpani_bank` stay source-limited).
+  * **the community mod area** (`Other/`) holds mod sources, a script template and
+    debug logs: 215 resource-shaped paths, all of them names we already hold.
+  * **the database** holds no names at all (57.1).
+
+58.2 A SAME-ENGINE DICTIONARY FROM ANOTHER GAME DOES NOT TRANSFER
+
+  `reference/filediver/` (BSD, a Helldivers 2 / Bitsquid tool) ships a community
+  hash database: 15,671 cracked names, 109,510 path strings, 86,486 wwise stream
+  names, 33,802 thin hashes, and real wordlists (10,052 + 224 words).  Helldivers 2
+  runs the **same engine** and the same MurmurHash64A over the same lowercased
+  names, so engine vocabulary *should* transfer.
+
+  It does not: **0 exact hits from 154,309 names**, and **0 matches from
+  122,120,970** directory-anchored candidates (335,564 words x 365 directories).
+  That is a precise result: what we are missing is **Gauntlet-specific words**, not
+  engine vocabulary - and those exist only as hashes.
+
+58.3 SO THE LEVER LEFT IS THROUGHPUT, NOT VOCABULARY
+
+  The same repository points at a **hashcat kernel for this exact hash**
+  (`github.com/ryanjsims/hashcat`, branch `murmur64a`) and ships its own
+  `hash-tool` - "a simple tool for calculating and cracking murmur64a hashes",
+  crack mode `-c -d _ -w <wordlist> <hash_in_little_endian>`.  The community built
+  the tooling; we were hand-rolling it.
+
+  `tools/dump_hashcat_targets.py` emits our 1,096 unresolved hashes in hashcat's
+  little-endian form (and the big-endian form our engine reads), so the big
+  mask/combinator spaces become affordable on a card that is 10-30x the RX 6600 XT:
+  `postail5` in minutes rather than eleven hours, and the six-token spaces after it.
+
+58.4 LICENSING AND SAFETY
+
+  Audited rather than assumed: the engine is our own Rust with MIT/Apache-2.0 deps
+  (wgpu, rayon, pollster, bytemuck, anyhow, aho-corasick) pinned and built from the
+  local cargo cache, offline; the tools and sweeps are ours; python/numpy are
+  PSF/BSD; `reference/filediver` is BSD and is used only for its **data**
+  (wordlists), never executed.  The one closed component is the **NVIDIA driver**,
+  which is unavoidable on that hardware and sees nothing but game resource names.
+  hashcat itself is MIT, but the murmur64a support is a **fork branch**, so: build
+  it from source and read the diff, or skip it - our engine already works.
+
+58.5 RUNNING IT ON THE OTHER MACHINE: `REMOTE-GPU.md`
+
+  The GPU box needs the driver, rust and the archive.  The engine's compute path
+  creates no window or surface, so **headless Vulkan over SSH works with no X
+  server**; `tools/gpu_smoke_test.sh` is the gate that proves it in five seconds
+  (with `xvfb-run` and the CPU path as fallbacks).  The workflow - key-based SSH,
+  resumable `rsync`, **`tmux` so a dropped connection cannot kill a ten-hour
+  sweep**, bring `matches.tsv` back and merge - is written up in
+  `hashcracker/REMOTE-GPU.md`.
