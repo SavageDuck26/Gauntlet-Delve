@@ -6905,10 +6905,12 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   The old names say it themselves: the effect leaves were already called
   `beastoforox_*` - "*beast of Orox*" - before the rename, so the vfx team's
   internal name for the creature is the one that survived into the shipped build.
-  "Gator Brute" was a working title; the boss shipped as **Orox**.  Re-running the
-  same diff reproduces the same 341 moves, and a direct hash check confirms that
-  neither the 7 old hashes nor 169 spelled-out variants of them has a row in the
-  shipped build.
+  "Gator Brute" was a working title; the boss shipped as **Orox**.  The window is
+  narrow and certain: the same seven names are recovered from 2014-10-10 as well, so
+  the unit was live in both snapshots and renamed between 2015-01-21 and 2015-08-11.
+  Re-running the same diff reproduces the same 341 moves, and a direct hash check
+  confirms that neither the 7 old hashes nor 169 spelled-out variants of them has a
+  row in the shipped build.
 
 60.3 WHY NO SWEEP COULD HAVE FOUND IT
 
@@ -6918,19 +6920,27 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   per-component dictionary over all 3,102 old names therefore returns nothing, and
   more vocabulary cannot close that gap.  Only content identity can.
 
-60.4 THE LIZARDS: ALREADY GONE BEFORE 2015-01
+60.4 THE LIZARDS: CUT BEFORE 2014, AND THE HARVEST IS NOT A LIVENESS TEST
 
-  2014-10-10 and 2015-01-21 both name `characters/lizard_guardian/lizard_guardian`
-  and `characters/lizard_warlord/lizard_warlord`; 2015-08-11 does not.  Its strings
-  offer `characters/lizard_archer/lizard_archer` and a *flat* `characters/lizard_base`
-  with `_diff`/`_norm`/`_spec`/`_var01` siblings instead.  In the shipped build
-  exactly one lizard-shaped resource exists and it is already named:
-  `characters/lizard_base`.  Everywhere else "lizard" survives only as media - a
-  hero coin (`menu/hero_coins/lizard_*`), an action-bar icon
+  The lizard units in the depot strings - `lizard_guardian`, `lizard_warlord`,
+  `lizard_melee`, `lizard_heavy`, `lizard_drone`, `lizard_archer` - are live in
+  **none** of the three snapshots.  Mining each build's own strings against its own
+  hashes recovers 2,785 names for 2014-10-10 and 3,102 for 2015-01-21, and not one
+  of them is a lizard.  2015-08-11 names exactly one lizard resource,
+  `characters/lizard_base`, and a hash check confirms that it is a real row in the
+  shipped build (it is one of the 17,435 already named).  Everything else lizard is
+  media only - a hero coin (`menu/hero_coins/lizard_*`), an action-bar icon
   (`effects_ui/hud_action_ready_lizard`), a roar (`effects/wep_lizard_roar`), a
-  locked-coin icon (`effects_ui/hero_coin_locked_lizard`) - which is exactly why the
-  name looked recoverable when it was not.  `gator` likewise survives only as
-  `audio/enemy_gator`.
+  locked-coin icon (`effects_ui/hero_coin_locked_lizard`) - and `gator` likewise
+  survives only as `audio/enemy_gator`.
+
+  This is the correction that matters for method: a snapshot's `_names.txt` is a
+  harvest of **strings, not of live resources**.  It contains `lizard_archer`, which
+  was never a live resource anywhere, and the 2015-08 harvest still contains
+  `gator_brute` and `beastoforox_*` long after those names had been renamed away.  A
+  name found in a harvest is only evidence once it has been hashed *and matched
+  against that build's own resource list* - which is what `hunt_old_names.py` does,
+  and what a raw grep does not.
 
 60.5 THE RENAME GLOSSARY, AND TWO LEADS IT LEAVES
 
