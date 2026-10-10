@@ -191,9 +191,10 @@ Implementation notes (src/gpu.rs):
   candidates) halves the rate exactly — ~4.5 G Murmur blocks/s either way on the
   RX 6600 XT. Nor is it load- or batch-bound: removing inner-loop loads changed
   nothing measurable, and the rate is flat from 16 to 1024 iterations per thread.
-  So the remaining levers are exposing more independent candidates per thread (a
-  few interleaved chains) and, further out, hashcat's native-64-bit-multiply path
-  (`REMOTE-GPU.md` measures that at 10-30x).
+  Leverage is therefore bounded: two engine processes on one card raise the
+  *combined* rate by only 14% (1112 → 1267 M/s), so interleaving candidate chains
+  has little headroom, and the hashcat fork is not the answer either (it cannot
+  express N-way token products — see `REMOTE-GPU.md` for the measured numbers).
 * MurmurHash64A needs 64-bit multiplies -> the device must expose
   `wgpu::Features::SHADER_INT64`.
 * Dispatches are sized to ~0.3 s of work because amdgpu's scheduler watchdog
