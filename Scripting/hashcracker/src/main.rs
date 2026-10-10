@@ -8,6 +8,7 @@
 //!
 //! See README.md for usage.
 
+mod arena;
 mod gpu;
 pub(crate) mod murmur;
 mod pattern;
@@ -26,6 +27,7 @@ fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("crack") => crack(&args[2..]),
+        Some("bench") => bench(&args[2..]),
         Some("mutate") => mutate(&args[2..]),
         Some("mine") => mine(&args[2..]),
         Some("substitute") => substitute::run(&args[2..]),
@@ -43,6 +45,8 @@ fn print_help() {
 
 USAGE
   hashcracker crack  --targets <file> --list <X=file>... --pattern <pat>... [opts]
+  hashcracker bench  --list <X=file>... --pattern <pat> [--phase 0-6] [--threads N]
+                      [--limit N]        (time one stage of the CPU loop)
   hashcracker mutate --names <file> --targets <file> [--suffixes F] [--tokens F]
   hashcracker mine   --dict <file> --corpus <file>... [opts]
   hashcracker substitute --catalogue <csv> [--packages N] [--no-hybrids]
@@ -71,6 +75,8 @@ CRACK OPTIONS
  GPU (Vulkan compute; used automatically when available)
   --gpu               require the GPU (fail if unavailable)
   --cpu               force the CPU path (also used automatically as fallback)
+  --safe              reference CPU path (build the name, then hash it; no
+                      arena, no GPU) - only to cross-check the fast path
 "
     );
 }
@@ -151,11 +157,12 @@ pub(crate) fn read_targets(path: &str) -> Result<HashSet<u64>> {
 }
 
 /// Open-addressed u64 set with a cheap multiply-hash (no SipHash) — used for
-/// the per-candidate membership test in the hot loop.
+/// the per-candidate membership test in the hot loop. `0` marks an empty slot
+/// (the GPU's table uses the same convention), so the callers reject a target
+/// hash of 0 when they load targets.
 pub(crate) struct TargetSet {
     mask: usize,
     slots: Vec<u64>,
-    used: Vec<bool>,
 }
 
 impl TargetSet {
@@ -169,12 +176,19 @@ impl TargetSet {
         while cap < v.len() * 2 {
             cap <<= 1;
         }
-        let mut s = TargetSet { mask: cap - 1, slots: vec![0; cap], used: vec![false; cap] };
+        // A single array, `0` = empty — one line per probe instead of a value
+        // array plus a bit-packed "used" bitmap (the bit test cost a load, a
+        // shift and a mask per candidate). The GPU table has always used this
+        // convention, so both paths now probe identical tables.
+        let mut s = TargetSet { mask: cap - 1, slots: vec![0; cap] };
         for h in v {
+            debug_assert!(h != 0, "a 0 target collides with the empty-slot marker");
+            if h == 0 {
+                continue; // caller rejects these; never silently probe for one
+            }
             let mut i = Self::slot(h, s.mask);
             loop {
-                if !s.used[i] {
-                    s.used[i] = true;
+                if s.slots[i] == 0 {
                     s.slots[i] = h;
                     break;
                 }
@@ -190,10 +204,11 @@ impl TargetSet {
     pub(crate) fn contains(&self, h: u64) -> bool {
         let mut i = Self::slot(h, self.mask);
         loop {
-            if !self.used[i] {
+            let v = self.slots[i];
+            if v == 0 {
                 return false;
             }
-            if self.slots[i] == h {
+            if v == h {
                 return true;
             }
             i = (i + 1) & self.mask;
@@ -250,6 +265,9 @@ fn crack(argv: &[String]) -> Result<()> {
     }
     let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
     let limit: u64 = args.one_or("limit", "0").parse().unwrap_or(0);
+    // --safe forces the reference path (build the string, then hash it) so the
+    // arena fast path can be diffed against it on the same space.
+    let safe = args.has("safe");
 
     let mut targets = read_targets(&targets_path)?;
     if let Some(ex) = args.one("exclude") {
@@ -257,6 +275,11 @@ fn crack(argv: &[String]) -> Result<()> {
         let before = targets.len();
         targets.retain(|h| !drop.contains(h));
         println!("excluded     : {} already-solved", before - targets.len());
+    }
+    if targets.contains(&0) {
+        return Err(anyhow!(
+            "a target hash is 0, which marks empty table slots (murmur(\"\") is 0 too)"
+        ));
     }
     println!("targets      : {} hashes", targets.len());
 
@@ -291,7 +314,7 @@ fn crack(argv: &[String]) -> Result<()> {
 
     // GPU is used automatically when a Vulkan adapter with 64-bit shader ints
     // is present; --cpu disables it, --gpu makes its absence fatal.
-    let gpu = if args.has("cpu") {
+    let gpu = if args.has("cpu") || safe {
         None
     } else {
         match gpu::Gpu::new() {
@@ -349,12 +372,19 @@ fn crack(argv: &[String]) -> Result<()> {
         let mut done = false;
         if let Some(g) = &gpu {
             let mut cb = |h: u64, name: &[u8]| record(h, name);
-            match g.eval_pattern(pat, &comp.lists, &targets, limit, &mut cb) {
+            match g.eval_pattern(pat, &targets, limit, &mut cb) {
                 Ok(_) => done = true,
                 Err(e) => eprintln!("  gpu: {e} - falling back to CPU for this pattern"),
             }
         }
         if !done {
+        // The fast path fills a stack-sized buffer straight out of the arena and
+        // hashes it with the padded hasher; `--safe`, or a pattern whose longest
+        // candidate will not fit, uses the build-a-Vec reference path instead.
+        // (Measured: emission dominates — the hash is a third of the cost — so
+        // what matters is touching the word bytes once and copying them wide.)
+        let cap = (pat.arena.max_len() + 8).max(64);
+        let use_fast = !safe && cap <= 4096;
         pool.install(|| {
             // Split the flat index space into one contiguous chunk per thread.
             // Each thread decodes its start index ONCE (a few divisions) and
@@ -364,27 +394,36 @@ fn crack(argv: &[String]) -> Result<()> {
             (0..nt).into_par_iter().for_each(|t| {
                 let start = t * chunk;
                 let end = ((t + 1) * chunk).min(total);
-                let mut buf = Vec::with_capacity(192);
-                let mut picks = [0usize; 16];
-                if nslots == 0 {
-                    if t == 0 {
-                        pat.emit(&comp.lists, &[], &mut buf);
-                        let h = murmur::hash_bytes(&buf);
-                        if tset.contains(h) {
-                            record(h, &buf);
-                        }
-                    }
-                    return;
-                }
                 if start >= end {
                     return;
                 }
+                let mut picks = [0usize; 16];
+                let mut buf = Vec::with_capacity(192);
+                let mut sbuf: Vec<u8> = vec![0u8; cap];
                 pat.decode(start, &mut picks);
                 for _ in start..end {
-                    pat.emit(&comp.lists, &picks[..nslots], &mut buf);
-                    let h = murmur::hash_bytes(&buf);
+                    let h = if use_fast {
+                        let n = pat.arena.fill(&picks, &mut sbuf);
+                        murmur::hash_padded(&sbuf, n)
+                    } else {
+                        pat.emit(&comp.lists, &picks[..nslots], &mut buf);
+                        murmur::hash_bytes(&buf)
+                    };
                     if tset.contains(h) {
-                        record(h, &buf);
+                        // Rare. Rebuild the name and re-hash it with the reference
+                        // hasher before recording, so a fast-path bug can lose a
+                        // find but can never write a *wrong* name — the same
+                        // contract the GPU path works under.
+                        pat.emit(&comp.lists, &picks[..nslots], &mut buf);
+                        let h2 = murmur::hash_bytes(&buf);
+                        if h2 == h && tset.contains(h2) {
+                            record(h2, &buf);
+                        } else {
+                            eprintln!(
+                                "  (cpu: {:?} hashed {h:016x} fast / {h2:016x} reference - not recorded)",
+                                String::from_utf8_lossy(&buf)
+                            );
+                        }
                     }
                     if !pat.bump(&mut picks) {
                         break;
@@ -473,6 +512,11 @@ fn mutate(argv: &[String]) -> Result<()> {
     if let Some(ex) = args.one("exclude") {
         let drop = read_targets(&ex)?;
         targets.retain(|h| !drop.contains(h));
+    }
+    if targets.contains(&0) {
+        return Err(anyhow!(
+            "a target hash is 0, which marks empty table slots (murmur(\"\") is 0 too)"
+        ));
     }
     let tset = TargetSet::new(targets.iter().copied());
 
@@ -714,6 +758,113 @@ fn mutate(argv: &[String]) -> Result<()> {
         "\ndone in {secs:.1}s (+{chain_secs:.1}s chains)\nnew matches  : {}\nmatches file : {matches_path} ({} total)",
         new_hits.load(Ordering::Relaxed),
         matches.lock().unwrap().len()
+    );
+    Ok(())
+}
+
+/// Micro-benchmark of the candidate loop's stages, so optimisation follows where
+/// the time actually goes instead of theory. `--phase` picks one stage per run:
+///
+/// ```text
+///   0  walk only (decode + bump)
+///   1  emit into a Vec
+///   2  + hash_bytes on that buffer
+///   3  + target probe            <- the CPU path as it was (`--safe`)
+///   4  arena fill only           (isolates the emitter)
+///   5  arena fill + hash_padded  <- new path
+///   6  + target probe
+/// ```
+///
+///   hashcracker bench --phase 3 --list a=F --list b=F --pattern '%a_%b'
+fn bench(argv: &[String]) -> Result<()> {
+    let args = Args::parse(argv)?;
+    let pattern = args.one("pattern").ok_or_else(|| anyhow!("--pattern required"))?;
+    let phase: u32 = args.one_or("phase", "3").parse().unwrap_or(3);
+    let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
+    let limit: u64 = args.one_or("limit", "0").parse().unwrap_or(0);
+
+    let mut comp = Compiler::new();
+    for spec in args.all("list") {
+        let (slot, file) = spec
+            .split_once('=')
+            .ok_or_else(|| anyhow!("--list must be X=FILE, got {spec:?}"))?;
+        let c = slot.bytes().next().ok_or_else(|| anyhow!("empty slot in {spec:?}"))?;
+        let idx = comp.slot(c);
+        comp.lists[idx] = read_lines(file)?;
+    }
+    let pat = comp.compile(&pattern).map_err(|e| anyhow!(e))?;
+    let nslots = pat.slots();
+    let total = if limit > 0 { pat.total().min(limit) } else { pat.total() };
+    // Never matches: phases that probe pay for the lookup but never build a name.
+    let tset = TargetSet::new([0x0123_4567_89ab_cdefu64]);
+
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build()?;
+    let nt = pool.current_num_threads() as u64;
+    let chunk = total.div_ceil(nt.max(1));
+    let cap = (pat.arena.max_len() + 8).max(64);
+    let t0 = std::time::Instant::now();
+    let sink: u64 = pool.install(|| {
+        (0..nt)
+            .into_par_iter()
+            .map(|t| {
+                let start = t * chunk;
+                let end = ((t + 1) * chunk).min(total);
+                if start >= end {
+                    return 0u64;
+                }
+                let mut out = 0u64;
+                let mut picks = [0usize; 16];
+                let mut buf: Vec<u8> = Vec::with_capacity(192);
+                let mut sbuf: Vec<u8> = vec![0u8; cap];
+                pat.decode(start, &mut picks);
+                for _ in start..end {
+                    match phase {
+                        0 => {}
+                        1 => {
+                            pat.emit(&comp.lists, &picks[..nslots], &mut buf);
+                            out = out.wrapping_add(buf.len() as u64);
+                        }
+                        2 => {
+                            pat.emit(&comp.lists, &picks[..nslots], &mut buf);
+                            out ^= murmur::hash_bytes(&buf);
+                        }
+                        3 => {
+                            pat.emit(&comp.lists, &picks[..nslots], &mut buf);
+                            let h = murmur::hash_bytes(&buf);
+                            if tset.contains(h) {
+                                out ^= h;
+                            }
+                        }
+                        4 => {
+                            let n = pat.arena.fill(&picks, &mut sbuf);
+                            out = out.wrapping_add(n as u64);
+                        }
+                        5 => {
+                            let n = pat.arena.fill(&picks, &mut sbuf);
+                            out ^= murmur::hash_padded(&sbuf, n);
+                        }
+                        _ => {
+                            let n = pat.arena.fill(&picks, &mut sbuf);
+                            let h = murmur::hash_padded(&sbuf, n);
+                            if tset.contains(h) {
+                                out ^= h;
+                            }
+                        }
+                    }
+                    if !pat.bump(&mut picks) {
+                        break;
+                    }
+                }
+                out
+            })
+            .sum()
+    });
+    let secs = t0.elapsed().as_secs_f64().max(1e-9);
+    std::hint::black_box(sink);
+    println!(
+        "phase {phase} : {total} cands in {secs:.2}s  ({:.1}M/s, {:.1} ns/cand)",
+        total as f64 / secs / 1e6,
+        secs * 1e9 / total as f64
     );
     Ok(())
 }

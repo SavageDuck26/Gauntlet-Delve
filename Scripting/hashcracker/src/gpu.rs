@@ -40,7 +40,8 @@ struct Params {
     iters: u32,
     nslots: u32,
     tmask: u32,
-    _pad: u32,
+    /// Bytes the pattern's literals contribute — the seed for the length pass.
+    lit_len: u32,
 }
 
 /// GPU context: device, queue, pipeline and the bind group layout.
@@ -63,7 +64,7 @@ struct Params {
     iters: u32,
     nslots: u32,
     tmask: u32,
-    pad: u32,
+    lit: u32,
 };
 
 @group(0) @binding(0) var<uniform> P: Params;
@@ -81,10 +82,6 @@ struct Params {
 const MB: i64 = -4132994306676758123;
 const KB: i64 = -7046029254386353131;
 const R: u32 = 47u;
-
-fn byte_at(i: u32) -> u32 {
-    return (blob[i >> 2u] >> ((i & 3u) * 8u)) & 0xffu;
-}
 
 fn bump(picks: ptr<function, array<u64, 8>>, nslots: u32) -> bool {
     for (var s = 0u; s < nslots; s = s + 1u) {
@@ -114,16 +111,15 @@ fn eval(@builtin(global_invocation_id) gid: vec3<u32>) {
         let idx = start + u64(it);
         if (idx >= P.total) { break; }
 
-        // pass 1: total byte length (Murmur seeds with len * M)
-        var total_len: u32 = 0u;
-        for (var p = 0u; p < nops; p = p + 1u) {
-            let o = 9u + p * 4u;
-            if (mdat[o] == 0u) {
-                total_len = total_len + mdat[o + 2u];
-            } else {
-                let e = mdat[o + 2u] + u32(picks[mdat[o + 1u]]);
-                total_len = total_len + entries[e * 2u + 1u];
-            }
+        // pass 1: total byte length (Murmur seeds with len * M). Only the slot
+        // words can change it, so this walks the slot table instead of every op —
+        // and it sits at the head of the serial dependency chain, so it stays
+        // short: nslots lookups rather than nops branches.
+        var total_len: u32 = P.lit;
+        let sbase = 9u + nops * 4u;
+        for (var s = 0u; s < nslots; s = s + 1u) {
+            let e = mdat[sbase + s] + u32(picks[s]);
+            total_len = total_len + entries[e * 2u + 1u];
         }
 
         // pass 2: feed bytes through the accumulator
@@ -142,8 +138,19 @@ fn eval(@builtin(global_invocation_id) gid: vec3<u32>) {
                 off = entries[e * 2u];
                 len = entries[e * 2u + 1u];
             }
+            // Pull a 32-bit blob word and drip bytes out of it, so this loop
+            // does one storage load per four bytes instead of one per byte
+            // (the load, not the arithmetic, was what the old byte_at cost).
+            var word: u32 = 0u;
+            var left: u32 = 0u;
             for (var i = 0u; i < len; i = i + 1u) {
-                acc = acc | (u64(byte_at(off + i)) << (nb * 8u));
+                if (left == 0u) {
+                    word = blob[(off + i) >> 2u];
+                    left = 4u - ((off + i) & 3u);
+                }
+                acc = acc | (u64(word & 0xffu) << (nb * 8u));
+                word = word >> 8u;
+                left = left - 1u;
                 nb = nb + 1u;
                 if (nb == 8u) {
                     var k = acc * M;
@@ -261,12 +268,12 @@ impl Gpu {
     }
 
     /// Evaluate every candidate of `pat` (capped at `limit`, 0 = all) on the
-    /// GPU. `on_match(hash, name)` fires for confirmed targets only. Returns
-    /// the number of candidates evaluated.
+    /// GPU. The candidate bytes come from the pattern's arena, so no word lists
+    /// are needed here. `on_match(hash, name)` fires for confirmed targets only.
+    /// Returns the number of candidates evaluated.
     pub fn eval_pattern(
         &self,
         pat: &Compiled,
-        lists: &[Vec<Vec<u8>>],
         targets: &std::collections::HashSet<u64>,
         limit: u64,
         on_match: &mut dyn FnMut(u64, &[u8]),
@@ -285,13 +292,18 @@ impl Gpu {
             return Err(anyhow!("a target hash is 0, which marks empty table slots"));
         }
 
-        // per-used-slot entry base (word entries are stored slot-major)
-        let mut ebase = [0u32; MAX_SLOTS];
-        let mut acc = 0u32;
-        for p in 0..nslots {
-            ebase[p] = acc;
-            acc += pat.lens[p] as u32;
-        }
+        // Everything the kernel reads comes from the pattern's arena: the same
+        // flattened bytes the CPU hot loop hashes, built once at compile time,
+        // so the two paths cannot drift apart. Entries are 8-byte padded, which
+        // the shader's word refill relies on for its final partial word.
+        let arena = &pat.arena;
+        let ebase: [u32; MAX_SLOTS] = {
+            let mut b = [0u32; MAX_SLOTS];
+            for p in 0..nslots {
+                b[p] = arena.slot_first[p];
+            }
+            b
+        };
 
         // meta = [8 x lens][nops][ops x 4]
         let mut meta: Vec<u32> = vec![0; 8];
@@ -299,32 +311,32 @@ impl Gpu {
             meta[p] = pat.lens[p] as u32;
         }
         let mut ops: Vec<u32> = Vec::new();
-        let mut blob: Vec<u8> = Vec::new();
-        for part in &pat.parts {
+        for (k, part) in pat.parts.iter().enumerate() {
             match part {
-                Part::Lit(b) => {
-                    let off = blob.len() as u32;
-                    ops.extend_from_slice(&[0, off, b.len() as u32, 0]);
-                    blob.extend_from_slice(b);
+                Part::Lit(_) => {
+                    let e = arena.part_base[k] as usize;
+                    ops.extend_from_slice(&[0, arena.ent_off[e], arena.ent_len[e], 0]);
                 }
                 Part::Slot(pos) => ops.extend_from_slice(&[1, *pos as u32, ebase[*pos], 0]),
             }
         }
         meta.push((ops.len() / 4) as u32); // nops lives at index 8
         meta.extend_from_slice(&ops);
-
-        // word blob + (offset, len) entries, ordered by used-slot
-        let mut entries: Vec<u32> = Vec::new();
+        // followed by the slot entry bases, so the shader can sum a candidate's
+        // length from the slots alone (literals never change it)
         for p in 0..nslots {
-            for w in &lists[pat.used[p]] {
-                entries.push(blob.len() as u32);
-                entries.push(w.len() as u32);
-                blob.extend_from_slice(w);
-            }
+            meta.push(arena.slot_first[p]);
         }
-        // pack bytes little-endian into u32 words (shader unpacks with shifts)
-        let mut packed: Vec<u32> = Vec::with_capacity(blob.len() / 4 + 1);
-        for chunk in blob.chunks(4) {
+
+        // (offset, len) per entry — literals first, then words slot-major
+        let mut entries: Vec<u32> = Vec::with_capacity(arena.ent_off.len() * 2);
+        for e in 0..arena.ent_off.len() {
+            entries.push(arena.ent_off[e]);
+            entries.push(arena.ent_len[e]);
+        }
+        // pack the arena's padded bytes little-endian into u32 words
+        let mut packed: Vec<u32> = Vec::with_capacity(arena.blob.len() / 4 + 1);
+        for chunk in arena.blob.chunks(4) {
             let mut v = [0u8; 4];
             v[..chunk.len()].copy_from_slice(chunk);
             packed.push(u32::from_le_bytes(v));
@@ -419,7 +431,7 @@ impl Gpu {
                 iters: it,
                 nslots: nslots as u32,
                 tmask: mask as u32,
-                _pad: 0,
+                lit_len: arena.lit_len,
             };
             self.queue.write_buffer(&params_buf, 0, bytemuck::bytes_of(&params));
             self.queue.write_buffer(&rc_buf, 0, &[0u8; 4]);
@@ -453,7 +465,9 @@ impl Gpu {
                     }
                     // rebuild on the host and RE-HASH: the GPU can only ever
                     // surface an index, never a wrong name
-                    pat.build(lists, idx, &mut buf);
+                    let mut picks = [0usize; 16];
+                    pat.decode(idx, &mut picks);
+                    pat.arena.emit_into(&picks, &mut buf);
                     let h = hash_bytes(&buf);
                     if targets.contains(&h) {
                         confirmed += 1;

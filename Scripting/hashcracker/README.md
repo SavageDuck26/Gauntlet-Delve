@@ -13,7 +13,7 @@ candidates, this handles **billions** in seconds.
 
 ```
 hashcracker/
-├── src/                  Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
+├── src/                  Rust: murmur.rs, pattern.rs, arena.rs, gpu.rs (WGSL), main.rs
 ├── tools/                target + vocabulary builders (the maintainer entry points)
 │   ├── build_targets.py      catalogue -> data/vocab/targets_<type>.txt
 │   ├── merge_matches.py      matches.tsv -> resource_name_overlay.json
@@ -112,14 +112,46 @@ Common slots: `%d` dirs, `%n` names, `%p` prefixes, `%s` suffixes, `%k` numbers.
 
 ### Other options
 `--threads N`, `--exclude F` (skip already-solved hashes), `--limit N` (cap per
-pattern, for testing).
+pattern, for testing), `--safe` (reference CPU path — build each name the long way
+and hash it — for diffing the fast path against it).
 
 ### Performance
 The hot loop is division-free: each thread is handed one contiguous slice of the
 index space, decodes its start index once (mixed-radix), then walks it with an
-**odometer**. Target lookup uses a small open-addressed `u64` set (no SipHash),
-and the build uses `-C target-cpu=native` (see `.cargo/config.toml`). Throughput
-is typically **~150–200 M candidates/s** across ~12 cores.
+**odometer**. Compiling a pattern also flattens every byte it can emit into one
+padded *arena* (`src/arena.rs`); each candidate is then copied into a slacked
+per-thread buffer eight bytes at a time and hashed with a masked-tail hasher, so
+no string is allocated and no byte is touched twice. Target lookup is a small
+open-addressed `u64` array (no SipHash; `0` marks an empty slot, and a `0` target
+hash is rejected because `murmur("")` is `0`).
+
+Measured on an AMD Ryzen 5 5600G (6C/12T, `-C target-cpu=x86-64-v3`), best of six
+interleaved runs, against the previous implementation (`--safe` still runs it):
+
+| pattern | before | after |
+| --- | --- | --- |
+| `%a_%b` | 231 M/s | **289 M/s** |
+| `characters/%a/%b_diff` | 190 M/s | **230 M/s** |
+| `%a/%b/%c` | 185 M/s | **245 M/s** |
+
+A second machine (a 16-thread laptop) showed +19–34 % on the same change, so the
+gain is not microarchitecture-specific, and `--safe` output is byte-identical to
+the fast path on 2,789 planted names.
+
+**`bench`** times one stage of the loop, which is how the above was targeted:
+
+```bash
+hashcracker bench --list a=data/names.txt --list b=data/names.txt \
+  --pattern '%a_%b' --phase 6 --threads 12 --limit 50000000
+```
+
+`--phase 0` walks only, `1` adds the emit, `2` the hash, `3` the probe (the old
+path), `4` the arena fill, `5` the padded hash, `6` the probe (the current path).
+In every pattern measured, **emission dominates (~70 %)** and the hash is ~25 %,
+which is why the copy — not the hash — is where the work went.
+
+`--safe` forces the reference path (build the name into a `Vec`, then hash it; no
+GPU, no arena) so the two can be diffed over the same space.
 
 ## GPU acceleration (optional, automatic)
 
@@ -133,18 +165,35 @@ CPU. Force it with `--gpu` (fail if unavailable) or `--cpu`.
   --pattern '%d/%a_%b' --matches matches.tsv      # picks GPU automatically
 ```
 
-Measured on an AMD RX 6600 XT (RADV): **~1.24 G candidates/s**, versus
-~0.06–0.26 G/s on 12 CPU threads — i.e. roughly **5–12x** depending on how much
-string assembly a pattern needs. A 42-billion-candidate sweep takes ~34 s.
+Measured on an AMD RX 6600 XT (RADV): **~1.12 G candidates/s** for `%a_%b` and
+~0.89 G/s when the pattern carries literals, versus ~0.23–0.29 G/s on 12 CPU
+threads — i.e. roughly **4–5x**. A discrete NVIDIA card measures ~2x the RX 6600
+XT again (an RTX 4060 Laptop: **2.5–2.6 G/s** / 2.0 G/s on the same two patterns).
+A 42-billion-candidate sweep takes ~34 s.
 
 Correctness: the kernel only ever reports candidate **indices**; the host
-re-emits each index with the CPU emitter and re-hashes it before recording, so a
+re-emits each index from the same arena and re-hashes it before recording, so a
 GPU arithmetic bug can never write a wrong name. `crack --gpu` output has been
-diffed against `crack --cpu` on a 48,000-candidate space with 900 planted
-targets and is byte-identical.
+diffed against the fast CPU path on a 2,789-target planted space and against
+`--safe` — both byte-identical, and `tools/gpu_smoke_test.sh` is the standing
+gate.
 
 Implementation notes (src/gpu.rs):
 
+* The kernel reads the *same* arena the CPU hot loop uses (`src/arena.rs`), built
+  once at compile time, so the two paths cannot drift apart.
+* Pass 1 sums the candidate's length from the slot table instead of walking every
+  op (only slots can change it); pass 2 pulls a 32-bit blob word and drips bytes
+  out of it, so it does one storage load per *four* bytes rather than one per byte
+  (that alone was worth +9–27 % on NVIDIA; RADV barely noticed).
+* Cost is **proportional to the bytes hashed**, not to a fixed per-candidate cost:
+  doubling the word lists (same slots, same number of picks, 32 → 65 byte
+  candidates) halves the rate exactly — ~4.5 G Murmur blocks/s either way on the
+  RX 6600 XT. Nor is it load- or batch-bound: removing inner-loop loads changed
+  nothing measurable, and the rate is flat from 16 to 1024 iterations per thread.
+  So the remaining levers are exposing more independent candidates per thread (a
+  few interleaved chains) and, further out, hashcat's native-64-bit-multiply path
+  (`REMOTE-GPU.md` measures that at 10-30x).
 * MurmurHash64A needs 64-bit multiplies -> the device must expose
   `wgpu::Features::SHADER_INT64`.
 * Dispatches are sized to ~0.3 s of work because amdgpu's scheduler watchdog
@@ -153,7 +202,8 @@ Implementation notes (src/gpu.rs):
   `i64::MAX` cannot be represented (the 64-bit constants are stored as negative
   `i64` bit patterns and `bitcast` to `u64`); shift amounts must be `u32`;
   mixed-width literals need explicit `u64(...)` conversions.
-* Patterns with more than 8 slots fall back to the CPU.
+* Patterns with more than 8 slots fall back to the CPU (the compiler accepts up to
+  16; more than that is an error rather than an index-out-of-bounds panic).
 
 
 Keep only dictionary words that actually occur in a corpus (aho-corasick):

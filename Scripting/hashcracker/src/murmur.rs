@@ -43,6 +43,43 @@ pub fn hash_bytes(data: &[u8]) -> u64 {
     h
 }
 
+/// Hash the first `len` bytes of `buf`, which must have at least `len + 8` bytes
+/// of storage. That slack lets the tail be read as one masked 8-byte load
+/// instead of a byte-at-a-time loop.
+///
+/// Bit-for-bit equal to `hash_bytes(&buf[..len])`; `padded_matches_plain`
+/// checks that for every length and every starting offset.
+#[inline]
+pub fn hash_padded(buf: &[u8], len: usize) -> u64 {
+    debug_assert!(buf.len() >= len + 8, "tail read needs 8 bytes of slack");
+    let mut h: u64 = (len as u64).wrapping_mul(M); // seed 0
+
+    let nblocks = len / 8;
+    for i in 0..nblocks {
+        // SAFETY: i*8 + 8 <= nblocks*8 <= len <= buf.len() - 8.
+        let mut k = unsafe { (buf.as_ptr().add(i * 8) as *const u64).read_unaligned() };
+        k = k.wrapping_mul(M);
+        k ^= k >> R;
+        k = k.wrapping_mul(M);
+        h ^= k;
+        h = h.wrapping_mul(M);
+    }
+
+    let tail = len & 7;
+    if tail != 0 {
+        // SAFETY: the load starts at nblocks*8 <= len and the slack guarantees
+        // eight readable bytes there; everything past `len` is masked off.
+        let raw = unsafe { (buf.as_ptr().add(nblocks * 8) as *const u64).read_unaligned() };
+        h ^= raw & ((1u64 << (tail * 8)) - 1);
+        h = h.wrapping_mul(M);
+    }
+
+    h ^= h >> R;
+    h = h.wrapping_mul(M);
+    h ^= h >> R;
+    h
+}
+
 /// Convenience: lowercase a `&str` (ASCII) and hash it.
 #[allow(dead_code)]
 #[inline]
@@ -68,5 +105,23 @@ mod tests {
         assert_eq!(hash_str("resource_packages/heroes/elf_base"), 0x2c8fb6cb55aba416);
         // case-insensitive
         assert_eq!(hash_str("RESOURCE_PACKAGES/ELIAS"), hash_str("resource_packages/elias"));
+    }
+
+    /// `hash_padded` must agree with `hash_bytes` for every length, including
+    /// the ones whose tail straddles the end of the buffer.
+    #[test]
+    fn padded_matches_plain() {
+        let data: Vec<u8> = (0..=200u32).map(|i| (i * 37 % 251) as u8).collect();
+        for len in 0..=128usize {
+            for off in 0..8usize {
+                // 8 bytes of slack after the candidate, so the tail read is legal
+                let buf = &data[off..off + len + 8];
+                assert_eq!(
+                    hash_padded(buf, len),
+                    hash_bytes(&data[off..off + len]),
+                    "len {len} off {off}"
+                );
+            }
+        }
     }
 }

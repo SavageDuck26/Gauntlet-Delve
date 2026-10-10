@@ -237,13 +237,15 @@ fn plan(c: &Ctx, comp: &mut Compiler, depth: usize, top: usize) -> Vec<String> {
 }
 
 /// CPU fallback: walk the pattern's index space with the odometer emitter.
-fn run_cpu(pat: &crate::pattern::Compiled, lists: &[Vec<Vec<u8>>],
-           targets: &HashSet<u64>) -> Vec<(u64, Vec<u8>)> {
+/// Same fast path as `crack` — fill a slacked buffer out of the arena and hash
+/// it with the padded hasher — with the reference re-hash guarding every hit.
+fn run_cpu(pat: &crate::pattern::Compiled, targets: &HashSet<u64>) -> Vec<(u64, Vec<u8>)> {
     let total = pat.total();
     if total == 0 {
         return Vec::new();
     }
-    let nslots = pat.slots();
+    let cap = (pat.arena.max_len() + 8).max(64);
+    let use_fast = cap <= 4096;
     let nt = rayon::current_num_threads() as u64;
     let chunk = total.div_ceil(nt.max(1));
     (0..nt)
@@ -253,24 +255,25 @@ fn run_cpu(pat: &crate::pattern::Compiled, lists: &[Vec<Vec<u8>>],
             let end = ((t + 1) * chunk).min(total);
             let mut out = Vec::new();
             let mut buf = Vec::with_capacity(192);
+            let mut sbuf = vec![0u8; cap];
             let mut picks = [0usize; 16];
             if start >= end {
                 return out;
             }
-            if nslots == 0 {
-                pat.emit(lists, &[], &mut buf);
-                let h = murmur::hash_bytes(&buf);
-                if targets.contains(&h) {
-                    out.push((h, buf.clone()));
-                }
-                return out;
-            }
             pat.decode(start, &mut picks);
             for _ in start..end {
-                pat.emit(lists, &picks[..nslots], &mut buf);
-                let h = murmur::hash_bytes(&buf);
+                let h = if use_fast {
+                    let n = pat.arena.fill(&picks, &mut sbuf);
+                    murmur::hash_padded(&sbuf, n)
+                } else {
+                    pat.arena.emit_into(&picks, &mut buf);
+                    murmur::hash_bytes(&buf)
+                };
                 if targets.contains(&h) {
-                    out.push((h, buf.clone()));
+                    pat.arena.emit_into(&picks, &mut buf);
+                    if murmur::hash_bytes(&buf) == h {
+                        out.push((h, buf.clone()));
+                    }
                 }
                 if !pat.bump(&mut picks) {
                     break;
@@ -451,7 +454,7 @@ pub fn run(argv: &[String]) -> Result<()> {
             if let Some(g) = &gpu {
                 let label = format!("{}/{}", c.pack, c.typ);
                 let mut cb = |h: u64, name: &[u8]| record(&matches, &hits, &label, h, name);
-                match g.eval_pattern(&pat, &comp.lists, &tset, 0, &mut cb) {
+                match g.eval_pattern(&pat, &tset, 0, &mut cb) {
                     Ok(_) => {
                         done = true;
                         used_gpu.fetch_add(total, Ordering::Relaxed);
@@ -461,7 +464,7 @@ pub fn run(argv: &[String]) -> Result<()> {
             }
             if !done {
                 let label = format!("{}/{}", c.pack, c.typ);
-                for (h, name) in run_cpu(&pat, &comp.lists, &tset) {
+                for (h, name) in run_cpu(&pat, &tset) {
                     record(&matches, &hits, &label, h, &name);
                 }
             }
@@ -486,7 +489,7 @@ pub fn run(argv: &[String]) -> Result<()> {
             if let Some(gpu) = &gpu {
                 let label = "cross-type".to_string();
                 let mut cb = |h: u64, name: &[u8]| record(&matches, &hits, &label, h, name);
-                match gpu.eval_pattern(&pat, &comp.lists, &tset, 0, &mut cb) {
+                match gpu.eval_pattern(&pat, &tset, 0, &mut cb) {
                     Ok(_) => {
                         done = true;
                         used_gpu.fetch_add(total, Ordering::Relaxed);
@@ -495,7 +498,7 @@ pub fn run(argv: &[String]) -> Result<()> {
                 }
             }
             if !done {
-                for (h, name) in run_cpu(&pat, &comp.lists, &tset) {
+                for (h, name) in run_cpu(&pat, &tset) {
                     record(&matches, &hits, "cross-type", h, &name);
                 }
             }
