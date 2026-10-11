@@ -6608,5 +6608,8 @@
   "5171038d70d672d0": "blocks/d01_caves/floors/cavestruct_floor_track_straight_2c",
   "eda3b17372d851e4": "blocks/d01_caves/floors/cavestruct_floor_track_straight_4c",
   "f7338afc0dccc65d": "effects/cha_eye_of_dur_imp_spawn",
-  "608652e0d763612f": "blocks/d01_lava/lava_waterfall_01_ash_diff"
+  "608652e0d763612f": "blocks/d01_lava/lava_waterfall_01_ash_diff",
+  "ba41ea370021a5ac": "blocks/d01_caves/walls/swampstruct_wall_corner_4c",
+  "326550231e5bcf02": "blocks/d01_lava/lavastruct_floor_tile_01_diff",
+  "315f62e2962c3b29": "blocks/d01_lava/lavastruct_floor_tile_01_norm"
 }
