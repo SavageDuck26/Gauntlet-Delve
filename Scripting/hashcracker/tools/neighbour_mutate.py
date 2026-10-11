@@ -42,6 +42,14 @@ def main() -> int:
     ap.add_argument("--global", dest="glob", action="store_true",
                     help="cross with the tokens of every directory as well")
     ap.add_argument("--min-dir", type=int, default=2)
+    ap.add_argument("--only", action="append", default=[],
+                    help="restrict to directories starting with this prefix (repeatable)")
+    ap.add_argument("--pool-file", action="append", default=[],
+                    help="extra token pool, one token per line (repeatable)")
+    ap.add_argument("--group-by", type=int, default=0,
+                    help="pool tokens by the first N path components instead of by "
+                         "directory: 2 groups `characters/boss_morak/*` together, so a "
+                         "unit's abilities/gibs vocabulary reaches its animations/")
     a = ap.parse_args()
 
     dirs: dict[str, list[str]] = collections.defaultdict(list)
@@ -55,13 +63,31 @@ def main() -> int:
         dir_maps[d].add(m)
         all_tokens.update(base.split("_"))
 
+    groups: dict[str, set[str]] = collections.defaultdict(set)
+    if a.group_by:
+        for name in set(load_names(all_types=True).values()):
+            i = name.rfind("/")
+            d, leaf = (name[: i + 1], name[i + 1:]) if i >= 0 else ("", name)
+            base, _m = split_map(leaf)
+            key = "/".join(d.split("/")[: a.group_by]) + "/"
+            groups[key].update(base.split("_"))
+
     out = sys.stdout
     total = 0
     for d, bases in sorted(dirs.items()):
         if len(bases) < a.min_dir:
             continue
+        if a.only and not any(d.startswith(p) for p in a.only):
+            continue
         bases = sorted(set(bases))
         pool = set(all_tokens) if a.glob else set()
+        if a.group_by:
+            keys = ["/".join(d.split("/")[: a.group_by]) + "/"]
+            for k in keys:
+                pool |= groups.get(k, set())
+        for p in a.pool_file:
+            pool.update(t.strip().lstrip("_") for t in
+                        pathlib.Path(p).read_text().splitlines() if t.strip())
         for b in bases:
             pool.update(b.split("_"))
         pool = sorted(pool)
@@ -76,6 +102,11 @@ def main() -> int:
                 for t in pool:
                     if t != toks[i]:
                         cands.add("_".join(toks[:i] + [t] + toks[i + 1:]))
+            # insertion, not just replacement: `move_jog_left` -> `move_jog_look_left`
+            # is how the animation names in FINDINGS 61.9 were actually spelled.
+            for i in range(len(toks) + 1):
+                for t in pool:
+                    cands.add("_".join(toks[:i] + [t] + toks[i:]))
             for t in pool:
                 cands.add(f"{b}_{t}")
                 cands.add(f"{t}_{b}")

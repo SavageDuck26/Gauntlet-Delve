@@ -8133,3 +8133,56 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   Scoreboard for the session: matches.tsv 5925 -> 5960, overlay 6528 -> 6563.
 
+
+
+61.9 THE RESIDUAL IS 11 TYPES, NOT ONE: PER-TYPE VOCABULARIES
+
+  `hashcracker mutate` had been fed `tex_suffixes.txt` (`_diff`/`_norm`/`_spec`) whatever
+  the target was, which is noise in an animation name.  The 978 hashes still missing are
+
+      animation 326   texture 309   shader_library 151   material 107   particles 91
+      unit 46   timpani_bank 37   shader 36   level 10   package 2   flow 1
+
+  so `tools/mine_type_tokens.py` now mines three files per type out of the names we
+  hold for that type - `seeds.txt` (the `--names` input), `suffixes.txt` (tokens that
+  *end* a held name of that type, which for animation is `windup`, `turnleft`,
+  `offset_02`, `exit`) and `tokens.txt` (every leaf token) - and
+  `sweeps/type_battery.sh` spends them in rounds.  Round A (each type on its own
+  vocabulary alone, seconds per type) immediately found six:
+
+      characters/avatar_valkyrie/animations/move_jog_break_left
+      gameobjects/traps/trap_floor_blades_normal
+      decal_projector:deferred_decals_group_floor:deferred_decals_group_level:diffuse_map:normal_aware
+      decal_projector:deferred_decals_group_floor:...:deferred_decals_group_prop:diffuse_map:normal_aware
+
+  Two lessons from that, both about *grouping* rather than vocabulary:
+
+  * The unit is the missing coordinate.  The unresolved animations sit in
+    `resource_packages/d01_caves` (83), `d01_lava` (79), **`morak` (77)**, `d01_crypt`
+    (66), `d01_arcade` (61) and the hero bases - i.e. in units, and the package name is
+    how you find out which.  `neighbour_mutate.py` pools tokens by *directory*, so a
+    unit's `abilities/` and `gib/` words could never reach its `animations/`; with
+    `--group-by 2` (pool by `characters/<unit>/`) the same-size space yielded
+    `move_jog_look_left_back` and `move_jog_look_right_back`, which the per-directory
+    pass had missed.  Same words, different grouping, different answer.
+  * Insertion, not replacement.  `move_jog_left` -> `move_jog_look_left` needs a token
+    *inserted* mid-name; a swap-only pass cannot spell it.  `neighbour_mutate.py` now
+    tries every insertion point, and `move_jog_{look,break}_{left,right}[_back]` came
+    out of it.  (`hashcracker mutate` reaches these only through its append/prepend
+    forms, which is why the animation family lagged the texture families.)
+
+  Negative results, with their sizes, all hash-verified:
+
+    * `tools/enumerate_spaces.py` - the four *parseable* spaces, 568,388 candidates:
+      quilts (`modules/<mod>/quilts/<cat>/<lvl>_quilt_<shape>__<grid>__<NN>[_<sfx>]`,
+      including synthesized `lava_quilt_*` heads, since we only held caves and crypt),
+      `audio/<group>` (every unit x every audio prefix), `flow/status_effect_*` (45
+      status words x numbers) and `shaders/<name>` (every token as a shader name plus
+      every held shader with a variant suffix, because 23 of the 36 missing `shader`
+      rows are in `resource_packages/menu`) - **0**.
+    * cross-unit animation token cross (per-directory pooling): 4,348,175 - 0.  The
+      same space *grouped by unit* then found 4, which is the point above.
+    * `tools/enumerate_chains.py` - a shader chain is `technique:<flag:flag:...>` with
+      the flags sorted, so the space is technique x sorted subsets: 43 techniques x
+      subsets <= 3 of 109 flags = 9,284,990 candidates, enumerated once instead of
+      once per seed (which is what `mutate --chain-depth` does).
