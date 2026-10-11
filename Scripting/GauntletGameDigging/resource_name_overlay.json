@@ -6598,5 +6598,6 @@
   "ffc9623a23787ccc": "effects/env_fog_creepy_01_slow",
   "ffdbae46a8d94661": "characters/avatar_necromagus/animation/leap",
   "fff80118cd84e586": "modules/d01_crypt/quilts/base/crypt_quilt_straight__xx_e_xx_e__02_spiketrapschain_skeleton",
-  "fffdce662cbf0f67": "gui/interact_price_ui"
+  "fffdce662cbf0f67": "gui/interact_price_ui",
+  "6a6b4d2d2076b9a3": "effects/cha_necromagus_light_attack_burst"
 }
