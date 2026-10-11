@@ -9,6 +9,11 @@ pattern files - just murmur64 and the unresolved set from the catalogue.
 
 --write appends the hits to matches.tsv.  Exit code 0 always; the hits are what
 matters (a control name that is already resolved never prints).
+
+Candidates are consumed **one line at a time**: earlier versions did
+`sys.stdin.read().splitlines()`, which buffers the whole stream, and a sweep that
+streams tens of millions of names then needs gigabytes for names it only hashes
+once.  Memory here is flat in the number of candidates.
 """
 from __future__ import annotations
 
@@ -51,24 +56,31 @@ def main():
     if not args.quiet:
         print(f"unresolved hashes: {len(un):,}", file=sys.stderr)
 
-    cands = list(args.names)
+    hits: list[tuple[str, str]] = []
+    tested = 0
+
+    def check(c: str) -> None:
+        """Hash one candidate.  Streaming: nothing is accumulated but hits."""
+        nonlocal tested
+        tested += 1
+        h = f"{murmur_hash64(c):016x}"
+        if h in un:
+            hits.append((h, c))
+
+    for c in args.names:
+        check(c)
     for f in args.file:
         for line in pathlib.Path(f).read_text().splitlines():
             line = line.strip()
             if line and not line.startswith("#"):
-                cands.append(line)
+                check(line)
     if not sys.stdin.isatty():
-        for line in sys.stdin.read().splitlines():
+        for line in sys.stdin:                      # streaming, never .read()
             line = line.strip()
             if line and not line.startswith("#"):
-                cands.append(line)
+                check(line)
 
-    hits = []
-    for c in cands:
-        h = f"{murmur_hash64(c):016x}"
-        if h in un:
-            hits.append((h, c))
-    print(f"tested {len(cands):,}   HITS {len(hits)}")
+    print(f"tested {tested:,}   HITS {len(hits)}")
     for h, c in hits:
         print(f"  {h}  {c}")
     if args.write and hits:

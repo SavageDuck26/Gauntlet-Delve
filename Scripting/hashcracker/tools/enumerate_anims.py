@@ -25,9 +25,13 @@ from __future__ import annotations
 
 import itertools
 import pathlib
+import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+HC = HERE.parent
+REPO = HC.parent.parent
+REPO_SRC = REPO / "game-source" / "Gauntlet-SourceCode-LUA"
 sys.path.insert(0, str(HERE))
 from named_textures import load_names                                 # noqa: E402
 
@@ -53,6 +57,19 @@ def main() -> int:
     names = sorted(set(load_names(all_types=True).values()))
     units = sorted({n.split("/")[1] for n in names
                     if n.startswith("characters/") and n.count("/") > 1})
+    # The Lua's generated lists carry units we do not hold yet
+    # (`characters/<unit>/<unit stem>` in characters_unit_path.lua, the unit paths
+    # in settings_paths.lua), so the unit axis is not a function of our names.
+    for f in ("characters_unit_path.lua", "settings_paths.lua", "unit_paths.lua",
+              "spawners_unit_path.lua"):
+        p = REPO_SRC / "lua" / "generated" / f
+        if not p.exists():
+            continue
+        for s in re.findall(r'"characters/([a-z0-9_]+)/',
+                            p.read_text(encoding="utf-8", errors="replace")):
+            if s not in units:
+                units.append(s)
+    units = sorted(set(units))
     # the ability vocabulary is per unit, so every unit gets the union - a boss
     # reuses hero ability names and vice versa
     abilities = sorted({n.rsplit("/", 1)[-1] for n in names
@@ -63,13 +80,29 @@ def main() -> int:
                   + ["_offset", "_offset01", "_offset02"]
 
     out = sys.stdout
-    seen: set[str] = set()
 
     def emit(d: str, stem: str) -> None:
-        name = d + stem
-        if name not in seen:
-            seen.add(name)
-            out.write(name + "\n")
+        # NB no `seen` set: the candidate stream is millions of names and holding
+        # them all is what OOMs the box.  `check_names.py` hashes each line, so a
+        # duplicate only costs the hash.
+        out.write(d + stem + "\n")
+
+    # The shipped Lua names animation *events* (`charselect_turn`,
+    # `spearthrust_impale`) and the equipment tables name ability animations
+    # (`animation = "ability_talisman_03"`), so Lua leaves are a vocabulary the
+    # per-unit grammar can be crossed with - something the held leaves alone
+    # cannot do, because the leaves we hold are exactly the ones we already have.
+    LUA = pathlib.Path(REPO_SRC)
+    lua_leaves = set()
+    if LUA.exists():
+        for p in LUA.rglob("*.lua"):
+            for s in re.findall(r'"([a-z0-9_]{4,60})"',
+                                p.read_text(encoding="utf-8", errors="replace")):
+                lua_leaves.add(s)
+            for s in re.findall(r'^\s*([a-z0-9_]{4,60})\s*=\s*[{"]',
+                                p.read_text(encoding="utf-8", errors="replace"),
+                                re.M):
+                lua_leaves.add(s)
 
     for u in units:
         for sub in ("animations/", "animation/"):
@@ -154,8 +187,24 @@ def main() -> int:
                         emit(f"characters/{u}_{v}/{sub}",
                              f"charselect_{nn}_{a}" + (f"_{dr}" if dr else ""))
 
-    print(f"{len(seen)} candidates over {len(units)} units, "
-          f"{len(abilities)} abilities", file=sys.stderr)
+    # Lua leaves (above) crossed with the slots we can read off the held names:
+    # `<ability>_<body>` is the shape of the one animation leaf that was recovered
+    # from the source side (`talisman_03_lowerbody`), and the Lua's animation /
+    # event vocabulary is the only vocabulary that is not a function of the names
+    # we already hold.
+    for u in units:
+        for sub in ("animations/", "animation/"):
+            d = f"characters/{u}/{sub}"
+            for l in sorted(lua_leaves):
+                emit(d, l)
+                for b in BODY:
+                    emit(d, f"{l}_{b}")
+                for a in ACTIONS:
+                    emit(d, f"{l}_{a}")
+
+    print(f"candidates streamed over {len(units)} units, "
+          f"{len(abilities)} abilities, {len(lua_leaves)} lua leaves",
+          file=sys.stderr)
 
     return 0
 
