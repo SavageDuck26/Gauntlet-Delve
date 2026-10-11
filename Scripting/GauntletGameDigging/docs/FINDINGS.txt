@@ -8267,10 +8267,35 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   49,323 ASCII strings (23,313 distinct) - `global_viewport`, `charselect`, `impale`,
   `decals`, `diffuse`, `movement`, `animationvariablecomponent`, DXBC shader blobs.
 
-  `tools/mine_bundle_strings.py` streams every bundle, decompresses with a per-stream
-  cap, hashes each distilled ASCII run against the unresolved set, and writes the
-  tokens to a corpus for the `mutate` engine - the vocabulary, not the verbatim
-  strings, is the value here (the strings are mostly DXBC/compiler identifiers and
-  binary noise, so the corpus wants a frequency/vowel filter before use).
+61.13 LOCAL ENUMERATION IS EXHAUSTED FOR THE SMALL TYPES (*)
+
+  A round of micro-passes over the types where a handful of names remain, each
+  enumerated from the grammar its *known* siblings spell out, all of them empty:
+
+    * `audio/<token>` and `audio/<prefix>_<token>` (timpani_bank - the type is
+      `audio/enemy_cultist`, `audio/enemy_mummy_king`, ...): 720 candidates, 0.
+    * `flow/status_effect_<status>` for the full status vocabulary, and
+      `flow/<token>`: 0.  (The 17 `flow/*` we hold are `flow/status_effect_*`,
+      `flow/gib`, `flow/dropped_weapon` - the shape is known, the words are not.)
+    * `resource_packages/<t>`, `resource_packages/<env>_<mode>`,
+      `modules/d01_<env>/<mode>`, `foundation/<t>`, `core/<a>/<b>` and
+      `core/editor_slave/level_editor/<b>` (render_config / package / level):
+      20,149 candidates, 0.
+    * `characters/<unit>{_var}/<ability>_illu` and `_icon` for every ability the
+      Lua names (127) x 65 units x 16 variants x 3 directories: 10,271,745
+      candidates, 0 - even though `_illu` is a *proven* family (61.7).
+    * `hud/action_icons/<hero>_{action,ultimate,ability}_<ability>`,
+      `effects_ui/<subject>_<hero>`, `gui/<t>_{ui,css,list,background}`,
+      `menu/{buttons,level_select}/<t>`: 24,394 candidates, 0.
+    * `<animation leaf>_var_<NN>` / `character_select_pos<NN>_var_<NN>` /
+      `charselect*` for every unit and every held leaf: 15,173,600 candidates, 0.
+
+  That is ~26 M candidates and it says something useful: the residual is not
+  reachable from the *shape* of its siblings; it needs a wider token vocabulary or
+  the engine's per-name edits.  The `_var_NN` shape itself is new and came from the
+  engine, on the GPU box (`characters/avatar_wizard/animations/
+  character_select_pos02_var_0{1,2}`), which is the pattern this project keeps
+  re-learning (61.4: the reach comes from the token list, not the pattern).
+
 
 

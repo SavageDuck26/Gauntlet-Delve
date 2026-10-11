@@ -263,6 +263,7 @@
 0b238eda0858922c	effects/textures/additive_cross
 0b2755d96e5fdaf4	modules/d01_caves/quilts/encounters/caves_quilt_smallroom__oo_ex_ii_ex__01_spider
 0b36c7f19e281e1c	menu/colosseum/grades/b
+0b3b9e97f19fe805	characters/avatar_wizard/animations/character_select_pos02_var_01
 0b3ba31529207554	menu/options_frame_02
 0b3fc10ddc57f502	characters/avatar_warrior/animations/axe_move_walk_left_back
 0b667042fb93ccbf	characters/mummy_bloated/mummy_bloated
@@ -1464,6 +1465,7 @@
 3faf8c60ef3f6cc2	modules/d01_lava/quilts/entrances/lava_quilt_entrance__xox_xxxxx_xxx_xxxxx__01
 3fc573a5f2782f80	effects_ui/level_select_node_hover_boss
 3fdabc99b04b106d	lua/components/rotation_component
+3fdfa82a0f7f1265	characters/avatar_wizard/animations/character_select_pos02_var_02
 3fe3f8714d10e3e0	beckmann_distribution_lut
 3fe439130b1364ef	modules/d01_lava/quilts/base/lava_quilt_turn__e_e_x_x__01
 3ff4431dccc894c1	effects/gam_spawner_exploding_timer
