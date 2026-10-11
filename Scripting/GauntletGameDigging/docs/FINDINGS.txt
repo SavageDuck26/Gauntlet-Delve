@@ -8070,3 +8070,66 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   slot is what `cape_collar` was, and every extra token list is another 100k shots
   at the same slot.
 
+
+61.8 WHAT THE TOKEN ENGINE UNLOCKED: 30 NAMES, AND EVERY ONE OPENS A SUBTREE
+
+  `hashcracker mutate` with a big mined token list is the first method in this
+  project that keeps paying after every pattern sweep has flat-lined.  Thirty names
+  in one session, and they are not siblings of each other - each opens a family:
+
+    blocks/d01_caves/swamp_broken_wall_2c_{hm,ml,m,l}_{diff,norm}    (8) - the walls
+    blocks/d01_caves/cavestruct_floor_track_{mark_diff,mark_norm,turn}
+    blocks/d01_hub_room/tutorial_platform_{diff,norm}
+    blocks/d01_caves/caverock_stalagmites_01b_diff
+    blocks/d01_lava/lavastruct_borders_01b_diff
+    props/d01_caves/caves_dragon_bones_01b_diff
+    props/d01_caves/caves_skullpiles_01_{diff,norm}
+    equipment/capes/cape_collar_r01..r03
+    menu/level_select/map_rock_l01..l06        (l = left; r01..r06 were already held)
+    effects/textures/additive_{flare_01,lightning_arc}
+    characters/avatar_valkyrie/animations/character_select_{turnleft,turnright}
+    characters/avatar_warrior/animations/character_select_pos02_{turnleft,turnright}
+    characters/avatar_necromagus/abilities/ultimate_remnant_illu
+    characters/mummy_bloated/mummy_bloated_illu
+
+  Sub-lessons, in order of how much they change the next run:
+
+  * The residual is NOT only textures.  The 1019 missing hashes are 326 animation,
+    309 texture, 151 shader_library, 107 material, 91 particles, 47 unit, 37
+    timpani_bank, 36 shader, 10 level, 2 package, 1 flow.  `mutate` does not care
+    what a name belongs to: a seed contributes a directory and a leaf token list, so
+    an animation name is as good a seed as a texture, and `character_select_pos02_
+    turnleft` came out of exactly that.  `tools/named_textures.py --all` feeds all
+    6812 known names for this reason; the texture-only list is 1483.
+  * `_illu` is a real map suffix (illumination) and `_01b` a real letter-variant slot
+    (`01a/01b/01c`), used by blocks, props and characters alike.  Neither is
+    reachable by number substitution: `mutate` replaces a whole digit token, so
+    `_01` -> `_07` but never `_01b`, and a token like `l01` would lose its letter.
+    `tools/letter_variants.py` covers the slot explicitly: 479,681 candidates over
+    every name we hold.  It reproduced the six `map_rock_lXX` and both `_01b` names
+    independently - grammar confirmed - and added 0, because the engine had beaten it
+    by minutes.  That is the honest reading of the test: it is not that the slot is
+    unreachable, it is that the token lists already reach it.
+  * Two directories appeared that no list contained before: `effects/textures/`
+    (`additive_*`, `alpha_*`, `atlas_*`, `normal_*` families) and
+    `menu/level_select/` (`map_rock_l/r01..06`, `level_button_*`, `flow_background_*`).
+  * `tools/wallgen.py` tested the "walls and bricks" reading of the normals head-on:
+    level dirs x ~100 families (including swampstruct/masonry/cobble/stone ones no
+    held name uses) x the 352 mined parts x map suffixes, flat and under `walls/` -
+    3,639,712 candidates, 0.  The walls that were actually missing are not
+    `<family>_wall_<n>`, they are `swamp_broken_wall_2c_<piece>`: the answer was in
+    the token list again.
+  * `tools/neighbour_mutate.py` is the CPU complement to the GPU engine: inside each
+    directory, replace one leaf token with any token that already lives in the same
+    directory (the game's own vocabulary for that folder - `turnleft`/`pos02` in
+    `characters/*/animations/`, `windup`/`start` in an attack set, `_2c`/`_low` in a
+    block set), plus append/prepend one.  16,641,631 candidates over 372 directories
+    in 10 s, single-threaded, no GPU, no queue behind the lock.
+  * `tools/token_mutate_loop.sh` is the loop that keeps this going: it rebuilds the
+    seed list from matches.tsv every round (`mutate` is self-feeding - a name found
+    in round N is a seed in round N+1, with its directory), walks the token lists in
+    order of what has paid, and stops at a fixpoint.  `sweeps/level_slug_hunt.sh`
+    covers the level-material half.
+
+  Scoreboard for the session: matches.tsv 5925 -> 5960, overlay 6528 -> 6563.
+
