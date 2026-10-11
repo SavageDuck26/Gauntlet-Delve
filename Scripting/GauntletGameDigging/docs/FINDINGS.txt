@@ -8297,5 +8297,29 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   character_select_pos02_var_0{1,2}`), which is the pattern this project keeps
   re-learning (61.4: the reach comes from the token list, not the pattern).
 
+61.14 THE MERGE ORDER IS PART OF THE RESULT (*)
+
+  Two tools rewrote their output instead of appending to it, which threw away the
+  only record of *which sweep found which name*:
+
+    * `tools/pull-gpu.sh` unioned the box's `matches.tsv` with `sort -u`, so a name
+      recovered by the box landed wherever its hash sorts rather than at the end,
+      and
+    * `tools/merge_matches.py` wrote the overlay with
+      `json.dumps(..., sort_keys=True)`, which does the same to the JSON.
+
+  Both are append-only now, and `pull-gpu.sh` prints what it appended:
+
+      cat matches.tsv "$BOX" | awk -F'\t' '!seen[$1]++'      # ours, then theirs
+
+  so our lines keep their order and the box's unseen names are appended in the
+  order the box found them.  The overlay is written in insertion order
+  (`json.dumps(ov, indent=2)`, no `sort_keys`).  `check_names.py --write`,
+  `mine_bundle_strings.py --out` and the enumerations already appended, so this was
+  the only leak.  Note the legacy part is still hash-ordered: the first 5,995 lines
+  of `matches.tsv` predate the fix and cannot be un-sorted, everything after them is
+  chronological.
+
+
 
 
