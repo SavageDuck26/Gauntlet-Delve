@@ -7656,6 +7656,61 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   our sources".  Reading the *position* the word has to occupy, rather than the
   list we happened to have, is the fourth instance this session of the same lesson.
 
+60.17 THE MAP-SUFFIX SWEEP, AND THE NUMBER INSIDE THE SUFFIX PAIR
+
+  60.16 closed the shader question on the *flag position*.  The same reasoning
+  applied to textures closes the *suffix position*, and finds the last two.
+
+  `tools/derive_tex_siblings.py` appends map suffixes to the geometry families
+  (unit, decal, prop, block) and strips them from names that already carry one.
+  It never asks a *texture* for its other maps, so a project where we hold
+  `X_diff` is never asked for `X_norm` or `X_spec` - which is what "we may be
+  missing diffs and norms" means.  Running the whole 77-suffix vocabulary over
+  every name we hold, in the three forms that position allows,
+
+      append   <name><suffix>        strip  <name minus suffix>
+      swap     <stem><other suffix>
+
+  is 593,939 candidates (6,781 names + 897 derived stems) and returns **0**.
+
+  The wall is the shape, not the vocabulary, and the catalogue says so itself:
+  `_01_diff` appears 44 times, `_01_norm` 43, `_02_diff` / `_02_norm` 5 each,
+  `_03_diff`, `_03_norm`, `_01_spec` - a number *inside* the suffix pair.  No
+  pass generated that: the number pass appends numbers at the end of a name
+  (`moss_2`, then `moss_2_diff`), never before an existing map suffix.  Four
+  pattern shapes, 88.2 M candidates, again with no candidate file:
+
+      tools/hc.sh crack --gpu --targets data/vocab/unresolved_targets.txt \
+          --list n=data/vocab/all_names.txt --list k=data/vocab/probe_numbers.txt \
+          --list s=data/suffixes.txt \
+          --pattern '%n_%k_%s' --pattern '%n%k_%s' \
+          --pattern '%n_%s_%k' --pattern '%n_%k%s'
+
+  Result: **2 names** -
+
+      e31ea4f409715e97  props/d01_caves/caves_dragon_bones_01_diff
+      0f1b125e15d37ed0  props/d01_caves/caves_dragon_bones_01_norm
+
+  - both re-hashed against the reference murmur before recording, neither in the
+  catalogue.  Folding them re-derives `caves_dragon_bones_01` as a stem, so the
+  loop re-runs both sweeps; both return 0, a fixpoint in one round.
+
+  The texture dimension, run to exhaustion, gave four sibling pairs:
+
+      props/d01_lava/lava_wood_metal_set_01_{diff,norm}
+      blocks/d01_lava/lava_waterfall_01_{diff,norm}
+      props/d01_caves/caves_dragon_bones_01_{diff,norm}
+      (plus the `achievement_icons/*_locked` pair, 60.16)
+
+  Effects: overlay 6,520 -> 6,522; catalogue unresolved 1,027 -> 1,025; texture
+  targets 317 -> 315.  Session total: 24 names (14 `shader_library`, 10 texture).
+
+  This is the fifth instance of one lesson: a word or a shape has a *position*
+  in the name, and curation inside that position keeps failing while the
+  position itself is free.  Flag position (60.16), token position (60.14-60.16),
+  number-before-suffix here.  `derive_tex_siblings.py` should take the
+  `<stem>_<NN>_<suffix>` shape so `auto_run.sh` covers it without a bespoke run.
+
 
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
 

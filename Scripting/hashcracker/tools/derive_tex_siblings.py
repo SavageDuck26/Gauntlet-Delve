@@ -24,9 +24,11 @@ merge and try the siblings of the names we just recovered, in both directions
     python3 tools/derive_tex_siblings.py [--out data/vocab/derived_tex.txt]
 """
 import argparse
+import collections
 import csv
 import json
 import pathlib
+import re
 
 HERE = pathlib.Path(__file__).resolve().parent
 HC = HERE.parent
@@ -76,6 +78,32 @@ def seed_namespaces(names: set, sufs: list) -> set:
     return ns
 
 
+def seed_numbers(names: set, sufs: list) -> list:
+    """
+    The tokens the game inserts BETWEEN a stem and its map suffix.
+
+    `_01_diff` (44 names), `_01_norm` (43), `_02_diff`/`_02_norm`, `_03_*`,
+    `_01_spec` - the number is *inside* the pair, a shape append/strip/swap
+    cannot reach (FINDINGS 60.17: the sweep over those three forms is 594 k
+    candidates and returns 0, while this shape names two).  Read from the
+    catalogue the same way the namespaces are; the fallback covers a cold start.
+    """
+    counts = collections.Counter()
+    for n in names:
+        leaf = n.split("/")[-1]
+        for s in sufs:
+            if leaf.endswith(s):
+                m = re.search(r"[_]?([0-9]{1,3}[a-z]{0,2})$", leaf[: -len(s)])
+                if m:
+                    counts[m.group(1)] += 1
+                break
+    got = [k for k, c in counts.most_common() if c >= 2]
+    for k in ("01", "02", "1", "2", "03", "3", "0", "04", "4"):
+        if k not in got:
+            got.append(k)
+    return got[:16]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out",
@@ -97,8 +125,10 @@ def main():
     ns = seed_namespaces(allnames, sufs)
     seeds = [n for n in sorted(allnames) if n.startswith(tuple(ns))]
     strip_order = sorted(sufs, key=len, reverse=True)   # most specific first
+    nums = seed_numbers(allnames, sufs)
     cand: set = set()
     swaps = 0
+    numbered = 0
     for n in seeds:
         base = n
         for s in strip_order:
@@ -109,10 +139,19 @@ def main():
         if base != n:
             cand.add(base)                  # from a map back to its parent
             swaps += 1
+        # the number goes INSIDE the pair: <stem>_<NN>_<suffix> (60.17)
+        stem = re.sub(r"[_]?[0-9]{1,3}[a-z]{0,2}$", "", base)
+        if stem != base:
+            numbered += 1
+            for k in nums:
+                cand.update(f"{stem}_{k}{s}" for s in sufs)
+                cand.update(f"{stem}{k}{s}" for s in sufs)
     out = pathlib.Path(args.out)
     out.write_text("\n".join(sorted(cand)) + "\n")
     print(f"namespaces  : {len(ns)}  {sorted(ns)[:12]}")
     print(f"seeds       : {len(seeds)}  ({swaps} already map-suffixed)")
+    print(f"numbers     : {len(nums)}  {nums}")
+    print(f"numbered    : {numbered} stems carry a number inside the pair")
     print(f"suffixes    : {len(sufs)}")
     print(f"candidates  : {len(cand)}  -> {out}")
 
