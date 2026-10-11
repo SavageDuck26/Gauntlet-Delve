@@ -7589,6 +7589,74 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 
 
+60.16 THE SHADER FLAG WALL WAS A VOCABULARY GAP, NOT A RUNTIME GAP
+
+  60.14 closed the shader question with two large sweeps - 40.7 M subset candidates
+  carrying the `render_config` pass flags, then chain `mutate` to depth 4 - and
+  concluded that the remaining 165 `shader_library` chains "use flags or techniques
+  that appear nowhere in our vocabulary", leaving a frame capture as the only
+  source.  That conclusion is wrong, and the correction is cheap: the words were
+  already in sources we hold.  They had never been placed in the *flag position*.
+
+  Every earlier shader run combined a CURATED flag list - the 100 flags mined from
+  the named chains, the 13 render_config pass flags, or a keyword-filtered list from
+  another BitSquid-family game.  A chain has only two kinds of position, so the
+  probe that matters needs no curation at all:
+
+      <known technique> : <any token>          80 x |tokens|
+      <any token> : <known flag>               |tokens| x 100
+      <any token>                              |tokens|
+
+  `<tokens>` is pooled from everything on disk that could spell an engine word: the
+  shipped Lua (`game-source`), the depot string harvest (`work/harvest2/raw.txt`),
+  both runtime captures in `binaries/`, every token of every catalogue name, the
+  strings of `gauntlet.exe` and `elias.dll`, and the Stingray documentation -
+  348,633 tokens once hex runs, pure digits and 1-2 character fragments are dropped
+  (requiring 3+ characters matters: it is what let `hdr` through in pass 2).  That
+  is 63.1 M candidates, and all three shapes are expressible with the *pattern*
+  engine, so the whole probe costs no candidate file at all:
+
+      tools/hc.sh crack --gpu --targets data/vocab/unresolved_targets.txt \
+          --list t=data/vocab/probe_techniques.txt \
+          --list f=data/vocab/probe_tokens.txt --pattern '%t:%f'
+
+  Result: **13 chains**, each re-hashed with the reference murmur before recording
+  and none of which had a name in the catalogue.  Five passes, each recorded,
+  merged and re-run with the flags it had just found:
+
+      51.6 M   the three shapes above                          -> 9
+      63.1 M   pass 2, relaxed filter (`hdr`, `hq`, `4x4`, …)   -> 1
+     129.4 M   <the 7 yielding techniques>:<known flag>:<word>  -> 2
+     138.4 M   pass 4, pass 1-3 flags fed back                  -> 1
+     139.7 M   pass 5                                           -> 0  (fixpoint)
+
+      global_lighting:debug_lights          global_lighting:sun_enabled
+      copy:scale                            character:outline
+      character:enemy                       lava_pool:vegetation_bending
+      shadow_caster:instanced               tone_mapping:dust
+      tone_mapping:hdr                      player_marker:deferred_decals_group_floor
+      character:enemy:skinned_3weights      character:outline:skinned_3weights
+      character:enemy:self_illumination
+
+  Passes 3-5 compound, which is the whole point: `character:enemy` found in pass 1
+  is a *known* word in pass 3, so the two-flag chains that contain it fall out
+  without ever enumerating them.  The residue is also not one exotic token - three
+  of the flags (`enemy`, `outline`, `instanced`) are *techniques* elsewhere, and
+  `self_illumination` existed in our vocabulary only as `self_illumination_map`.
+  It is ordinary engine vocabulary that a chain-derived flag list was incomplete
+  for, which is exactly why curation kept failing.
+
+  Effects: overlay 6,498 -> 6,511; catalogue unresolved 1,049 -> 1,036;
+  `shader_library` targets 165 -> 152.
+
+  What 60.14 got right: subsets over a *curated* pool are genuinely dead, and the
+  1e13-1e18 blow-up for a wide pool at 6-9 flags is real, so the size model (body
+  size -> technique + flag count) still matters for anything wider than one or two
+  flags.  What it got wrong is the inference from "not in our flag list" to "not in
+  our sources".  Reading the *position* the word has to occupy, rather than the
+  list we happened to have, is the fourth instance this session of the same lesson.
+
+
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
 
   `hud/action_icons` is not itself an icon: it is the *material* for the HUD

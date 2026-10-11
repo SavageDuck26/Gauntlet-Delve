@@ -5893,3 +5893,16 @@ ffc9623a23787ccc	effects/env_fog_creepy_01_slow
 ffdbae46a8d94661	characters/avatar_necromagus/animation/leap
 fff80118cd84e586	modules/d01_crypt/quilts/base/crypt_quilt_straight__xx_e_xx_e__02_spiketrapschain_skeleton
 fffdce662cbf0f67	gui/interact_price_ui
+d408e12879e16595	global_lighting:debug_lights
+c3b324a3cb13f726	global_lighting:sun_enabled
+59506f2c5a959686	copy:scale
+6415c5e9fa2c1200	character:outline
+5afc3f70ebee85f1	character:enemy
+b27e6c2fb33348b4	lava_pool:vegetation_bending
+dfe5ac66e60f957f	shadow_caster:instanced
+ead2fbc0dc09e8b7	tone_mapping:dust
+09f73de10b18b758	player_marker:deferred_decals_group_floor
+24757388e8a4ccaf	tone_mapping:hdr
+9980b84575c4a5b3	character:enemy:skinned_3weights
+fb07e03835358387	character:outline:skinned_3weights
+71184cc9d65965ea	character:enemy:self_illumination
