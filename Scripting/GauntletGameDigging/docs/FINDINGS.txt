@@ -8450,6 +8450,107 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   ... 51 entries) - but every entry is a name we already hold, so that list is
   complete.  This closes "scan the shipped payloads" as a source of names.
 
+61.20 THE `equippables_icons/equipment` BOARD IS THE SHOP-ITEM LOOKUP (*)
+
+  §61.1-61.2 left 19 icon textures unnamed and treated all of them as "the art".  The
+  largest single group of them is not art at all - it is a *table*.  `equippables_icons/
+  equipment` (material, 5,208 bytes, `resource_packages/menu`) has an 8-byte header
+  (`u32 version = 10`, `u32 count = 100`) and then 100 fixed 52-byte entries, the same
+  shape §61 found for `hud/action_icons`:
+
+      [ 0: 4]  key low      - the *top* 32 bits of murmur64("shop_" + <item id>)
+      [ 4:12]  key high     - constant 0x3d7a037c
+      [ 8:16]  shader hash  - murmur64("shaders/shop_icon"); 0 on the 16 below
+      [16:24]  1, constant
+      [24:32]  texture hash - murmur64(<texture resource name>)
+      [32:52]  1, constant, zeroes
+
+  and the entries are **sorted by that key**, so it is a binary-searchable map.  The
+  key is not the name of anything on disk - it is the thin hash of a *shop* material,
+  and `lua/menu/avatar_loadout.lua:item_icon` spells out where it comes from:
+
+      icon = sprintf("shop_%s", item_id)          -- e.g. shop_eq_valkyrie_talisman01
+      icon_material = Gui.material(gui, icon)
+
+  i.e. the panel builds `shop_<item id>` from `lua/settings/items.lua` and reads the
+  texture out of this table.  Checked against all 84 entries the catalogue can already
+  name: `key low32 == murmur64("shop_" + basename(texture)) >> 32` **84/84**, and
+  `texture == murmur64("equippables_icons/" + <item id>)` **84/84**.  The board is the
+  `equippables_icons` namespace's lookup, nothing else.
+
+  61.20a THE KEY IS AN ORACLE, AND IT NAMES THE 16 RESIDUAL ICONS
+
+  Which means an unresolved entry can be labelled *without knowing its name*: hash the
+  shop ids it could belong to and compare the top 32 bits.  Doing that for
+  `eq_<hero>_talisman<01|02|03>` labels **15 of the 16** - the heroes' talisman icons,
+  the exact family the store's TALISMANS panel draws:
+
+      key       texture            shop name
+      b9746d98  7ddc5a5550256ad3   shop_eq_valkyrie_talisman01
+      308f83a5  174111e70af497a6   shop_eq_valkyrie_talisman02
+      1e3b1ec7  0568fef95f147d6a   shop_eq_valkyrie_talisman03
+      302bdb36  f952b5a5ef56ffed   shop_eq_warrior_talisman01
+      7c8a6f90  250dfb341c8e915c   shop_eq_warrior_talisman02
+      cedb0c10  c3b7936b7b1f52ba   shop_eq_warrior_talisman03
+      dbb1b6d5  b1646965117fe21b   shop_eq_elf_talisman01
+      7f5fe107  1644df1acbf87204   shop_eq_elf_talisman02
+      6985c05c  999caa5fdf166f71   shop_eq_elf_talisman03
+      a23445e0  12809bd4e1e66e32   shop_eq_wizard_talisman01
+      f0408625  40a6467849f510ec   shop_eq_wizard_talisman02
+      88a670da  96399c5d85932a77   shop_eq_wizard_talisman03
+      f14994a1  42c45822bd6aca28   shop_eq_necromagus_talisman01
+      b506e177  080223ab1c88aa0a   shop_eq_necromagus_talisman02
+      c4ae772b  d38580863759e074   shop_eq_necromagus_talisman03
+      26e74ba4  bcef7daa3a221c6c   (no `shop_eq_*_talisman*` - still open)
+
+  The 16th is the necromagus `talisman_souleater` slot (`equipment/necromagus/
+  talisman_souleater` is a Lua resource), but neither `shop_eq_necromagus_talisman_
+  souleater` (3ace9cd8) nor `..._soul_eater` (101d6688) hashes to its key, so that one
+  item id is spelled differently - it is the last unknown of the group.
+
+  The mapping also settles §61.2's display-name question for the valkyries, read off
+  the store's own panel: talisman01 is *Thyra's Vow* (`ultimate_vengeance`, "Righteous
+  Retribution"), talisman02 *Guardian Symbol* (`ultimate_aegis`, "Divine Aegis"),
+  talisman03 *Mark of the Commander* (`ultimate_valkyries`, "Summon Valkyries") - and
+  the icons are, in that order, the leaf medallion `7ddc5a5550256ad3`, the gemmed star
+  `174111e70af497a6` and the serpent knot `0568fef95f147d6a`.
+
+  61.20b THE NAMES THEMSELVES ARE STILL OPEN - THE 16 BREAK THE CONVENTION (recorded)
+
+  84/84 named entries are `equippables_icons/<item id>`; the 16 talismans are not, and
+  no name of that shape exists: `murmur64("equippables_icons/eq_valkyrie_talisman01")`
+  = 332eb8adc08e65b9 is **not in the catalogue at all**, so the artist shipped these
+  under some other leaf.  Every enumeration for that leaf came back empty:
+
+    * `equippables_icons/eq_<hero>_talisman<NN>` and 7 spelling variants x 13 dirs x 6
+      prefixes x 11 suffixes (41k), plus NN over 0..100 and 1/2-digit forms (158k), 0;
+    * the catalogue's **386 directory prefixes** x the item ids x all 274 map suffixes
+      (3.2 M), 0 - so the leaf is not `eq_<hero>_talisman<NN>` under any namespace the
+      project holds;
+    * every directory form of the *shop* name itself (`shop_<id>`, `menu/shop/shop_<id>`,
+      `equippables_icons/shop_<id>`, ...) x 16 ids (600), 0;
+    * the display-name glues out of `game_strings.strings` (`thyras_vow`,
+      `guardian_symbol`, `mark_of_the_commander`, ...) x 18 dirs x 5 prefixes x 8
+      suffixes (70k), 0 - the icons are not named after their own text;
+    * the ability-icon rule from `items.lua` (`<hero>_talisman_talisman<NN>_ability`),
+      the Lua `icon` field (`valkyrie_ultimate_0N`), the `loc_` keys, the relic-style
+      `relic_<item>` shape - all 0;
+    * a 21.5 M token sweep over 12 dirs x 6 prefixes x the merged 257k-token vocabulary
+      of the project (`ic_all`, `loc_slugs`, `tokens_big`, `all_names`, `hud_words`,
+      `action_words`), 0;
+    * the GPU box's own `talglue` (32.5 M) and `talhunt` (91.9 M) rounds over the same
+      19 targets, 0; the Rust cracker's `equippables_icons/%a_%b`, `menu/shop/%a_%b`,
+      `hud/%a_%b`, `equippables_icons/eq_%a_%b` over the 348k-token probe vocabulary
+      (4 x 1.2e11 candidates), 0.
+
+  So the leaf is *not derivable from shipped data*: it is either an art name no text
+  holds, or the file was renamed after the store table was built.  What this section
+  recovers is the **ownership** of all 16 (which hero, which talisman, which panel),
+  which is what the art needed - `tools/dump_board.py <board> --item-ids ids.txt` prints
+  exactly the table above and is the tool to re-run the moment a name is found.  The
+  other §61.2 icons (`402c8d6e26caf96f`, `965dc9490a86221e`) are *not* in this table -
+  they come from `equippables_icons/shop_action_icons` and are action plates, not items.
+
 
 
 
