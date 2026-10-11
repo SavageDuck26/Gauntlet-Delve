@@ -57,6 +57,7 @@ def main():
         print(f"unresolved hashes: {len(un):,}", file=sys.stderr)
 
     hits: list[tuple[str, str]] = []
+    hit_seen: set[tuple[str, str]] = set()
     tested = 0
 
     def check(c: str) -> None:
@@ -64,7 +65,10 @@ def main():
         nonlocal tested
         tested += 1
         h = f"{murmur_hash64(c):016x}"
-        if h in un:
+        if h in un and (h, c) not in hit_seen:
+            # a sweep can offer the same name twice (the same leaf under two
+            # candidate spellings); record it once so matches.tsv stays clean
+            hit_seen.add((h, c))
             hits.append((h, c))
 
     for c in args.names:
