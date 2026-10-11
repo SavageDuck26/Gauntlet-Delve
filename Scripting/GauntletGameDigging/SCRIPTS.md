@@ -76,9 +76,10 @@ What the dump actually contains, learned the hard way: `.texture` bodies begin w
 12-byte resource header, not source (the chunk name is embedded, which is why the
 runtime capture named Lua so well); `.shader_library` names carry the chain form
 (`base:…:diffuse_map:normal_map:static_lighting`); only 40 catalogue rows have a
-`.stream` sidecar, so the dump is otherwise self-contained. 8,874 of the 17,861 named
+`.stream` sidecar, so the dump is otherwise self-contained. 8,876 of the 17,865 named
 rows are distinct resources — the rest are the same resource shipped in more than one
-package — and the 2,143 unnamed rows are 1,016 distinct resources (9,890 files in all).
+package — and the 2,139 unnamed rows are 930 distinct hashes, kept as 1,014 files (one
+per (type, hash) pair).
 
 
 ## Extraction / decoding
@@ -204,8 +205,8 @@ python3 convert_export.py --jobs 8 --overwrite     # -> that folder's view/{png,
 new name has changed; delete the folder (or move it aside) for a genuinely clean tree,
 because a resource whose name changed would otherwise leave its old file behind.
 
-Current state: overlay **6,876** names · catalogue **17,861/20,004 rows named (89.29%)**
-· **932** unique unresolved hashes (see `docs/FINDINGS.txt` §61–62).
+Current state: overlay **6,878** names · catalogue **17,865/20,004 rows named (89.31%)**
+· **930** unique unresolved hashes (see `docs/FINDINGS.txt` §61–62).
 
 Note: `list_game_bundles.decompress_bundle` now tolerates the **Pre-Slayer
 packing** (raw 64 KiB chunks mixed with zlib chunks), so the older depot's art

@@ -8558,3 +8558,117 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 
 
+
+62. WHAT A CLEAN REBUILD OF THE DERIVED ARTEFACTS EXPOSED
+
+  None of this is about the game's format.  It is the other half of the same rule:
+  the manifest, the export and the progress report are *artefacts* - every one of
+  them is re-derivable from the install, matches.tsv and the overlay - and if a
+  rebuild is not clean then a finding cannot be re-checked.  Three of the six items
+  below were silent: the tool reported success while it was wrong.
+
+  62.1 A PARALLEL-JOB TEMP FILE KEYED ON THE SOURCE STEM (lost 10 of 144)
+
+  convert_export.py's mp3 step wrote its intermediate to `<tmp>/<stem>.ogg` and read
+  it back to transcode.  `named/elias/*/audio/` is full of identical stems - every
+  screen ships `1_0_1.ugg`, `2_0_3.ugg`, `completed.ugg`, `gameover.ugg` - so at
+  `--jobs 8` two workers on the same stem wrote the same path and the second
+  unlink()ed the first's file.  A clean rebuild converted 134 of 144 tracks.  The old
+  incremental tree only had 144 because the failures were retried on later runs until
+  they won the race.
+
+  The quiet half of that bug is the worse half: the same collision can hand ffmpeg the
+  *wrong* intermediate and still exit 0, so the output is a valid mp3 of the wrong
+  sound.  The rule is that a temp file may never be keyed on anything that is not
+  unique per job - each job now gets its own file beside its own output, and the clean
+  rebuild is 144/144.
+
+  62.2 A DERIVED REPORT QUOTED ITS OWN NUMBERS, AND WENT STALE
+
+  make_progress_report.py hard-coded two strings that read like narrative:
+  `05_summary.txt reports "Unresolved 3,444"` and `sections 1-60`.  Both were wrong by
+  the time anyone read them - the file says 2,143, which is the *static*
+  hash_database.json count that barely moves, and FINDINGS had 61 sections.  A report
+  whose whole purpose is to be current cannot carry quoted numbers: it now reads the
+  `Unresolved` line out of 05_summary.txt and the section range off FINDINGS.txt, so
+  adding this section made it print `sections 1-62` with no edit.
+
+  Two traps on the way, both worth keeping.  The existing findings_sections() helper
+  cannot answer that question: it is deliberately loose, so it also parses body prose
+  - `  245 BILLION candidates across every ...` looks like section 245 - and the range
+  therefore needs a strict `^NN. TITLE` match.  And the *documents* had drifted the
+  same way the report had: SCRIPTS.md's export paragraph still described the previous
+  dump (8,692 of 17,435 named, 1,096 unresolved) and export_all_resources.py's
+  docstring still said "17,435 of 20,000 rows".  Derived documents go stale exactly
+  like derived data; the only defence is to read the number from its source, or state
+  it once and let a tool print it.
+
+  62.3 A STATUS COUNTER THAT COUNTED THE WRONG SUBCOMMAND
+
+  tools/pull-gpu.sh's status block asked for `release/hashcracker crack` and printed
+  `engine processes: 0` while the box was running a `mutate` sweep on all 24 threads.
+  The engine is one binary with a subcommand per sweep (`crack`, `mutate`, `pkg`,
+  `combo`, `chain`, ...), so a counter has to match the binary and not one subcommand;
+  it now counts every invocation and prints the breakdown by name.  That mattered more
+  than it looks: the project's own tool was answering "is the box working?" with 0 in
+  the one case - a long CPU sweep - where the true answer was "yes, harder than
+  usual".
+
+  62.4 THE BOX IS A CPU MACHINE BETWEEN GPU RUNS
+
+  Which is why that counter mattered.  The GPU sweeps are *bursty*: talglue (32.5 M
+  candidates), talhunt (91.9 M) and taltest (90.1 M) all completed inside one morning
+  with 0 matches each, and the card then sits at 15 MiB of 8,188 used, 9 W of 55 W, no
+  compute processes, Xorg as its only client.  The Rust engine's mutation sweeps are
+  the opposite: one `mutate` over recovered_names x unresolved_targets x tokens_big
+  was 13 hours in, averaging 4.2 of the box's 24 threads over its life and holding
+  23.5 of them at the moment it was checked.
+
+  So "load average 24.00 with the GPU idle" is the healthy state of that machine, and
+  "is it using the CPU or the GPU" is answered by `nvidia-smi` for one and `top`/`ps`
+  for the other - never by either alone.  A sleep/wake does not disturb any of it: the
+  box had been up 25 hours with all six tmux sessions intact.
+
+  62.5 A PULL FOUND TWO NAMES - AND WHAT COUNTS AS CHECKING THEM
+
+  Re-checking the box appended two `shader_library` chain names its mutate sweep had
+  found: `base:instanced:deferred_decals_group_level` (11bf0dbf40951969) and
+  `character:skinned_3weights:outline` (7084201b8f179000).  That is +4 catalogue rows
+  rather than +2, because the first is shipped in three renderer variants
+  (core/rendering/renderer, emulate_renderer, mobile_renderer) and the second in one.
+  They are the first chain-form names in this run to come out of a *mutation* sweep
+  rather than a `%`-pattern sweep, and they sit in a family - the
+  `deferred_decals_group_level` token appears in dozens of already-named chains.
+
+  A name is only a name if it can be re-derived, so each was checked twice, and the
+  second check is the instructive one:
+
+    * re-hash it with the project's own bundle_tools.murmur_hash64 and compare with the
+      recorded hash - both match exactly;
+    * run tools/check_names.py on it.  That prints 0 hits, and 0 is the *correct*
+      answer, not a contradiction: it tests candidates against the **unresolved** set,
+      and both hashes are resolved now, so it never considers them - "a control name
+      that is already resolved never prints", as its own docstring says.  Quoting that
+      tool at a solved name proves nothing at all.
+
+  62.6 AN INCREMENTAL RE-EXPORT LEAVES A TOMBSTONE
+
+  write-if-absent is what makes the export cheap to refresh, and it is also how it
+  lies: both of those hashes were already in `unresolved/`, so naming them *added*
+  `named/base:instanced:deferred_decals_group_level.shader_library` and left
+  `unresolved/shader_library/11bf0dbf40951969.shader_library` behind.  The tree then
+  held the same resource twice, once named and once not.  Nothing in the tool removes
+  it - the docstring says so ("delete the folder for a genuinely clean tree") - and
+  after this round it was exactly two files, so they were deleted by hand.
+
+  The counts are worth stating precisely, because they invite a wrong sum: `named/` is
+  8,876 files; `unresolved/` is 1,014 files, which are 930 distinct hashes (84 of them
+  carry two type names, and the dump keeps one file per (type, hash) pair, so
+  930 + 84 = 1,014); the two add to 9,890.  The catalogue's "2,139 unresolved rows" is
+  a third number again - rows, not files, and counted against the static
+  hash_database.json.  Three different denominators all called "unresolved" is exactly
+  how a stale report goes unnoticed.
+
+  State after this round: overlay 6,878 names, 17,865/20,004 rows named (89.31%),
+  930 unique unresolved hashes of which 44 are UNREACHABLE.
+

@@ -6874,5 +6874,7 @@
   "f76548f0d3e1077d": "resource_packages/heroes/warrior_equipment",
   "454306563f059f1c": "props/d01_caves/swamp_roots_01_dif",
   "1c390fc44e58cba8": "props/d01_caves/swamp_stone_01_dif",
-  "94c4e8676a6b9668": "blocks/d01_lava/floors/lavarock_floor_geyser_4c_4c"
+  "94c4e8676a6b9668": "blocks/d01_lava/floors/lavarock_floor_geyser_4c_4c",
+  "11bf0dbf40951969": "base:instanced:deferred_decals_group_level",
+  "7084201b8f179000": "character:skinned_3weights:outline"
 }
