@@ -7830,45 +7830,67 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   is generated from the export by `tools/make_loc_slugs.py`.
 
 
-60.20 THE TWO ICONS THAT BREAK THE RULE (AND THE WORDS ARE KNOWNS)
+60.20 THE TWO ICONS THAT BREAK THE RULE (AND THEIR ABILITIES ARE KNOWN)
 
   Two entries in `hud/action_icons` remain, and they are the only ones in any of the
   icon atlases that are *not* named after their own display text:
 
-      402c8d6e26caf96f   the warrior's, art = a hand gripping a blue potion flask
-      965dc9490a86221e   the elf's,     art = green swirling wisp energy
+      402c8d6e26caf96f   warrior  "Improvise"        - the grenade-toss potion
+      965dc9490a86221e   elf      "Spirit Guardians" - the will-o-wisp potion
 
-  28 of the 30 atlas entries that were ever unnamed reproduce from a display-string
-  slug (60.19) - including the third, `valkyrie_ultimate_vengeance`, and the relic
-  icon `equippables_icons/relic_heart_of_vlad`.  These two do not, and the ability
-  names are known (read off the game, not derived): **Improvise** (warrior) and
-  **Willow Branch** / **Spirit Guardians** (elf).
+  Both were read off the game rather than derived, and both match 61.2's art exactly:
+  the warrior's is a hand gripping a blue potion flask, the elf's is green swirling
+  wisp energy.  28 of the 30 atlas entries that were ever unnamed *do* reproduce from
+  a display-string slug (60.19) - including the third, `valkyrie_ultimate_vengeance`,
+  and the relic icon `equippables_icons/relic_heart_of_vlad`.  These two do not.
 
-  Everything those words allow is negative:
+  Everything the names and their descriptions allow is negative:
 
-    * every slug / glued / underscored / hyphen / case (incl. `IMPROVISE`,
-      `Improvise`, `improvise!`) form, in every `{hero}_{action,ultimate,ability,
-      special,potion,talisman,ability_icon,icon,spell,skill}_{word}[_01|01|_1|_icon|
-      _large|_small]` position and in every icon/relic/hud/potion home, plus the
-      reverse orders and the bare word - ~12 k forms, 0;
-    * the same words with a 350,242-word vocabulary on either side (the 348,405-token
-      engine pool *unioned with the 7,635 words of the display text* - necessary,
-      because a word like `guardians` appears in no Lua and only in the localisation),
-      which covers every `<word>_<token>` and `<token>_<word>` form;
-    * `--pattern 'hud/action_icons/{warrior,elf}_ultimate_%t%v'` over
-      `probe_tokens_plus.txt` squared - 2.5e11 candidates, every glued two-token
-      ability word, 0 (the shape the resolved ones actually use: `moreofthor`,
-      `dryadssong`, `hypersniper`).
+    * the display words and the *new* words those descriptions give (`grenade`,
+      `toss`, `willowisp`, `willo_wisp`, `guardians`, `spirit`, ...) in every slug /
+      glued / underscored / hyphen / case form (incl. `IMPROVISE`, `improvise!`), in
+      every `{hero}_{action,ultimate,ability,special,potion,talisman,ability_icon,
+      icon,spell,skill,throw}_{word}[_01|01|_1|_icon|_large|_small]` position and in
+      every icon / relic / hud / potion / effects home - ~20 k forms, 0;
+    * the same words with a 350,242-word vocabulary on **either side** (the
+      348,405-token engine pool *unioned with the 7,635 words of the display text* -
+      necessary, because a word like `guardians` is in no Lua at all) in
+      `hud/action_icons/`, `effects/textures/`, `gameobjects/potions/`,
+      `equippables_icons/` and `hud/` - ~1.1e9 candidates, 0;
+    * the glued two-token shape the resolved ones actually use (`moreofthor`,
+      `dryadssong`, `hypersniper`) after `_ultimate_` and after `_potion_` - 2 x
+      2.5e11 candidates, 0.
 
-  And `hud/action_icons/warrior_ultimate_improvise` hashes to `a53249b9dd323d33`,
-  which is in **neither** the catalogue **nor** the atlas - so the resource is not
-  named after the ability at all, which is the whole point of the exception.
+  Two structural negatives:
 
-  The two words exist in exactly one source: the localisation.  Not in `gauntlet.exe`,
-  not in `elias.dll` (checked, both negative), not in any Lua, not in the depot
+    * `hud/action_icons/warrior_ultimate_improvise` hashes to `a53249b9dd323d33`,
+      which is in **neither** the catalogue **nor** the atlas.  So these two are not
+      named after their ability at all: the atlas *region* is presumably the id
+      (`warrior_ultimate_01`, `elf_ultimate_03` - exactly what the item Lua carries)
+      while the *texture* the artist saved carries some other name.
+    * both hashes **do** exist in the pre-release builds (2015-01-21, 2015-08-11), so
+      the textures shipped then and their names were in use - but that build's
+      20,095,020-string harvest (`_names.txt`) holds no string hashing to either of
+      them, so the old name is not recoverable that way either.
+
+  The words exist in exactly one source: the localisation.  Not in `gauntlet.exe`,
+  not in `elias.dll` (both checked, negative), not in any Lua, not in the depot
   harvest.  So no vocabulary route reaches these two; what is left is the UI code
-  that turns `icon = warrior_ultimate_01` (from `equipment/warrior/talisman01.lua`)
-  into an atlas entry - and failing that, the art (61.2).
+  that resolves `icon = warrior_ultimate_01` into an atlas entry, or the art (61.2).
+
+  60.20.1 TWO THINGS `crack --candidates` DOES THAT MISLEAD BY OMISSION
+
+    * **It lowercases every candidate.**  A target for `A--` matches the candidate
+      written `A--` and is reported as `a--`; that is the project's convention, but a
+      candidate file of uppercase spellings silently tests their lowercase forms.
+    * **It skips names already in `matches.tsv`** - correctly, since they are not
+      news - so `total cands : 0` with `new matches : 0` is *normal* for a file whose
+      best candidates we already hold.  Re-testing a name we have therefore reports
+      nothing at all, which reads like the file was never opened; use an empty
+      `--matches` file for a control.
+
+    Both bit during this hunt, and both are why the old-build harvest looked skipped
+    when it had in fact been tested in 0.0 s.
 
 
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
