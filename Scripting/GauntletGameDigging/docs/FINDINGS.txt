@@ -8215,9 +8215,62 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     * unit *variants* as separate units (`boss_morak_sword`, `avatar_necromagus_
       summoned_archer`), each with its own full animation set.
 
-  `tools/enumerate_anims.py` enumerates the whole read-off grammar - the
-  `move_<gait>_<action>_<direction>[_back]` sentence, attacks per weapon and
-  direction, `turn_<direction>_<angle>`, offsets, windups, `_NN_start`/`_NN_end`,
-  body parts and unit variants - 4,535,480 candidates; it returned `talisman_03_
-  lowerbody`, which the engine had already found minutes earlier (0 appended).
+61.11 THE SHIPPED LUA NAMES RESOURCES IT DOES NOT SPELL OUT (*)
+
+  `lua/generated/` had never been read as a *name list*, and it is one: the tree
+  ships `unit_paths.lua` (245 literal paths), `settings_paths.lua` (289),
+  `unit_path_to_components.lua` (1813), `unit_path_to_network_object.lua` (1174),
+  `characters_unit_path.lua` (63), `animation_events.lua` (493 event names) and
+  `flow_events.lua` (1090).  They are generated *from the data*, so they are
+  authoritative - but every one of those paths is already a name we hold (0
+  unknown, the same result as 60.13 for the source tree itself).
+
+  The reach is in the *join*, because the game writes unit-relative leaves:
+  `preview_hero.lua` says `Unit.animation_event(self.unit, "charselect_turn")`, not
+  `characters/avatar_valkyrie/animations/charselect_turn`.  `mine_lua_expand.py`
+  therefore hashes `<directory> + <leaf>` for every directory in the corpus (plus
+  every directory the Lua spells out, plus `characters/<unit>/{animations,animation}/`
+  for each unit in `characters_unit_path.lua`) x every leaf the Lua contains
+  (quoted strings **and bare table keys** - `special_root_bomb = {` is how the
+  config tables name things, and quoting-only mining misses them).
+
+  Result, 27,057,030 candidates: 13 hits, and they are a whole family -
+
+      resource_packages/elias/cave_adventure     .../lava_boss
+      resource_packages/elias/cave_arena         .../lava_labyrinth
+      resource_packages/elias/cave_boss          resource_packages/elias/hubroom
+      resource_packages/elias/crypt_{adventure,arena,boss,labyrinth}
+
+  i.e. `<env>_{adventure,arena,boss,labyrinth}` for cave/crypt/lava.  Widening the
+  leaf pool with bare keys and the directory pool with Lua dirs (25,338,138 more)
+  adds nothing further: the elias packages were the whole yield of this vein.
+
+  Dead ends recorded so they are not re-run:
+
+    * every quoted literal of all 927 `.lua` files, verbatim (11,799 literals) - 0.
+    * `charselect_01_directional_<dir>` / `charselect_<NN>_<action>_<dir>` /
+      `character_select_*` / `charselect_turn[_<dir>]` for **every** unit in the
+      generated unit lists (89 units) x unit variants x `{animations,animation,
+      abilities,ability}/` - 1,416,168 candidates, 0.  The heroes' select-screen
+      animations are therefore named with words that are *not* in the shipped text
+      (the same conclusion as 17.9/60.13 for animation clips in general).
+    * `talisman_0N` / `ability_talisman_0N` (+ `_lowerbody`/`_upperbody`/`_cast`/
+      `_impact`/`_loop`) in those same four directories - 0.
+
+61.12 THE BUNDLE PAYLOADS ARE ZLIB, AND THEY DO CONTAIN NAMES (*)
+
+  `Gauntlet-install/contents/<hex>` (1.5 GB, 260 bundles) is a Stingray container:
+  each entry is a small header followed by a **zlib stream** (`78 9c`).  60.13
+  grepped those files *as bytes* and correctly reported "no path-like strings" -
+  compressed data has none - so nobody had ever decompressed them.  They do:
+  one 25 MB slice of `0164ad48615ba9ed` is 536 zlib streams, 35 MB decompressed,
+  49,323 ASCII strings (23,313 distinct) - `global_viewport`, `charselect`, `impale`,
+  `decals`, `diffuse`, `movement`, `animationvariablecomponent`, DXBC shader blobs.
+
+  `tools/mine_bundle_strings.py` streams every bundle, decompresses with a per-stream
+  cap, hashes each distilled ASCII run against the unresolved set, and writes the
+  tokens to a corpus for the `mutate` engine - the vocabulary, not the verbatim
+  strings, is the value here (the strings are mostly DXBC/compiler identifiers and
+  binary noise, so the corpus wants a frequency/vowel filter before use).
+
 
