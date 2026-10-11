@@ -224,6 +224,7 @@
 09f2c4d4f7a06f62	billboard:diffuse_map:pivot:rotation:tangent_locked:vertex_color
 09f3369952d0f081	gameobjects/potions/potion_blue_explosion
 09f4509226848a54	equippables_icons/eq_valkyrie_head_set01
+09f73de10b18b758	player_marker:deferred_decals_group_floor
 09f95a66ee66ce3d	base:colored_specular:diffuse_map:instanced:self_illumination_map:self_illumination_multiplier_map:static_lighting
 09fb9029a039e42b	menu/colosseum/plate_background_necromagus
 0a0c117f36065ab7	effects/cha_demon_heavy_confuse_chargeup
@@ -351,6 +352,7 @@
 0eeff86023a5f472	lua/ai_states/state_common_illusion
 0f026876063522c3	characters/death/death
 0f07a1cb5132485b	modules/d01_lava/resources
+0f1b125e15d37ed0	props/d01_caves/caves_dragon_bones_01_norm
 0f29382f890dd9f5	menu/colosseum/new_arena_shine
 0f2d7b29b63b3873	characters/demon_ranged/animations/attack_throw_projectile
 0f4bb21008766c3f	effects/cha_necromancer_appear
@@ -514,6 +516,7 @@
 17880d3533aea595	characters/avatar_wizard/animations/attack_chillorb
 178ebf1af52f284d	billboard:diffuse_map:one_bit_alpha:rotation:vertex_color
 1791b27f34b8fadf	characters/avatar_valkyrie/animations/talisman01
+17929f7ac8a600bc	base:detail_normal_map:normal_map
 17972b59dee65c50	effects/textures/alpha_blob
 17ae3a960cf659df	effects/textures/alpha_coin_cloud
 17ae8063bcbe1977	props/d01_common/coffin_open_02
@@ -830,6 +833,7 @@
 245bc5f61c4c5d8a	modules/d01_lava/quilts/base/lava_quilt_straight__e_x_e_x__01_floor05
 245c86e68efa1895	modules/d01_caves/quilts/base/caves_quilt_turn__x_e_e_x__01_spider
 2469be045abef933	lua/ui/stat_event_hud
+24757388e8a4ccaf	tone_mapping:hdr
 2494ff80d1bd0240	characters/lake_dweller/animations/stagger_right_01
 249f93706e74046a	lua/managers/vo_server
 24a2300456c221d6	modules/d01_crypt/quilts/base/crypt_quilt_turn__x_e_e_x__01_slaves
@@ -1431,6 +1435,7 @@
 3f03f01760b359f4	elias/crypt_adventure/audio/2_0_14
 3f065636172f940c	props/d01_common/fog_plane
 3f29f5959f0d0b8f	effects/textures/smoke_and_sparkles
+3f3c0ca0ae92203a	achievement_icons/defiant_locked
 3f437777f4634da0	elias/crypt_adventure/audio/7_0_1
 3f4b8ddf8328978a	gameobjects/spawners/spawner_crypt_skeleton_head_diff
 3f53f4595d755e28	blocks/d01_caves/floors/caverock_floor_4c_4c_invisibility
@@ -1795,6 +1800,7 @@
 503b8c26bfd55548	gameobjects/doors/door
 50528f05d16cee48	menu/standard_elements
 5059056d9da57a7d	lua/dungeon/layouts/caves_floor_colosseum_03_exploding
+5067d2382d17a94c	achievement_icons/seductive_locked
 5069939bc242957d	characters/skeleton_soldier/gib/gib_headless
 507255d83267b978	characters/skeleton_soldier/animations/death_smash_01
 5086df95a8dec42c	lua/dungeon/layouts/lava_endless_02_demon
@@ -1998,6 +2004,7 @@
 592ed45388d6fc7f	menu/buttons/listitem_joined
 5932a3bb84cc75f3	characters/illusion_valkyrie/animations/spawn_default
 59355778fe6cd7f8	characters/avatar_wizard/animations/ability_talisman_03
+59506f2c5a959686	copy:scale
 596837beb76c37fd	blocks/d01_lava/borders/lavastruct_border_convex
 597118b5d5b3780d	billboard:diffuse_map:pivot:soft_particles:tangent_locked:uv_animation:vertex_color
 598148a5bae30518	props/d01_lava/lava_volume_4c_4c_01
@@ -2030,6 +2037,7 @@
 5a9526fe64a310eb	characters/avatar_wizard/animations/idle_squat
 5aa3755fea680c04	equipment/wizard/cape_s02_r01
 5af889020c5aef22	equippables_icons/eq_necromagus_head_set01
+5afc3f70ebee85f1	character:enemy
 5b0893796d677dab	equipment/warrior/set04_torso
 5b0c2901960e8097	equipment/necromagus/weapon
 5b0c7f4d35e4f340	modules/d01_crypt/quilts/encounters/crypt_quilt_smallroom__oo_ee_ii_ee__01_slaves
@@ -2246,6 +2254,7 @@
 63e46a16c6c11462	gameobjects/deathplane/deathplane
 640c2445fa943001	characters/spawner_base
 64115801e04a0e45	characters/mummy_risen/animations/die_right_02
+6415c5e9fa2c1200	character:outline
 641d72266135d363	lua/managers/light_manager
 6425c49998fa6c92	effects/obj_door_crypt_encounter_close
 6430e60259e35ec4	gameobjects/spawners/animations/death
@@ -2553,6 +2562,7 @@
 7105df1c5aa0d42e	audio/enemy_spawner
 7116474c76b07c02	characters/avatar_necromagus/animation/dash_forward
 7117f5a8940e96f7	gui/achievement_ui
+71184cc9d65965ea	character:enemy:self_illumination
 712d7d9b4bc05301	flow/weapon_spear
 7138e83631753e42	effects/wep_trap_explosion
 71409169e64bcbd6	characters/relic_gargoyle/gibs/gib_headless
@@ -2738,6 +2748,7 @@
 78ee837a23ff82c6	effects/textures/alpha_liquid_explosion_01
 78f07f239f5e077f	equipment/wizard/set03_torso_cloth
 78fba10c0a6160c4	effects/meshes/demon_heavy_confuse_cone_full
+78fc54d4497d3b67	achievement_icons/seductive
 7929386d7e9324e4	effects/cha_use_potion
 792ddaa45eaa412e	characters/illusion_wizard/animations/chainlightning
 7943cff1c523cf14	modules/d01_crypt/room_crypt_floor3_03_west_wing
@@ -3479,6 +3490,7 @@
 995af5d67664e501	modules/d01_caves/quilts/base/caves_quilt_straight__x_e_x_e__02
 995b0b5441a8b142	effects/relic_firetrail_cast
 995e599124c7be21	characters/lich/animations/move_forward
+9980b84575c4a5b3	character:enemy:skinned_3weights
 9981e2c1d4f15cae	elias/lava_adventure/audio/1_0_2
 9984ed9fca8834fe	elias/lava_adventure/audio/2_0_11
 9999e88c8c20bbd2	effects/textures/additive_fire_jets
@@ -4063,6 +4075,7 @@ b25be84b87428561	menu/icons/player_counter_necromagus
 b264096670d3d5fa	gameobjects/traps/trap_spear
 b2688a42d1b8d314	achievement_icons/bombardier_locked
 b274a16ad5affebf	props/d01_lava/workbench_01
+b27e6c2fb33348b4	lava_pool:vegetation_bending
 b287fba529d77673	characters/death/animations/idle
 b28a4f9a3143943a	characters/avatar_warrior/animations/default_falling
 b29a080081d003e7	props/d01_lava/skysphere_dust
@@ -4270,6 +4283,7 @@ ba2df8fa8db5e3f3	characters/avatar_elf/animations/character_select_pos01
 ba62cfa63c6136e0	characters/boss_mummy/animations/attack_nom
 ba6e5260805849de	achievement_icons/burned_alive
 ba83364782409549	gameobjects/status_effects/invincible_bubble
+ba8b767a7105ad46	blocks/d01_lava/lava_waterfall_01_diff
 ba8b805451a44585	characters/mummy_risen/animations/die_explode1
 ba8d37daa36a7b27	characters/orc_juggernaut/animations/death_right_01
 ba97570cb02ef160	achievement_icons/scarred_veteran_locked
@@ -4499,6 +4513,7 @@ c376a138e1100da0	lua/managers/query_manager
 c38a1e95112cb369	effects/statuseffect_rooted_start
 c391062e5aa6cde6	characters/demon_heavy/gib/gib_horn
 c392fb1e33cee162	characters/avatar_elf/animations/die_default1
+c3b324a3cb13f726	global_lighting:sun_enabled
 c3d026a7f5e36a5d	menu/colosseum/arena_button_connector_horizontal
 c3ddfe040eabe9a7	billboard:blend_additive:diffuse_map:soft_particles:uv_animation:vertex_color
 c40a362216c3b417	effects/env_swamp_fog_slow
@@ -4531,6 +4546,7 @@ c5326b4c4ccf3160	modules/d01_crypt/quilts/base/crypt_quilt_turn__e_x_x_e__02_sla
 c545b20c4e32bc10	modules/d01_lava/room_lava_floor_adventure_1_template
 c55941d748957c93	props/d01_caves/planks_02
 c567e30758cdf2e2	hud/cursors/elf
+c568ace66fa9ddff	blocks/d01_lava/lava_waterfall_01_norm
 c5807d5edb91e85f	characters/avatar_wizard/animations/attack_firebomb
 c58cfbafde5575ea	effects/cha_player_spawn_warrior
 c59425db261071c2	effects/meshes/halfsphere
@@ -4884,6 +4900,7 @@ d3c611e58d8d26ce	lua/managers/difficulty_manager
 d3cd8cdeebad6752	characters/skeleton_soldier/animations/stagger_hit_left_01
 d3ea7ff408855265	effects/wep_necromagus_ultimate_darkhunger_windup
 d404eb6e0cf48cd7	characters/demon_heavy/gib/gib_head_lower
+d408e12879e16595	global_lighting:debug_lights
 d40f14ea8c3d5e96	effects/cha_demon_ranged_leap_trail
 d41f26ba26b40473	blocks/d01_caves/stairs/stairs_4d
 d431e8529aa8ea17	effects/cha_ghost_spawn
@@ -5146,6 +5163,7 @@ dfa3ba32d74e44b9	modules/d01_caves/quilts/base/caves_quilt_turn__e_e_x_x__01_civ
 dfbfb231f907916a	blocks/d01_caves/floors/caverock_floor_concave_4c
 dfcf282b8d0cddd3	characters/cultist_novice/gib/cultist_novice_headless
 dfdb1cc6c90c6849	gameobjects/food/turkey_gold
+dfe5ac66e60f957f	shadow_caster:instanced
 dfec1ce0fa1dc883	equippables_icons/eq_valkyrie_torso_set01
 dfffae3e38ea4e26	shaders/crystal_ball
 e000515f5a1c86cd	modules/d01_lava/quilts/encounters/lava_quilt_smallroom__ox_ex_ix_ex__01
@@ -5173,6 +5191,7 @@ e0a909625956c5fb	gameobjects/traps/trap_floor_lavacolumn
 e0ae614d58986056	equipment/capes/cape_s06_r01
 e0af68e33f3c860b	modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e__01_civilization
 e0b441e68866d994	gameobjects/relics/illusion_ring
+e0c1c4ab60bd6ade	achievement_icons/defiant
 e0ca82e91a05fd22	blocks/d01_caves/walls/swampstruct_stone_01
 e0e583cad6fac111	effects/wep_demon_melee_claw
 e0fc4d806e2ca021	props/d01_crypt/armor_01
@@ -5216,6 +5235,7 @@ e2f4bcd1b9013e36	blocks/d01_crypt/floors/crypt_floor_border_01_2c_2c
 e2fa6e5bb535ef3a	characters/skeleton_soldier/animations/walk_strafe_left
 e2fd9d95ca41509c	equipment/wizard/weapon
 e30f6cda19f61622	billboard:diffuse_map:pivot:rotation:uv_animation:vertex_color
+e31ea4f409715e97	props/d01_caves/caves_dragon_bones_01_diff
 e321a88c34a6081d	achievement_icons/whirling_death_locked
 e323533ece29ffeb	characters/necromancer/animations/spawn
 e329f92704245e08	effects/wep_elf_special_shadow_bomb_explode
@@ -5422,6 +5442,7 @@ eaa2f35f42e581b9	effects/textures/alpha_burst_01
 eaadcfd2f8fd62f2	lua/dungeon/dungeon_graph_builder
 eabcce49afdf6b9d	characters/grunt_shaman/abilities/summoned_wall
 eacc22120df9b114	props/d01_common/urn_01_var01_high
+ead2fbc0dc09e8b7	tone_mapping:dust
 eada41dae07d2bed	lua/components/status_receiver_component
 eaf9d1c6e9e02d0c	menu/level_select/flow_background_special_06
 eb02620c6d86f170	elias/crypt_labyrinth/audio/completed
@@ -5621,6 +5642,7 @@ f2f6f5c0c2d5efb5	filter:separable_gaussian_13tap_x
 f2fd7d95a49feeed	characters/avatar_elf/animations/tumble_forward
 f301da9dbd0d0494	gameobjects/level_editor/generic_marker_green
 f30651a300b3af88	characters/mummy_risen/animations/die1
+f324411f9975a2fd	props/d01_lava/lava_wood_metal_set_01_diff
 f32de244f6e21bfb	spot_light:skin
 f339002bbd4650cb	menu/colosseum/grades/f
 f34886fe198ba3e1	blocks/d01_lava/lavastruct_doorarch_01_norm
@@ -5769,6 +5791,7 @@ fa06b7e80731fd96	effects_ui/stat_popup
 fa157af73528ae7a	props/d01_caves/caves_dragon_bones_b
 fa275899b873a4df	characters/skeleton_soldier/animations/idle_default
 fa2b7999e6300f1a	core/rendering/base_dx11
+fa32a76e932764ad	props/d01_lava/lava_wood_metal_set_01_norm
 fa4746bd12366de4	modules/d01_crypt/quilts/base/crypt_quilt_straight__xx_e_xx_e__04_gold
 fa4a755395214590	base:colored_specular:deferred_decals_group_other:diffuse_map:self_illumination_map:self_illumination_multiplier_map:static_lighting
 fa58e8bc45d269b4	effects/env_eyes_red
@@ -5790,7 +5813,9 @@ fad0fac1a1810f08	characters/illusion_valkyrie/animations/move_walk_right
 fad9c4038a82d9f9	effects/cha_valkyrie_foot_slide_dust_short
 faffb88738224145	foundation/lua/util/network_util
 fb0241cf249b1186	blocks/d01_caves/cavestruct_floor_01_diff
+fb07e03835358387	character:outline:skinned_3weights
 fb09d65fc9e76141	light_volume
+fb0dcb48ec930ca5	hud/action_icons/valkyrie_ultimate_vengeance
 fb1ae0deb9a9ed53	gameobjects/player/wisp_necromagus
 fb20345f441d6a36	effects/menu_hero_spawn
 fb23df5d6b5e547d	characters/skeleton_warrior/animation/attack_shieldbash_windup
@@ -5893,27 +5918,3 @@ ffc9623a23787ccc	effects/env_fog_creepy_01_slow
 ffdbae46a8d94661	characters/avatar_necromagus/animation/leap
 fff80118cd84e586	modules/d01_crypt/quilts/base/crypt_quilt_straight__xx_e_xx_e__02_spiketrapschain_skeleton
 fffdce662cbf0f67	gui/interact_price_ui
-d408e12879e16595	global_lighting:debug_lights
-c3b324a3cb13f726	global_lighting:sun_enabled
-59506f2c5a959686	copy:scale
-6415c5e9fa2c1200	character:outline
-5afc3f70ebee85f1	character:enemy
-b27e6c2fb33348b4	lava_pool:vegetation_bending
-dfe5ac66e60f957f	shadow_caster:instanced
-ead2fbc0dc09e8b7	tone_mapping:dust
-09f73de10b18b758	player_marker:deferred_decals_group_floor
-24757388e8a4ccaf	tone_mapping:hdr
-9980b84575c4a5b3	character:enemy:skinned_3weights
-fb07e03835358387	character:outline:skinned_3weights
-71184cc9d65965ea	character:enemy:self_illumination
-17929f7ac8a600bc	base:detail_normal_map:normal_map
-e0c1c4ab60bd6ade	achievement_icons/defiant
-78fc54d4497d3b67	achievement_icons/seductive
-f324411f9975a2fd	props/d01_lava/lava_wood_metal_set_01_diff
-fa32a76e932764ad	props/d01_lava/lava_wood_metal_set_01_norm
-5067d2382d17a94c	achievement_icons/seductive_locked
-3f3c0ca0ae92203a	achievement_icons/defiant_locked
-ba8b767a7105ad46	blocks/d01_lava/lava_waterfall_01_diff
-c568ace66fa9ddff	blocks/d01_lava/lava_waterfall_01_norm
-e31ea4f409715e97	props/d01_caves/caves_dragon_bones_01_diff
-0f1b125e15d37ed0	props/d01_caves/caves_dragon_bones_01_norm

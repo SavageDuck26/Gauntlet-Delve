@@ -7712,6 +7712,69 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `<stem>_<NN>_<suffix>` shape so `auto_run.sh` covers it without a bespoke run.
 
 
+60.18 THE ICON AND RELIC FAMILIES: ONE NAME, AND A PATTERN TRAP
+
+  The texture residue is not one family.  Reading each icon atlas as an *ordered*
+  member list (an 8-byte hash per entry, resolved to a name or marked unnamed),
+  and scanning the exported bodies for referenced hashes, gives the shape of what
+  is left in the HUD / item space:
+
+      equippables_icons/equipment   84 named, 16 unnamed   eq_<class>_<slot>_set<NN>
+      hud/hud                       39 named,  6 unnamed   hud/<word>[_<word>]
+      hud/action_icons              32 named,  3 unnamed   <hero>_<action|ultimate>_<w>
+      equippables_icons/relics      10 named,  1 unnamed   equippables_icons/relic_<item>
+      gameobjects/relics/vampire_heart_ring          -> the ring map is the last relic gap
+                                                       (its material draws only it)
+
+  One name came out, and it came out of the *document*:
+
+      fb0dcb48ec930ca5   hud/action_icons/valkyrie_ultimate_vengeance
+
+  61 identified this exact name - the sibling grammar's `..._ultimate_<ability>`
+  with `<ability>` read from the talisman's flow event `ultimate_vengeance_windup`
+  - and then left the hash unresolved.  The candidate was never run through the
+  cracker.  Recording it is the whole gain.
+
+  Everything else is a *closed* space, and all of it is exhausted:
+
+      equippables_icons/eq_%c_%s_set%n, eq_%c_%s%n, eq_%c_%w%n       ~160 k
+      hud/%h, %h_%g, %h_%n   (52 hud words, harvested from the atlas) ~2.7 k
+      hud/action_icons/%c_{action,ultimate}_{%a, %n, %t}              ~140 M
+      equippables_icons/{relic_%r, %r, relic_%r_tier%n}                ~1 k
+      menu/shop/%t_%v, gameobjects/relics/%t_%v, potions/%t_%v     3 x 1.2e11
+      gameobjects/relics/%t%u, effects/textures/%t%u                2 x 32 M
+
+  Run on the GPU box (RTX 4060, 2.7-3.1 G/s on the token products; 3.7e11
+  candidates total): the single name above.  So unlike the shader chains of 60.16,
+  the icon residue is **not** a vocabulary gap - the unnamed atlas entries are not
+  `<known member grammar>` with any engine token, with or without a map suffix, and
+  not the `<stem>_<NN>_<suffix>` shape that named two textures in 60.17.  What is
+  left there needs the art (61.2) or the shop/item tables, not more vocabulary.
+
+  60.18.1 A TRAP IN `--pattern`: A REPEATED LETTER IS A BACKREFERENCE
+
+  `%t_%t` over a 348,405-token list reports **348,405** candidates, not 1.2e11.
+  Repeating a letter means *the same value*, not a second draw from the list.  That
+  is deliberate and load-bearing - `modules/d01_%a/%b/%a_quilt_...` needs the
+  environment repeated, and 13 shipped sweeps rely on it - but a product therefore
+  needs its own letter:
+
+      --list t=probe_tokens.txt --list v=probe_tokens.txt --pattern '%t_%v'
+
+  which is 1.2e11 and runs at 3.1 G/s.  A "0 hits" must be read against the
+  candidate count, not against the size of the vocabulary: the first draft of this
+  hunt enumerated 348,405 candidates while claiming to test 1.2e11.
+
+  60.18.2 `tools/pull-gpu.sh` GAVE `merge_matches.py` THE WRONG BASE
+
+  It passed the git root; `merge_matches.py` wants the directory *containing*
+  `GauntletGameDigging` (`Scripting/`).  The overlay merge died with
+  FileNotFoundError *after* the union had already rewritten `matches.tsv`, so the
+  recovered name reached the tsv and never reached the overlay - the failure is
+  quiet unless the tool output is read.  Fixed to `"$REPO/Scripting"`; `*.sh` is
+  gitignored, so this paragraph is the record rather than a diff.
+
+
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
 
   `hud/action_icons` is not itself an icon: it is the *material* for the HUD
