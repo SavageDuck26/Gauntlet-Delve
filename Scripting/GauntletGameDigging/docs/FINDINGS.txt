@@ -8380,6 +8380,24 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   (`<stem>_set`/`_set_lava`/`_no_fade`/`_dissolve`/..., 260,792 - 0) and the local
   `shaders/<token>` product.
 
+61.17 THE CHAIN SPACE, COMPLETELY ENUMERATED (*)
+
+  `tools/enumerate_chains.py 3 --wide` is now finished, and it is a *complete*
+  enumeration rather than a sweep: **143,060,674 chains (53 techniques x every sorted
+  subset of <= 3 of the 253 flag words)**, in 19 MB of memory, and it returns
+  nothing.  Combined with 61.9 (43 techniques x subsets <= 3 of the 109 flags we
+  held, 9,284,990, which found `character:enemy:silhouette:silhouette_decals_group_level`)
+  and the depth-2 wide pass (1,702,996, empty), the `shader_library` chains we are
+  missing are not combinations of any technique and any three flags that appear
+  anywhere in the corpus - their flag words are words we do not have at all.
+
+  That is the same conclusion the animation residuals keep forcing (17.9, 60.13,
+  61.11): for these two types the vocabulary, not the grammar, is the frontier, so
+  the only thing that can still move them is a *new source of words*.  The chain run
+  also set the pattern for what a "complete" pass looks like here - finite, streaming,
+  and reported as a count so the next person does not repeat it.
+
+
 
 
 
