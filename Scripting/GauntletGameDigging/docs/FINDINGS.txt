@@ -8023,23 +8023,26 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   candidates over 6 dirs x 3 bases x 46 style spellings x 16 rarity spellings x 9
   suffixes -> 0.
 
-61.6 THE CAPE SUB-FAMILIES: THREE RECOVERED, AND WHY THE TOKEN LIST WINS
+61.6 THE CAPE SUB-FAMILIES: FOUR RECOVERED, AND WHY THE TOKEN LIST WINS
 
-  Swapping a *token* into the style slot of every named texture (Rust `mutate`,
-  `--tokens data/vocab/tokens_big.txt`) recovered a sub-family no sibling walk
-  could reach, because `collar` is a word none of them had:
+  Swapping a *token* into one slot of a name we hold (Rust `mutate`, `--tokens`)
+  recovered names no sibling walk could reach, because the words are ones no
+  sibling sweep had:
 
       66b02cb8e2a7ac88  equipment/capes/cape_collar_r01
       18fc99eba2227ec7  equipment/capes/cape_collar_r02
       a6c107981bb4a3ce  equipment/capes/cape_collar_r03
+      f1b2a4d3b95faacc  props/d01_caves/caves_skullpiles_01_diff
 
-  So the cape tree is `cape_<part>_r<nn>` *and* `cape_s<nn>_r<nn>`, and this is the
-  general lesson for the residual: the reach comes from the *token list*, not from
-  the pattern.  `cape_collar_r0X` is 3 names off a 100k-word list in the position
-  where a sibling sweep only had `s01..s06`.
+  (`cape_collar_r0X` out of `tokens_big.txt`, `caves_skullpiles_01_diff` out of
+  `big_dict.txt`.)  So the cape tree is `cape_<part>_r<nn>` *and* `cape_s<nn>_r<nn>`,
+  and a `caves_*` family exists next to the `caverock_*`/`cavestruct_*` ones.  This
+  is the general lesson for the residual: the reach comes from the *token list*, not
+  from the pattern.  `cape_collar_r0X` is 3 names off a 100k-word list dropped into
+  the position where a sibling sweep only had `s01..s06`.
 
-  Note for the next run: the mode's summary line lied.  This run printed
-  `new matches : 0` and then `matches file : matches.tsv (5928 total)` - the 3 hits
+  Note for the next run: the mode's summary line lied.  That run printed
+  `new matches : 0` and then `matches file : matches.tsv (5928 total)` - the hits
   are real (their hashes verify and they are absent from the overlay), so trust the
   file total, not the per-run counter.
 
