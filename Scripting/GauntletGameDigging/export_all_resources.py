@@ -3,7 +3,7 @@
 Dump every resource in the shipped build as a file, named and with an extension.
 
 The point is to stop needing tools to look at the game: the catalogue knows every
-resource's type and (for 17,435 of 20,000 rows) its name, and a resource's body is
+resource's type and (for 17,861 of 20,004 rows) its name, and a resource's body is
 just bytes inside a bundle.  So this walks every bundle, cuts each body out, and
 writes it to
 

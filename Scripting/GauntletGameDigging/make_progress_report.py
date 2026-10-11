@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Overall progress report for the name-recovery work (FINDINGS.txt 41-60).
+Overall progress report for the name-recovery work (FINDINGS.txt 41+).
 
 `05_summary.txt` is written by `list_game_bundles.py` and describes the *catalogue*
-- and its "Unresolved 3444" line is counted against the static `hash_database.json`,
+- and its `Unresolved` line is counted against the static `hash_database.json`,
 not against what we have actually recovered, so it does not move as names land.
 This writes the missing view: one file that answers "how far are we, what did each
 sweep find, and where do I look next".
@@ -165,7 +165,20 @@ def main():
                      and r['reason'] == 'nothing references it')
         w(f'  unreachable (no named ref)    {un:>9,}   of which orphans {orphan}')
     w()
-    w('  note: 05_summary.txt reports "Unresolved 3,444" - that is counted against the')
+    # 05_summary.txt's "Unresolved" line is counted against the static
+    # hash_database.json, not against the overlay, so it barely moves as names land.
+    # Read the number back rather than quoting it, or the note goes stale (it sat at
+    # 3,444 long after the catalogue said 2,143).
+    static_metric = 'n/a'
+    summary_05 = MANIFEST / '05_summary.txt'
+    if summary_05.exists():
+        for line in summary_05.read_text(encoding='utf-8').splitlines():
+            if line.startswith('Unresolved'):
+                words = line.replace(':', ' ').split()
+                if len(words) >= 2:
+                    static_metric = words[1]
+                break
+    w(f'  note: 05_summary.txt reports "Unresolved {static_metric}" - that is counted against the')
     w('  static hash_database.json, not against this overlay, which is why it never moves')
     w('  as names land.  The numbers above are the live ones (tools/status.sh prints the')
     w('  same score).')
@@ -215,6 +228,17 @@ def main():
 
     w('6. WHERE TO LOOK')
     w('-' * WIDTH)
+    # The section range is read off the file, not quoted: the pointer below claimed
+    # "1-60" for a whole section after 61 landed.  A real top-level heading is
+    # "NN. TITLE" at column 0 - `findings_sections()` is deliberately loose and also
+    # catches body prose ("  245 BILLION candidates across every ..."), so it cannot
+    # answer this question.
+    sections = findings_sections()
+    top_section = 0
+    if FINDINGS.exists():
+        for m in re.finditer(r'^(\d+)\. [A-Z"\u201c]',
+                             FINDINGS.read_text(errors='replace'), re.M):
+            top_section = max(top_section, int(m.group(1)))
     for name, what in [
             ('bundle_manifest/00_file_tree.txt', 'every file in the install'),
             ('bundle_manifest/01_bundle_files.txt', 'the 75 bundle files'),
@@ -230,14 +254,14 @@ def main():
             ('../hashcracker/matches.tsv', 'every hit ever, hash<TAB>name'),
             ('../hashcracker/work/*/status.log', 'per-sweep logs (current run only)'),
             ('../hashcracker/tools/status.sh', 'live score + what is running right now'),
-            ('docs/FINDINGS.txt', 'the full narrative, sections 1-60'),
+            ('docs/FINDINGS.txt', f'the full narrative, sections 1-{top_section}'),
     ]:
         w(f'  {name:44s} {what}')
     w()
 
     w('7. WHERE THE WORK IS RECORDED   (FINDINGS.txt, most recent last)')
     w('-' * WIDTH)
-    for num, title in findings_sections()[-14:]:
+    for num, title in sections[-14:]:
         w(f'  {num:>6s}  {title}')
     w()
     w('=' * WIDTH)

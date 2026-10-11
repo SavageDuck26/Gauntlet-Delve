@@ -49,8 +49,17 @@ def convert_png(src, dst, _tmp):
 
 
 def convert_mp3(src, dst, tmp):
-    ogg = tmp / (src.stem + ".ogg")
+    # One temp file per JOB, not `tmp/<stem>.ogg`: `named/elias/*/audio/` is full of
+    # identical stems (`1_0_1.ugg`, `2_0_3.ugg`, `completed.ugg`, ...), so a
+    # stem-keyed temp path is shared by every parallel worker on that stem.  They
+    # overwrite and `unlink` each other's stream, which loses the conversion to a race
+    # ("Error opening input files: No such file or directory") and can even hand ffmpeg
+    # the *other* file's audio with no error reported at all.
+    ogg = None
     try:
+        with tempfile.NamedTemporaryFile(dir=tmp, prefix=src.stem + "_",
+                                         suffix=".ogg", delete=False) as fh:
+            ogg = pathlib.Path(fh.name)
         raw = src.read_bytes()
         if raw[:4] != b"OggS" and raw[UGG_HEADER:UGG_HEADER + 4] != b"OggS":
             return "not a UGG/Ogg stream"
@@ -67,7 +76,8 @@ def convert_mp3(src, dst, tmp):
     except Exception as exc:                                             # noqa: BLE001
         return f"{type(exc).__name__}: {exc}"
     finally:
-        ogg.unlink(missing_ok=True)
+        if ogg is not None:
+            ogg.unlink(missing_ok=True)
 
 
 def convert_glb(src, dst, _tmp):
