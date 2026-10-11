@@ -79,16 +79,19 @@ def main() -> int:
     techs = {t for t in techs if t}
 
     out = sys.stdout
-    seen: set[str] = set()
+    # NB no `seen` set: the space is technique x subsets<= k of the pool, which is
+    # 143 M chains at depth 3 over the wide pool - remembering every one of them is
+    # what OOM'd the box (FINDINGS 61.14/61.15).  The combinations are already
+    # unique, so streaming them costs nothing but the duplicates across `tech`.
+    tested = 0
     pool = sorted(flags)
     for tech in sorted(techs):
         for k in range(0, max_flags + 1):
             for combo in itertools.combinations(pool, k):
-                name = ":".join((tech,) + combo) if combo else tech
-                if name not in seen:
-                    seen.add(name)
-                    out.write(name + "\n")
-    print(f"{len(seen)} chains ({len(techs)} techniques x subsets<= {max_flags} of "
+                out.write(":".join((tech,) + combo) if combo else tech)
+                out.write("\n")
+                tested += 1
+    print(f"{tested:,} chains ({len(techs)} techniques x subsets<= {max_flags} of "
           f"{len(pool)} flags)", file=sys.stderr)
     return 0
 

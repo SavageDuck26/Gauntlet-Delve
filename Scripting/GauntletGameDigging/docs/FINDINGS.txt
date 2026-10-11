@@ -8316,9 +8316,32 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   order the box found them.  The overlay is written in insertion order
   (`json.dumps(ov, indent=2)`, no `sort_keys`).  `check_names.py --write`,
   `mine_bundle_strings.py --out` and the enumerations already appended, so this was
-  the only leak.  Note the legacy part is still hash-ordered: the first 5,995 lines
-  of `matches.tsv` predate the fix and cannot be un-sorted, everything after them is
-  chronological.
+  the only leak.  Note the legacy part is still hash-order: the first 5,995 lines
+  predate the fix and cannot be un-sorted, everything after them is chronological.
+
+61.15 ENUMERATIONS MUST NOT REMEMBER THEIR OWN CANDIDATES (*)
+
+  Two different bugs with one cause, and both of them cost a machine:
+
+    * `check_names.py` did `sys.stdin.read().splitlines()` - it buffered the whole
+      candidate stream before hashing anything; and
+    * `enumerate_anims.py` / `enumerate_chains.py` kept a `seen` set to de-duplicate
+      their output.
+
+  Neither is visible at 10 000 candidates and both are fatal at 15 000 000: the
+  names are hashed once and never needed again, so holding them is pure waste - the
+  15 M-candidate leaf pass needed ~2 GB for names it had already finished with, and
+  the 143 M-candidate chain space needed more than the box has.  That is what the
+  out-of-memory was.
+
+  The rule for every tool in `tools/`: stream the candidates, accumulate nothing but
+  the hits (and the small bounded de-dupe of *hits*, which is a set of a few dozen).
+  Verified: `check_names.py` holds 4 MB across 5 M candidates, `mine_lua_expand.py`
+  and `mine_bundle_strings.py` ~20 MB and ~140 MB over tens of millions, and
+  `enumerate_chains.py --wide 3` (143 M) now runs in 19 MB.  Where a bounded de-dupe
+  is genuinely wanted, cap it (`mine_bundle_strings.py` stops adding at 4 M) rather
+  than letting it grow with the input.
+
 
 
 
