@@ -7966,3 +7966,104 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   or not at all.  The two hashes and their identity are recorded here so the art
   at least pins what they *are* while the words stay open.
 
+
+61.4 OPENING THE UNRESOLVED TEXTURES - THE ART IS THE IDENTIFICATION
+
+  The export decodes the unresolved textures to PNG as well
+  (`view/png/_unresolved/texture/<hash>.png`) and they are *small* - the 1.4 MB
+  1024 level map is a ~1.1 MB PNG.  There is no OCR to do: this is game art, not
+  documents, and what "text" is in it is a rock, a mask colour or a skull.  What
+  the pixels give is *identity*, which is what the two potion icons needed in 61.2
+  and what the level-material gaps need here.  `tools/montage_png.py` turns any PNG
+  set into a labelled contact sheet (`--from-dir`, `--from-list`, `--size WxH`,
+  `--checker`, `--label-mode hash|stem|path`), so a whole group is *looked at* in
+  one image instead of one file at a time.  Sorted by size, the 314 unresolved are:
+
+      256x256 x69   128x128 x33   512x512 x52   1024x1024 x20   640x272 x9
+      1920x1080/880 x4 (title art)  + ~80 one-off UI sizes (580x320, 1200x480, ...)
+
+  Read off the sheets:
+
+    * 1024x1024 with mean RGB ~ (128,128,0) - **normal maps** (BC5: R and G only,
+      B = 0), i.e. the missing `_norm` partners of level materials: moss, sand
+      ripples, cobbles, cut stone, rubble, a rosette/pentagram inlay floor, arches.
+    * 512x512 RGB - the same thing, all normals, and legible as props: a column
+      arcade, a tiled floor medallion, cobble walls, a ruined beam, scattered
+      bones, a boss corbel, a fabric banner with fringe.
+    * 1024x2048 / 512x1024 flat 0x00FF00 + 0x00FFFF - **cloth masks**.  Pixels
+      confirm the type: the *named* capes (`equipment/capes/cape_s0X_r0Y`) have the
+      same signature (mean ~ (50,255,200), 40-80 % pure cyan/green), so the cape
+      textures are shader/cloth masks, not painted fabric.
+    * 1920x880 - a mountain with a **skull carved into the peak**: the title screen.
+    * 256x256 transparent - rubble/dirt piles, gold UI frames and rings, a red
+      cave-painting wall, hanging fur/banner strips, magenta dev swatches.
+
+  `tools/twin_by_image.py` is the machine version of this pass: it L1-compares each
+  unresolved PNG against every *named* PNG of the same dimensions (48x48 RGB+A) and
+  prints the closest named twins - `props/d01_crypt/cloth_01_norm` (0.010) for a
+  1024 cloth normal, `blocks/d01_crypt/crypt_floor_01_norm` (0.026), `equipment/
+  capes/cape_s05_r01` for the cloth masks.  Use it to choose the family to guess
+  in; do not read it as a name (the pixel-nearest named texture is normally a
+  different *map* of the same material).
+
+61.5 WHAT THE REFERENCES SAY THOSE ARE
+
+  `work/refs_texture.json` names the units that draw the unresolved bodies, and for
+  the striking ones the identity is immediate:
+
+      2b1bdea63cb3e2f8 <- props/menu/titlescreen_background    (the skull mountain)
+      0451f9d391a4ce38 <- props/d01_caves/ground_ornament_02   (a stone ornament)
+      006092561807ee0b, 02645408743ec88f, c01c37816b794f76
+                       <- equipment/{elf,necromagus,valkyrie,warrior,wizard}/cape_s03
+
+  The last three are the cape tree's cleanest hole: `equipment/capes/` holds
+  `cape_s0{1,2,4,5,6}` x `r01..r03` and **no s03 at all**, and exactly three
+  unresolved textures (one 1024x2048, two 512x1024) are drawn by `cape_s03` in all
+  five classes.  Their names are not any `cape_s03*` form, though: 421,578
+  candidates over 6 dirs x 3 bases x 46 style spellings x 16 rarity spellings x 9
+  suffixes -> 0.
+
+61.6 THE CAPE SUB-FAMILIES: THREE RECOVERED, AND WHY THE TOKEN LIST WINS
+
+  Swapping a *token* into the style slot of every named texture (Rust `mutate`,
+  `--tokens data/vocab/tokens_big.txt`) recovered a sub-family no sibling walk
+  could reach, because `collar` is a word none of them had:
+
+      66b02cb8e2a7ac88  equipment/capes/cape_collar_r01
+      18fc99eba2227ec7  equipment/capes/cape_collar_r02
+      a6c107981bb4a3ce  equipment/capes/cape_collar_r03
+
+  So the cape tree is `cape_<part>_r<nn>` *and* `cape_s<nn>_r<nn>`, and this is the
+  general lesson for the residual: the reach comes from the *token list*, not from
+  the pattern.  `cape_collar_r0X` is 3 names off a 100k-word list in the position
+  where a sibling sweep only had `s01..s06`.
+
+  Note for the next run: the mode's summary line lied.  This run printed
+  `new matches : 0` and then `matches file : matches.tsv (5928 total)` - the 3 hits
+  are real (their hashes verify and they are absent from the overlay), so trust the
+  file total, not the per-run counter.
+
+61.7 EVERYTHING ELSE TRIED FOR THESE 309 (all 0)
+
+  New tools, all hash-verified, all negative:
+
+    * `tools/mutate_named_textures.py` - mutate *every* named texture name (stem
+      truncation x 120 suffixes x numbers x dir moves x dir grammar): 2,594,864.
+    * level dirs (16) x `loc_slugs.txt` (13,346 display-text slugs) x level
+      suffixes x family/number shapes, on the GPU: **812,718,016 candidates in
+      1.06 s**, 0.
+    * `tools/gen_texture_candidates.py` re-run on the reference map: 1,387,654, 0.
+    * Rust `mutate` over the 1,483 named texture names x `tex_suffixes` (92):
+      `mut_tokens` (1,391) 0, `tokens_big` (80,000) 0 **plus the three cape_collar
+      names**, `bundle_words` (108,880) and the rest of the big lists running.
+    * targeted guesses with `tools/check_names.py` (stdin -> hits in milliseconds,
+      `--write` appends): `titlescreen_background*`, `ground_ornament_0X*`,
+      per-class `cape_s03*`, the whole cape style/rarity space -> 0.
+
+  So the residual textures are not siblings of anything we hold, not named after
+  the unit that draws them, and not the product of the level grammar with either
+  our stems or the game's display language.  Like 61.3 the words are simply not in
+  the pattern vocabularies - but they *are* in the token lists: one word in one
+  slot is what `cape_collar` was, and every extra token list is another 100k shots
+  at the same slot.
+
