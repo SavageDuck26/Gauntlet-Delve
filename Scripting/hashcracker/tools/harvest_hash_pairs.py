@@ -55,19 +55,22 @@ def unresolved() -> dict[str, str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="/tmp/harvest_pairs.tsv")
+    ap.add_argument("--root", default="",
+                    help="directory to sweep (default: this repository)")
     ap.add_argument("--max-mb", type=int, default=20)
     ap.add_argument("--write", action="store_true")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
 
     un = unresolved()
-    print(f"unresolved {len(un)}", file=sys.stderr)
+    root = pathlib.Path(a.root).expanduser().resolve() if a.root else REPO
+    print(f"unresolved {len(un)}   root {root}", file=sys.stderr)
     found: dict[str, str] = {}
     scanned = 0
     cap = a.max_mb * 1_000_000
 
     with open(a.out, "w", encoding="utf-8") as out:
-        for p in REPO.rglob("*"):
+        for p in root.rglob("*"):
             s = str(p)
             if not p.is_file() or any(k in s for k in SKIP):
                 continue
