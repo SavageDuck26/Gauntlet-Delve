@@ -6611,5 +6611,11 @@
   "608652e0d763612f": "blocks/d01_lava/lava_waterfall_01_ash_diff",
   "ba41ea370021a5ac": "blocks/d01_caves/walls/swampstruct_wall_corner_4c",
   "326550231e5bcf02": "blocks/d01_lava/lavastruct_floor_tile_01_diff",
-  "315f62e2962c3b29": "blocks/d01_lava/lavastruct_floor_tile_01_norm"
+  "315f62e2962c3b29": "blocks/d01_lava/lavastruct_floor_tile_01_norm",
+  "c360e2facc448c23": "props/d01_lava/swamp_redwizard_cage_01_diff",
+  "e21c473feddaf138": "props/d01_lava/swamp_redwizard_cage_01_norm",
+  "457370cd683b869b": "decals/decal_crypt_debris_01",
+  "2bf849bc88082608": "effects/wep_elf_special_vaultshot_explode",
+  "600d56cd580eb6b7": "gameobjects/traps/trap_floor_blades_4c_spec",
+  "830aa7b3c9bd50c0": "decals/decal_caves_floor_bones_01"
 }

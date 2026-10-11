@@ -92,31 +92,33 @@ def main() -> int:
             pool.update(b.split("_"))
         pool = sorted(pool)
         maps = [""] + sorted({m for m in dir_maps[d]}) + ["_diff", "_norm"]
-        seen: set[str] = set()
         for b in bases:
             toks = b.split("_")
-            cands: set[str] = set()
+            n_local = 0
+
+            def put(c: str) -> None:
+                # Streamed, never remembered: a wide pool over one directory used to
+                # fill a `seen` set with tens of millions of names (FINDINGS 61.15).
+                nonlocal n_local
+                for m in maps:
+                    out.write(d + c + m + "\n")
+                    n_local += 1
+
             for i in range(len(toks)):
                 if len(toks) == 1 and len(pool) > 4000:
                     continue
                 for t in pool:
                     if t != toks[i]:
-                        cands.add("_".join(toks[:i] + [t] + toks[i + 1:]))
+                        put("_".join(toks[:i] + [t] + toks[i + 1:]))
             # insertion, not just replacement: `move_jog_left` -> `move_jog_look_left`
             # is how the animation names in FINDINGS 61.9 were actually spelled.
             for i in range(len(toks) + 1):
                 for t in pool:
-                    cands.add("_".join(toks[:i] + [t] + toks[i:]))
+                    put("_".join(toks[:i] + [t] + toks[i:]))
             for t in pool:
-                cands.add(f"{b}_{t}")
-                cands.add(f"{t}_{b}")
-            for c in cands:
-                for m in maps:
-                    cand = d + c + m
-                    if cand not in seen:
-                        seen.add(cand)
-                        out.write(cand + "\n")
-        total += len(seen)
+                put(f"{b}_{t}")
+                put(f"{t}_{b}")
+            total += n_local
     print(f"{total} candidates from {len(dirs)} directories", file=sys.stderr)
     return 0
 
