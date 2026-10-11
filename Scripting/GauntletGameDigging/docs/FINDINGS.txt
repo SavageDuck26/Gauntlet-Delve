@@ -8185,4 +8185,39 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     * `tools/enumerate_chains.py` - a shader chain is `technique:<flag:flag:...>` with
       the flags sorted, so the space is technique x sorted subsets: 43 techniques x
       subsets <= 3 of 109 flags = 9,284,990 candidates, enumerated once instead of
-      once per seed (which is what `mutate --chain-depth` does).
+      once per seed (which is what `mutate --chain-depth` does).  It paid: after
+      44,955,607 candidates it returned
+
+          character:enemy:silhouette:silhouette_decals_group_level
+
+      - a *technique we did not hold* (`character`), with two flags (`enemy`,
+      `silhouette`) that no held chain name contains.  Both came from the pool the
+      tool mixes in (the `shader_library_group` / `render_config` tokens), which is
+      the lesson: for chains the pool is the reach, exactly as it is for textures.
+      `--wide` widens it further with every flag-shaped token in the corpus (53
+      techniques x 253 flags, depth 3 = 143,060,674).
+
+61.10 ANIMATION, SECOND PASS: BODY PARTS, CHARSELECT, UNIT VARIANTS
+
+  The animation names that came out of these passes:
+
+      characters/avatar_elf/animations/talisman_03_lowerbody
+      characters/avatar_necromagus/animation/charselect_01_directional_{up,down,left,right}
+      characters/avatar_valkyrie/animations/move_jog_{look,break}_{left,right}[_back]
+      characters/avatar_valkyrie/animations/move_jog_look_left_back
+
+  Which adds three axes to the animation grammar on top of 61.9:
+
+    * a *body part* axis (`_lowerbody`/`_upperbody`, and the same slot in `_lowerbody`
+      for every ability);
+    * a `charselect_<NN>_<action>_<direction>` family (the character-select screen),
+      spelled with `animation/` not `animations/` for the necromagus;
+    * unit *variants* as separate units (`boss_morak_sword`, `avatar_necromagus_
+      summoned_archer`), each with its own full animation set.
+
+  `tools/enumerate_anims.py` enumerates the whole read-off grammar - the
+  `move_<gait>_<action>_<direction>[_back]` sentence, attacks per weapon and
+  direction, `turn_<direction>_<angle>`, offsets, windups, `_NN_start`/`_NN_end`,
+  body parts and unit variants - 4,535,480 candidates; it returned `talisman_03_
+  lowerbody`, which the engine had already found minutes earlier (0 appended).
+

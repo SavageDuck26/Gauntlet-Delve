@@ -30,9 +30,23 @@ EXTRA_TECHNIQUES = ["base", "billboard", "decal_projector", "psvita_gbuffer_sten
                     "depth_only", "shadow", "outline", "ui", "menu", "water",
                     "terrain", "sky", "particle", "sprite", "flipbook"]
 
+# A flag is a word the engine can turn on, and the engine's words are recognisable:
+# shader-y tokens from anywhere in the corpus make the pool wider than the flags we
+# happen to hold.  `enemy` and `silhouette` were needed for the first new chain
+# (`character:enemy:silhouette:silhouette_decals_group_level`, 61.9) and neither was
+# in a held chain name.
+FLAGISH = ("map", "group", "pass", "flag", "blend", "proj", "tint", "scale", "alpha",
+           "mask", "light", "invert", "swap", "depth", "stencil", "blur", "fade",
+           "decal", "instance", "vertex", "rotation", "clip", "cutout", "fresnel",
+           "rim", "glow", "emissive", "specular", "normal", "diffuse", "detail",
+           "macro", "parallax", "uv", "world", "local", "screen", "additive",
+           "multiply", "silhouette", "enemy", "character", "outline", "gray", "grey",
+           "color", "colour", "rgb", "one", "bit", "two", "sided", "double", "show")
+
 
 def main() -> int:
     max_flags = int(sys.argv[1]) if len(sys.argv) > 1 else 4
+    wide = "--wide" in sys.argv[2:] or "-w" in sys.argv[2:]
     bytype = known_by_type()
     names = set(load_names(all_types=True).values())
     seeds = set(bytype.get("shader_library", ())) | set(bytype.get("shader_library_group", ()))
@@ -50,6 +64,15 @@ def main() -> int:
     for t in ("shader_library_group", "render_config"):
         for n in bytype.get(t, ()):
             flags.update(x for x in n.rsplit("/", 1)[-1].split("_") if len(x) > 2)
+    if wide:
+        # whole-corpus tokens that look like engine flag words, alone or compounded
+        cand: set[str] = set()
+        for n in names:
+            leaf = n.rsplit("/", 1)[-1]
+            for tok in leaf.replace(":", "_").split("_"):
+                if len(tok) > 2:
+                    cand.add(tok)
+        flags.update(c for c in cand if any(f in c for f in FLAGISH))
     flags = {f for f in flags if f and not f.isdigit()}
     for x in EXTRA_TECHNIQUES:
         techs.add(x)
