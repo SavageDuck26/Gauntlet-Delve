@@ -6617,5 +6617,9 @@
   "457370cd683b869b": "decals/decal_crypt_debris_01",
   "2bf849bc88082608": "effects/wep_elf_special_vaultshot_explode",
   "600d56cd580eb6b7": "gameobjects/traps/trap_floor_blades_4c_spec",
-  "830aa7b3c9bd50c0": "decals/decal_caves_floor_bones_01"
+  "830aa7b3c9bd50c0": "decals/decal_caves_floor_bones_01",
+  "44a4ab0da7f0d7b2": "effects/cha_eye_of_dur_imp_position",
+  "47213dc115961b6f": "effects/cha_eye_of_dur_imp_projectile",
+  "743ae3d4a0542f63": "effects/cha_eye_of_dur_imp_spawn_windup",
+  "ee3c8121e889f3c6": "effects/wep_elf_special_vaultshot_trail"
 }
