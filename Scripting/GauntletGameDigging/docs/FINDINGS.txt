@@ -7830,6 +7830,47 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   is generated from the export by `tools/make_loc_slugs.py`.
 
 
+60.20 THE TWO ICONS THAT BREAK THE RULE (AND THE WORDS ARE KNOWNS)
+
+  Two entries in `hud/action_icons` remain, and they are the only ones in any of the
+  icon atlases that are *not* named after their own display text:
+
+      402c8d6e26caf96f   the warrior's, art = a hand gripping a blue potion flask
+      965dc9490a86221e   the elf's,     art = green swirling wisp energy
+
+  28 of the 30 atlas entries that were ever unnamed reproduce from a display-string
+  slug (60.19) - including the third, `valkyrie_ultimate_vengeance`, and the relic
+  icon `equippables_icons/relic_heart_of_vlad`.  These two do not, and the ability
+  names are known (read off the game, not derived): **Improvise** (warrior) and
+  **Willow Branch** / **Spirit Guardians** (elf).
+
+  Everything those words allow is negative:
+
+    * every slug / glued / underscored / hyphen / case (incl. `IMPROVISE`,
+      `Improvise`, `improvise!`) form, in every `{hero}_{action,ultimate,ability,
+      special,potion,talisman,ability_icon,icon,spell,skill}_{word}[_01|01|_1|_icon|
+      _large|_small]` position and in every icon/relic/hud/potion home, plus the
+      reverse orders and the bare word - ~12 k forms, 0;
+    * the same words with a 350,242-word vocabulary on either side (the 348,405-token
+      engine pool *unioned with the 7,635 words of the display text* - necessary,
+      because a word like `guardians` appears in no Lua and only in the localisation),
+      which covers every `<word>_<token>` and `<token>_<word>` form;
+    * `--pattern 'hud/action_icons/{warrior,elf}_ultimate_%t%v'` over
+      `probe_tokens_plus.txt` squared - 2.5e11 candidates, every glued two-token
+      ability word, 0 (the shape the resolved ones actually use: `moreofthor`,
+      `dryadssong`, `hypersniper`).
+
+  And `hud/action_icons/warrior_ultimate_improvise` hashes to `a53249b9dd323d33`,
+  which is in **neither** the catalogue **nor** the atlas - so the resource is not
+  named after the ability at all, which is the whole point of the exception.
+
+  The two words exist in exactly one source: the localisation.  Not in `gauntlet.exe`,
+  not in `elias.dll` (checked, both negative), not in any Lua, not in the depot
+  harvest.  So no vocabulary route reaches these two; what is left is the UI code
+  that turns `icon = warrior_ultimate_01` (from `equipment/warrior/talisman01.lua`)
+  into an atlas entry - and failing that, the art (61.2).
+
+
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
 
   `hud/action_icons` is not itself an icon: it is the *material* for the HUD
