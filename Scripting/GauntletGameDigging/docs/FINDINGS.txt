@@ -7775,6 +7775,61 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   gitignored, so this paragraph is the record rather than a diff.
 
 
+60.19 THE ICON WORDS ARE GLUED SLUGS OF THE GAME'S OWN DISPLAY TEXT
+
+  The 15 talisman item names (Thyra's Vow, Guardian Symbol, Mark of the Commander,
+  Thor's Crummy Necklace, Bottomless Jug, The Prize, Merlin's Bookmark, Active
+  Magicite, Mercury Vial, Questor's First Arrowhead, Enchanted Willow Branch,
+  Dryad's Flute, Lilith's Heart, Dream Catcher, Reaper Charm) are the potion
+  abilities - the localisation says so directly:
+
+      "Each Hero has a Potion Ability that costs a Potion to use.  Unlock new
+       Talismans to get new Potion Abilities."
+
+  They are *item* names, and the icon is named after the *ability*, so testing the
+  item slugs against the icon grammar (`hud/action_icons/<hero>_<ultimate|action>_<w>`)
+  in every slug, glued, word and Lua-token form gives **0** - including every
+  identifier that appears inside the talisman's own Lua (`potion_explosion`,
+  `potion_throw`, `potion_projectile`, `wisps_cast`, `ultimate_wisp_projectile`,
+  `ultimate_throw_windup`, `ultimate_wisps_windup`, ...).
+
+  What does work is the *display* text.  Compare the two sides:
+
+      strings: "More of Thor"   icon: hud/action_icons/warrior_ultimate_moreofthor
+      strings: "Dryad's Song"   icon: hud/action_icons/elf_ultimate_dryadssong
+
+  i.e. lowercase, strip apostrophes, glue the words.  So the vocabulary is the
+  whole language file (`localization/game_strings.strings`, 91,936 null-separated
+  values, a language-index + offset table with no text keys): take every 1-4 word
+  n-gram that starts on a capitalised word, slug it glued and underscored (13,346
+  forms), and sweep the icon / relic / hud / potion homes with it.
+
+  Self-check: it *reproduces* 28 names we already held, across every sub-family -
+  `hud/action_icons/*` ultimates and actions, `equippables_icons/relic_*`,
+  `equippables_icons/equipment`, `hud/hud`, `hud/boss`, `hud/elements`, `hud/potion`,
+  `hud/spells`.  Nothing else in this project has that property; it is why the rule
+  is trusted.
+
+  One name came out, and it closes the relic icons:
+
+      f4870719d3c622cb   equippables_icons/relic_heart_of_vlad
+
+  61.1 had argued this hash "is a relic icon" from the material that draws it and
+  left it there; the display string is "Heart of Vlad".  Overlay 6,523 -> 6,524;
+  unresolved 1,024 -> 1,023 (texture 314 -> 313).
+
+  The two potion-ability icons that remain (`402c8d6e26caf96f`, the warrior's potion
+  flask, and `965dc9490a86221e`, the elf's wisps) are *not* display slugs and not
+  any Lua token of the two talismans that carry them, so unlike every other icon in
+  the atlases they are not named after their own text.  Theirs is the art (61.2)
+  and the UI code that resolves `icon = warrior_ultimate_01`, not more vocabulary.
+
+  Machinery: `sweeps/localization_hunt.sh` (tiers: homes, homes + map suffix,
+  display slugs x the 348 k-token pool in both orders) and
+  `sweeps/talisman_hunt.sh` (the item names in every form); `data/vocab/loc_slugs.txt`
+  is generated from the export by `tools/make_loc_slugs.py`.
+
+
 61. THE `hud/action_icons` SIBLING TABLE, AND THE LAST TWO "POTION" ICONS
 
   `hud/action_icons` is not itself an icon: it is the *material* for the HUD
