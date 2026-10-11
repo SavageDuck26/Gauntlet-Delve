@@ -6599,5 +6599,12 @@
   "ffdbae46a8d94661": "characters/avatar_necromagus/animation/leap",
   "fff80118cd84e586": "modules/d01_crypt/quilts/base/crypt_quilt_straight__xx_e_xx_e__02_spiketrapschain_skeleton",
   "fffdce662cbf0f67": "gui/interact_price_ui",
-  "6a6b4d2d2076b9a3": "effects/cha_necromagus_light_attack_burst"
+  "6a6b4d2d2076b9a3": "effects/cha_necromagus_light_attack_burst",
+  "f6154b9f3cd7dd51": "effects/cha_skeleton_archer_aim_marker",
+  "7b21f57cfd059115": "effects/cha_eye_of_dur_imp_projectile_tier3_explosion",
+  "8660dcfd54f3c8ed": "effects/wep_lakedweller_claw",
+  "4144d7634e024e4d": "effects/cha_necromagus_skeleton_light_left_destroy",
+  "1713475b5d1794c6": "effects/cha_necromagus_skeleton_light_right_destroy",
+  "5171038d70d672d0": "blocks/d01_caves/floors/cavestruct_floor_track_straight_2c",
+  "eda3b17372d851e4": "blocks/d01_caves/floors/cavestruct_floor_track_straight_4c"
 }
