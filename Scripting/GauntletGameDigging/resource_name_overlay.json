@@ -6622,5 +6622,6 @@
   "47213dc115961b6f": "effects/cha_eye_of_dur_imp_projectile",
   "743ae3d4a0542f63": "effects/cha_eye_of_dur_imp_spawn_windup",
   "ee3c8121e889f3c6": "effects/wep_elf_special_vaultshot_trail",
-  "4352ae7076ac5ee1": "characters/cultist_novice/cultist_fodder_weapons_diff"
+  "4352ae7076ac5ee1": "characters/cultist_novice/cultist_fodder_weapons_diff",
+  "baff19f0f720354f": "effects/cha_eye_of_dur_imp_projectile_hit"
 }
