@@ -8397,6 +8397,60 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   also set the pattern for what a "complete" pass looks like here - finite, streaming,
   and reported as a count so the next person does not repeat it.
 
+61.18 THE PROJECT'S OWN OLD PAIR FILES (the biggest single yield of the run) (*)
+
+  Everything above assumes the missing names have to be *derived*.  They do not all:
+  this project has been cracking the same game for years with several tools, and not
+  every one of those runs left its answer in `matches.tsv`.  A `hash<TAB>name` pair
+  is worth taking when it is verifiable, and it is trivially verifiable - re-hash the
+  name and require `murmur64(name) == hash`, which is exactly what defines the name
+  in the first place (the engine looks resources up by hash, so *any* preimage is a
+  correct answer).  `tools/harvest_hash_pairs.py` sweeps every text file under the
+  repo for that shape and keeps only the pairs that verify.
+
+  Two runs, both of them large:
+
+    * `Gauntlet-PreSlayer-2015-01-21/_slayer_all_matches.tsv` (2,410 pairs) - **113**
+      verified against our residual: `characters/avatar_elf/elf_{diff,norm,spec}`,
+      `characters/avatar_necromagus/necromagus_diff`, `gameobjects/doors/
+      door_crypt_3keys_{diff,norm}`, `gameobjects/food/{apple,ham,turkey}_{diff,spec}`,
+      `props/d01_caves/bridge_01_diff`, ...  (0 hash mismatches.)
+    * the repo-wide sweep - **135** more, including 12 `package` names out of
+      `bundle_name_overlay.json` (`resource_packages/heroes/{wizard_base,
+      valkyrie_equipment, elf_banks, elf_capes, elf_equipment, warrior_banks,
+      warrior_ability, wizard_banks, valkyrie_banks, ...}`), plus
+      `equipment/warrior/weapon02_diff`, `characters/boss_mummy/boss_mummy_{diff,spec}`,
+      `props/d01_lava/corruption_01_spec`, `props/d01_crypt/commander_chair_spec`.
+
+  Net effect on the residual by type: **texture 1,153 -> 690**, particles 165 -> 163,
+  material 216 -> 210, total 2,645 -> 2,148 unique hashes.  Most of what the pair files
+  held back was textures, which is exactly the family that no grammar reaches - the
+  answer had been sitting in a snapshot directory the whole time.
+
+  Lesson: before spending another 100 M candidates on a type, grep the repository for
+  `^[0-9a-f]{16}\t` and verify what turns up.  It costs seconds and it beat every
+  enumeration in this session combined.
+
+61.19 THE COMPILED BUNDLES REALLY ARE NAMELESS (recorded negative) (*)
+
+  `bundle_manifest/09_reachability.tsv` maps every resource to its package *and its
+  bundle file*, so the residual can be grouped by `(type, package, bundle)` - which
+  says exactly which `contents/<hash>` files are worth decompressing instead of all
+  1.5 GB.  `tools/mine_target_bundles.py` does that: for the 12 biggest groups
+  (`shader_library` 143 in `core/rendering/renderer`, `texture` 104 + `shader` 22 in
+  `resource_packages/menu`, `animation` 79 in `d01_lava`, `material` 42 in
+  `all_effects`, ...) it decompressed every zlib stream and extracted every name-ish
+  run, chains included.
+
+  Result: 239-4,219 strings per bundle and **0 hits**.  The payloads are compiled
+  bytecode, geometry and textures, and they carry almost no strings at all.  The one
+  exception is a `render_config`, which genuinely does spell its `shader_libraries`
+  list out as literal text (seen directly in `contents/1a9c33dcd0301dfd`:
+  `core/rendering/base`, `core/rendering/caustic`, `core/rendering/character_cape`,
+  ... 51 entries) - but every entry is a name we already hold, so that list is
+  complete.  This closes "scan the shipped payloads" as a source of names.
+
+
 
 
 
