@@ -8342,6 +8342,45 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   is genuinely wanted, cap it (`mine_bundle_strings.py` stops adding at 4 M) rather
   than letting it grow with the input.
 
+61.16 THE EFFECTS FAMILY, AND THE PULL-EXPLOIT LOOP (*)
+
+  `effects/` (the `particles` type, 868 names held) is a sentence
+  `<prefix>_<stem>_<action>[_<phase>]` with **47 prefixes**: `cha` (268 members),
+  `wep` (173), `env` (99), `gam` (75), `hit` (56), `textures/additive` (53),
+  `textures/alpha` (49), `obj` (24), `relic` (21), `statuseffect` (18), then
+  `menu`/`cutscene`/`gib`/`meshes/sphere`/`units/spawner`/`potion`/`trap`/
+  `treasure`/`elemental`/`footstep`/`gold`.  `tools/effects_family.py` crosses each
+  prefix with the unit stems (catalogue units, their tokens, and the units named in
+  `lua/generated/*.lua`), the tails of the members we hold, the animation leaves the
+  units play, a verb x noun cross, and the phases the family spells out
+  (`marker`/`tell`/`trail`/`windup`/`burst`/`spawn`/`destroy`/`2c`/`4c`/...).  The
+  `cha` pass (2,724,645 candidates) returned
+
+      effects/cha_skeleton_archer_aim_marker
+
+  and the GPU box, running its own mutate rounds at the same time, returned three
+  more in the same space: `cha_necromagus_light_attack_burst`,
+  `cha_necromagus_skeleton_light_right_destroy`, `cha_eye_of_dur_imp_spawn`.  So the
+  family is live and *both* methods reach into it.
+
+  The workflow that produced that is worth naming, because it is now the loop:
+
+    1. the GPU box runs the big rounds (battery -> self-feeding token mutate ->
+       big_run) and appends every find to its `matches.tsv`;
+    2. `tools/pull-gpu.sh` unions its file into ours **by appending** (61.14) and
+       prints both the appended lines and the overlay delta;
+    3. whatever shape the fresh finds reveal is enumerated locally straight away
+       (`effects_family.py` came out of step 3, and `_var_NN` in 61.13 did too).
+
+  The asymmetry is the point: the box is the throughput, this machine is the one that
+  reads the new names and turns them into a space.  Everything else tried in this
+  direction came back empty and is recorded above so it is not re-run: the `_illu`
+  and `_icon` products (61.13), infix substitution with an element vocabulary
+  (`_ash_`/`_lava_`/`_ice_` in every token position, 566,680 - 0), material suffixes
+  (`<stem>_set`/`_set_lava`/`_no_fade`/`_dissolve`/..., 260,792 - 0) and the local
+  `shaders/<token>` product.
+
+
 
 
 
