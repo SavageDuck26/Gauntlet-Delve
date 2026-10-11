@@ -70,10 +70,11 @@ def main():
     for c in args.names:
         check(c)
     for f in args.file:
-        for line in pathlib.Path(f).read_text().splitlines():
-            line = line.strip()
-            if line and not line.startswith("#"):
-                check(line)
+        with open(f, encoding="utf-8", errors="replace") as fh:
+            for line in fh:                         # streaming, never .read()
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    check(line)
     if not sys.stdin.isatty():
         for line in sys.stdin:                      # streaming, never .read()
             line = line.strip()

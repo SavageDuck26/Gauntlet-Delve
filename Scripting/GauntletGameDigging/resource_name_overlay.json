@@ -1314,6 +1314,7 @@
   "339ca7cd2f4030e4": "lua/managers/connection_monitor",
   "33a1981f2778a0c6": "modules/d01_crypt/quilts/base/crypt_quilt_turn__e_x_x_e__01_fancy",
   "33bb2307c7d357a3": "base:deferred_decals_group_floor:diffuse_map:global_uv_scale:normal_map:uv_proj_world_z",
+  "33d008cb77f0ae12": "props/d01_caves/swamp_roots_01_normal",
   "33d28301f4185234": "elias/cave_arena/cave_arena",
   "33def620bb752d60": "characters/lake_dweller/animations/stagger_back_01",
   "33e2441bea1b5d11": "shadow:deferred_decals_group_floor:deferred_decals_group_level:deferred_decals_group_prop:diffuse_map",
