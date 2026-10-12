@@ -9050,3 +9050,71 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   `--candidates` was verified with a known pair for exactly this reason); (c) the same
   cross-build hunt the icons used - a 2014/2015 snapshot's animation names for hashes that
   are still live today.
+
+  64.7 THE SHARED CLIPS: THE CONCEPT IS SHARED, THE SPELLING IS NOT
+
+  61.2/64.2 asked the right question and the corpus answers it: an animation *is* shared
+  between entities - the same walk, the same hit, the same die - but never as the same
+  string.  Grouping the 590 resolved leaves into concepts makes the size of the problem
+  visible: **452 concepts, 62 of them spelled more than one way**.
+
+    hit_offset    hit_offset, hit_offset1, hit_offset2, hit_offset3, hit_offset01,
+                  hit_offset02, hit_offset03, hit_offset_01, ..., offset_hit_01   (11)
+    die / death   die_left_01, die_left1, die_left_2, death_left_01, death_left_02,
+                  die_headshot01, death_headshot_02, die_decapitated
+    move / walk   move_walk_backwards (mummy_risen) beside move_walk_back (mummy_priest),
+                  move_run, walk_run, walk_default, walk_strafe_left
+
+  So "does this entity have the clip the others have?" is not a string search, it is a
+  search *per spelling convention* - which is what `tools/anim_shared_vocab.py` does: the
+  corpus's concepts, respelled every way the corpus respells them (underscored number,
+  glued number, `_default`/`_normal`/`_light`/`_heavy`, direction tokens with and without
+  numbers, reversed token order so `offset_hit_01` is reachable), under the directories of
+  the 37 entities that still own unresolved clips.
+
+  It named four clips in one run - all on the **singular** `animation/` directory, all
+  with the number **glued**:
+
+    characters/cultist_novice/animation/die_headshot01   fdaf5c89e291301c
+    characters/cultist_novice/animation/die_left01       23cc119b8b8ddb09
+    characters/cultist_novice/animation/die_right01      910ca8a9e30041d7
+    characters/cultist_novice/animation/die_slump01      0a9ed352aeb62d9b
+
+  None of the four was reachable by anything built before, and the reason is structural,
+  not budgetary: `mutate` substitutes a *token*, so it can turn `die_headshot_01` into
+  `die_headshot_1` but can never drop the separator; `%p_%t` and `leaf_tail` always join
+  with `_`; and the glued shapes (`%a%b`) glue *everything*, so the mixed form
+  `<words>_<words><NN>` - which is what these are - has no expression in the pattern
+  language at all.  Widening the conventions (26.8 M candidates: numbers 1-20 in four
+  forms, more suffix families, both directions) added nothing, so the four are the whole
+  of this family's spelling problem.
+
+  Two other fingerprints were aimed at the same targets and both are recorded as
+  negatives, because each would have been decisive had it held:
+
+    * **identical bodies**: 0 of the 307 unresolved animation bodies are byte-identical to
+      any of the 939 named ones.  An animation is rigged to its entity, so a shared clip
+      does not share bytes and the name is not recoverable from them.
+    * **size twins**: 116 unresolved rows (48 hashes) have a named animation of exactly the
+      same `body_size`, and size is nearly a function of the clip (§43).  The twin is not
+      the answer either - 9,086 candidates built from those twins (in the entity's own
+      directory, respelled) are 0 - and the biggest clusters show why: size 444 is
+      `stage1_idle`/`stage2_idle`/`stage3_idle`/`dormant` for `gameobjects/spawners`, and
+      the unresolved clips at that size are *other* clips of the same shape, not those
+      clips under another name.
+
+  What the referrers do give, reliably, is the *directory* - and they have to be read as
+  paths, not as unit names.  `gameobjects/spawners/spawner_beam` alone owns 141 of the 543
+  unresolved rows, and the named spawner clips all sit in one shared directory
+  (`gameobjects/spawners/animations/`: `stage1_idle`, `stage2_idle`, `stage3_idle`,
+  `stage1_hit`, `stage2_hit`, `stage3_hit`, `death`, `appear`, `dormant`).  Deriving only
+  the first-level unit collapses that name away, so `tools/anim_entity_guess.py` walks
+  every progressive context (`<each prefix>/{animations,animation}`) crossed with the
+  corpus leaves, the size twins and their respellings: 117,890 candidates, 0.  The spawner
+  clips are not a stage matrix either (`stage<N>_<verb>` and `<spawner>_<verb>` over 50
+  verbs, 9,870 candidates, 0).
+
+  State after this round: overlay 6,899 names, 17,886/20,004 rows named, 909 unique
+  unresolved hashes; the animation bucket 309 -> 305 distinct (543 unresolved rows, 141 of
+  them spawner-owned).
+

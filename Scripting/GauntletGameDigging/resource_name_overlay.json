@@ -6893,5 +6893,9 @@
   "7ddc5a5550256ad3": "equippables_icons/eq_valkyrie_talisman_laurels",
   "250dfb341c8e915c": "equippables_icons/eq_warrior_talisman_medal",
   "944beba296c3352d": "characters/avatar_valkyrie/animations/move_jog_break_fwd",
-  "4b70cbb14031b301": "characters/avatar_wizard/animations/wind_offset"
+  "4b70cbb14031b301": "characters/avatar_wizard/animations/wind_offset",
+  "fdaf5c89e291301c": "characters/cultist_novice/animation/die_headshot01",
+  "23cc119b8b8ddb09": "characters/cultist_novice/animation/die_left01",
+  "910ca8a9e30041d7": "characters/cultist_novice/animation/die_right01",
+  "0a9ed352aeb62d9b": "characters/cultist_novice/animation/die_slump01"
 }
