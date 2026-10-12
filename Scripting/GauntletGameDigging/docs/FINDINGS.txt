@@ -9187,3 +9187,48 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   State after this round: overlay 6,902 names, 17,892/20,004 rows named, 906 unique
   unresolved hashes; unit bucket 42 -> 39.
 
+66. THE BUCKETS THAT DID NOT MOVE, AND WHY
+
+  66.1 ONE MORE FIND.  Re-running the standing battery (`sweeps/battery.sh`) after the three
+  units were named found `effects/trap_floor_blades_swipe` (`fc65a8a7da42eacc`) in its
+  `twin_by_refs` phase: the batch of new names is fuel for phases that had been exhausted at
+  the previous corpus size.  (`--write` folded it into the overlay itself.)
+
+  66.2 TEXTURES (252 distinct unresolved).  All of these are 0:
+
+    * byte-identical bodies - 0 of 252 against 1,540 named texture bodies, so the same art is
+      never shipped twice under the same bytes in this build.
+    * pixel-identical PNG twins (`tools/twin_by_image.py`, the oracle that caught the ghost
+      orb).  Exactly one exact match, `72363b5263f238e0` == `textures/white`; the 47
+      near-twins under 0.02 are almost all flat `_norm` maps (all flat normals look alike),
+      and filtering the twins to diffuse art leaves 36 hints whose family mutation is 0.
+    * the map-set rule - an owner's *known* textures give the channel set and the unresolved
+      sibling is another channel: 162,871 candidates, 0.  Owners reference generic shared art
+      (`textures/outline`, `menu/black`, `effects/textures/alpha_smoke_thin_01`) while their
+      own art is a word we do not hold.
+    * the node names inside the *owner's* body (`m_`/`s_`/`t_` stems) x the owner's directory
+      x channel suffixes: 12,860, 0; the same with every known texture directory as the dir
+      side: 890,807, 0.
+    * `crack_siblings.py --type texture`: 31 M candidates, 0.
+
+  66.3 MATERIALS (91).  Owner bodies plus every material directory: 2,137,379 candidates, 0.
+  The known materials are named after their *units* (`blocks/d01_caves/caverock_set`,
+  `ability_units/spawners/spawner_exploding_burning`), so an unresolved material is the
+  material of a unit we have not named - the dependency runs unit -> material, not the other
+  way round.
+
+  66.4 `tools/twin_by_refs.py --write` over the whole residual: 661 targets had a twin,
+  1,484,090 candidates, 0.
+
+  66.5 THE COMMON CAUSE is the one from 64.5: these words are in no vocabulary we hold, and
+  every method above can only reshuffle a name we already have.  What breaks the wall is a
+  *body* (65.1, three units) or a *spelling convention* (64.7, four clips) - both live in the
+  assets and not in our word lists.
+
+  66.6 NEW SWEEP.  `sweeps/find_new.sh` runs this session's four finders in sequence
+  (`anim_shared_vocab`, `unit_guess_by_body`, `anim_twin_by_size`, `anim_mutate_loop`) and
+  merges into the overlay.  Like the standing battery, it is meant to be re-run after every
+  batch of new names.
+
+  State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
+

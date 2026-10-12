@@ -6900,5 +6900,6 @@
   "0a9ed352aeb62d9b": "characters/cultist_novice/animation/die_slump01",
   "34ad7dab78fa1dbf": "blocks/d01_crypt/railings/crypt_railing_end",
   "1f01e19947211248": "blocks/d01_crypt/railings/crypt_railing_straight_2c",
-  "b04f8e8773161d9d": "blocks/d01_crypt/railings/crypt_railing_straight_4c"
+  "b04f8e8773161d9d": "blocks/d01_crypt/railings/crypt_railing_straight_4c",
+  "fc65a8a7da42eacc": "effects/trap_floor_blades_swipe"
 }
