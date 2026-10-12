@@ -8790,3 +8790,46 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   all, so its item id is a third spelling), and the two ability plates above.
   `tools/gpu_talisman_battery.sh` is running the pairs-and-masks tail on the box.
 
+  63.6 THE 16th ROW IS THE GHOST ORB'S ART, UNDER A SECOND NAME (identified by eye)
+
+  The last unresolved row of the equipment board (`bcef7daa3a221c6c`) was identified
+  visually - "this looks like the ghost orb relic" - and the pixels agree emphatically:
+
+      bcef7daa3a221c6c  256x256   L1 0.0210  equippables_icons/relic_ghost_orb
+                                   L1 0.1131  achievement_icons/eye_for_an_eye_locked
+                                   L1 0.1146  achievement_icons/mysteries_in_the_dark_locked
+
+  The nearest named texture is 5.4x closer than the next candidate, i.e. this is the
+  ghost orb's art and nothing else.  It is not, however, the *same file*: the two bodies
+  are both 43,836 bytes, they share their 128-byte DDS header byte for byte, and 53.5%
+  of the payload differs - a re-encode (or a re-export) of one image, not a copy.  The
+  named one is `equippables_icons/relic_ghost_orb` = `1930e1af0d70213f`; this row points
+  at a second, unnamed export of the same picture.
+
+  So the row is a *duplicate asset*, and its name is a spelling that no list holds:
+
+    * not `equippables_icons/relic_ghost_orb` (that is 1930e1af, a different hash);
+    * not any of 6,018 ghost/orb spellings across 14 directories, nor 3,852 slugged
+      forms of the 113 localisation strings that mention ghost/orb/spirit;
+    * not any of 122,160 relic/talisman/potion variants (`_tier1`, `_locked`, `_02`,
+      `_ability`, ... over the 12 named relic basenames and the 15 recovered flavours);
+    * not any item id the game can build.  This one is worth stating carefully, because
+      it is a *proved* negative: `items.lua` builds item ids from `sprintf("eq_%s_%s",
+      avatar_type, id)` for weapon/talisman, `eq_<avatar>_<eq_type>_<id>` for
+      head/torso/legs/weapon_misc, `eq_<avatar>_shield_<id>` and `relic_<id>`, so an
+      enumeration of that whole grammar (1,829 ids) reproduces **all fifteen** board keys
+      we already know, exactly - and matches key `26e74ba4` not at all.  The same is true
+      of the relic-tier keys the store builds directly (`shop_relic_tier_%d`,
+      `avatar_loadout.lua:564`) for tiers 0-99, and of all 66 keys in the relics board.
+
+  Two things follow.  First, that row's shop id is built by code the source repo does
+  not contain (the readable Lua is a partial decompile), so labelling it means either
+  finding the id that hashes to `26e74ba4` - a 32-bit oracle, but the engine only
+  matches full 64-bit targets (`u64::from_str_radix` in `src/main.rs`), so it stays a
+  Python-side search - or finding the leaf directly, which is what the running masks do.
+  Second, the relics board is itself a fresh oracle: it has 66 entries but only 12
+  distinct icons - **6 keys point at `equippables_icons/relic_ghost_orb` alone** - so
+  the relic *item* names are mostly unrecovered even though their icons are named, and
+  that board's 66 keys can be brute-forced to label them (the vocabulary to try is the
+  shop's own relic flavour words, which the item ids clearly use).
+
