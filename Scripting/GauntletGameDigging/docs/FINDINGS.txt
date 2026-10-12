@@ -9390,6 +9390,43 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   State: overlay 6,931 names, 17,985/20,004 rows named (89.91%), 877 unique unresolved.
 
+69. MUTATE, SIZED RIGHT, AND WHAT THE LAST LOOK ESTABLISHED
+
+  69.1 MUTATE'S COST MODEL, WHICH IS EASY TO GET WRONG.  `mutate` does `tokens x suffixes`
+  *per seed* - not per run - so a "big pool" run can be astronomically large before the
+  engine says anything (`--tokens` 245,000 with `--suffixes` 10,661 against 1,432 seeds is
+  1.5e11 candidates and never returns; the right-sized version, 2,000 x 200, is 5.7e8 and
+  finishes).  All of these are 0: the package-scoped `pkg_mutate.sh` over the biggest
+  packages, a new `sweeps/mutate_from_refs.sh` that builds **referrer-placed seeds** in the
+  target's own namespace (1,432 seeds - effect textures under `effects/textures/`, ability art
+  under `characters/<hero>/abilities/`, shaders under `shaders/`, per type) with the
+  anim-token, strings-pool, tokens_big, `all_names` and `ic_all` pools and a wide `all_tails`
+  suffix pool (10,661 tails mined from every leaf token we hold), and the self-feeding global
+  mutate (all 6,329 held names as seeds).  The placement was right; the *stems* are the wall.
+
+  69.2 THE ANIMATION RESIDUAL IS ONE FAMILY.  Grouping the unresolved animations by their
+  referrer shows where they really live: 184 of them are referenced out of the `debug` bundle
+  (the audit falls back to the bundle name when the referring resource is itself unnamed),
+  then the hero base packs.  And their sizes say which family: 332 bytes x40, 696 x17, 444 x16.
+  Exactly one known animation is 332 bytes - `equipment/elf/animations/aim` and `drawn` - and
+  444/696 are the spawner clips (`stage1_idle` ... `stage3_idle`, `dormant`, `stage6_hit`).
+  So the largest unresolved animation cluster is aim/draw-class clips and spawner stage clips
+  for entities whose *names* we do not hold.
+
+  69.3 MY DIRECTORY LIST HAD A SCOPE GAP - AND FIXING IT DID NOT HELP.  Every animation sweep
+  so far used directories derived from the *referrers* (`anim_dirs_ctx.txt`), which is why
+  `equipment/<hero>/animations/` was never tried even though `equipment/elf/animations/aim`
+  is a name we hold.  The fix - every prefix of every known name crossed with `animations`
+  and `animation`, times the corpus leaves, the ability stems and number respellings - is
+  0.  The gap was real; it just was not the obstacle.
+
+  69.4 WHAT THE BLOCKS AND PROPS ARE MISSING.  `modules/d01_crypt/resources` (116 rows) and
+  its sibling level packs are the same story from the other side: 349,684-byte textures x22
+  in one bundle, and every known texture of that size in the corpus is a `*_norm` map.  They
+  are normal maps of bases we do not hold, and note the corpus spells the channel both ways
+  (`blocks/d01_lava/lavastruct_lavaflow_normal` beside `..._norm`), so a channel sweep has to
+  carry `normal`, `norm`, `diff`, `diffuse`, `spec`, `hm`, `m`, `illum`, `normal_aware`.
+
   68.5 WHY THE SUBSET SWEEPS ARE MOSTLY EMPTY - AND WHAT THAT MEANS.  A subset sweep only
   works if its flag vocabulary matches the chains.  Per technique it does not: `base` has 31
   flags, `character`/`mobile_filter`/`filter` 7 each, `billboard` 13 - so `base`'s own
