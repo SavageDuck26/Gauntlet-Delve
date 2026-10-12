@@ -9272,5 +9272,81 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   body proposes ~62 flags - the marker sets are shared globals (`ambient_top_color`,
   `c_per_object`) rather than discriminators.  Too broad to build a chain from; closed.
 
+67. THE VFX AND WEAPON HUNT: THE EFFECT SENTENCE IS BUILT FROM ABILITIES
+
+  67.1 WHERE THE GAPS ARE.  The grouped view of section 66.6 showed the residual to be VFX
+  and hero equipment - exactly as it looks from the type totals:
+
+    resource_packages/all_effects               171 rows  material 69, particles 68, texture 32, shader 2
+    resource_packages/heroes/necromagus_ability  39       animation 14, material 7, particles 7, shader 2, texture 9
+    resource_packages/heroes/wizard_base         39       animation 26, material 3, particles 3, texture 7
+    resource_packages/heroes/warrior_base        38       animation 25, material 3, particles 3, texture 7
+    resource_packages/heroes/necromagus_base     34       animation 17, material 5, particles 5, texture 7
+    resource_packages/heroes/valkyrie_base       29       animation 15, material 3, particles 3, texture 8
+    resource_packages/heroes/elf_base            28       animation 15, material 3, particles 3, texture 7
+    resource_packages/heroes/warrior_equipment   15       material 6, particles 6, shader 1, texture 2
+    resource_packages/heroes/*_capes             3 each   texture 3
+
+  Reading the bundles rather than counting them gave two corrections that matter.  In
+  `all_effects` the **material and the particles share one name and one hash** - 69 against 68
+  is the same resources counted in two type slots, so one effect name pays twice.  And the
+  three unresolved textures in *each* of the five cape packs are the **same three hashes**
+  (2,796,372 / 699,220 / 699,220 bytes): one cape set, shipped once, referenced by every hero.
+
+  67.2 THE EIGHT NAMES.  An effect name is a sentence -
+  `effects/<prefix>_<faction>_<ability>_<phase>` -
+
+    effects/cha_cultist_sorcerer_beam_windup
+    effects/boss_circle_turn_outer
+
+  and `tools/effects_family.py` already sweeps that shape with the **unit** vocabulary (its
+  stems are unit directories).  That is the wrong half of the sentence: it scored 0 across
+  all ten prefixes, ~2.7 M candidates each.  Driving the same shape with the **ability** names
+  we already hold - every leaf under `characters/*/abilities/`, `*/animations/`, `*/weapons/`
+  plus every prefix and suffix of those leaves - named eight in one run
+  (`tools/effects_by_ability.py`):
+
+    7d18b518b2650be4  effects/wep_elf_arrow_snipershot_pierce_trail
+    1df09ec7da3a8fd2  effects/wep_necromagus_heavy_shadowbolt_hit
+    8e05da3e161ce35e  effects/wep_necromagus_heavy_shadowbolt_trail
+    ab620c86ce595d70  effects/wep_necromagus_ultimate_remnant_spawn
+    a3656cd886df16ea  effects/wep_necromagus_ultimate_souleater_trail
+    d62a9c93e91c2b9d  effects/wep_necromagus_ultimate_remnant_idle
+    35565841792929ea  effects/wep_necromagus_ultimate_remnant_explode
+    48f1d20eb9fa6cdc  effects/cha_spider_queen_egg_projectile_trail
+
+  Eight names cleared 34 rows: 17,912 -> 17,946 named (89.71%), 900 -> 892 unique.  The
+  rounding is the material/particles doubling and the several packs each effect ships in, and
+  the referrer graph confirms the shape from the other side - `effects/wep_necromagus_ultimate_souleater_trail`
+  is referenced by `characters/avatar_necromagus/abilities/ultimate_souleater`.
+
+  67.3 CLOSED, WITH NUMBERS.  Every one of these is 0 against the residual:
+
+    * the *item* half of the sentence: `effects/<p>_<faction>_<item>_<tail>`,
+      `effects/<p>_<item>_<tail>` and `effects/<faction>_<item>_<tail>` with 113 weapon and
+      equipment stems - the weapon VFX are not named after the weapon.
+    * a second tail token (`%t_%t` and `%t%t`) on the five heroes, and ability-before-faction
+      (`effects/<p>_<ability>_<faction>_<tail>`).
+    * all 19 `effects/<p>_` prefixes rather than the main ten - the space is exhausted.
+    * every texture derivation from the *referrer*: `<referrer stem>_<channel>`, the
+      referrer's own directory, `effects/textures/<stem>`, `<hero>/abilities/<stem>_<channel>`
+      and `equipment/<hero>/<stem>_<channel>` (65,535 candidates).  An effect's texture is
+      *shared art*, not a derivative of the effect's name.
+    * channel completion over every equipment and effects name (70,859); the cape *meshes*'
+      stems (they are `cape_s0N_r0M` and their textures are not `<stem>_<channel>`); the known
+      effect-texture prefixes crossed with the known words and the pool; and
+      `shaders/<effect>` / `effects/meshes/<effect>` (2,935).
+    * the size-family rule on textures: 142 of the unresolved textures are exactly 349,684
+      bytes, which is the size of the known `*_norm` maps - they are normal maps whose base
+      names we do not hold either.  Size says *what kind* of art a texture is, never which.
+
+  67.4 WHAT IS LEFT.  `all_effects` 155 rows (61 effect names + 32 shared textures + 2
+  shaders); the five `*_equipment` packs (15/9/7/5); the five `*_capes` (3 each - three names
+  would clear all fifteen); five hero `*_banks`, one audio bank each; and the hero `*_base`
+  packs, which are animations (26/25/17/15/15) and belong to the animation bucket, not to VFX.
+
+  State after this hunt: overlay 6,916 names, 17,946/20,004 rows named (89.71%), 892 unique
+  unresolved hashes.
+
   State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
 
