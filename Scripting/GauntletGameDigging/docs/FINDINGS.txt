@@ -8889,3 +8889,45 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   artist used for the other thirteen (`Resurrect` -> `resurrect` holds, but `Remnant`
   -> `souleater` does not).  `tools/gpu_plate_battery.sh` is the run.
 
+  63.8 THE SECOND PATH - AND BOTH PLATES ARE NOW CONFIRMED AS THE STORE'S POTION ICONS
+
+  §63.7's oracle came from the ability Lua's `icon` field.  There is a *second* path to
+  the same two textures, and it is the one the store tooltip actually uses:
+
+      lua/menu/avatar_loadout.lua:779   if ability_icon then icon = item.ability_icon or "item_empty"
+      lua/settings/items.lua:780        item.ability_icon = sprintf("%s_%s_%s_ability", avatar_type, eq_type, id)
+
+  i.e. `<hero>_<eq_type>_<id>_ability` - `warrior_talisman_talisman01_ability` for the
+  warrior's first talisman.  That id resolves in the **`equippables_icons/shop_action_icons`**
+  board by the same `key == murmur64(<id>) >> 32` rule, and both unresolved ids land on
+  the two plates:
+
+      warrior_talisman_talisman01_ability -> f1d32816 -> 402c8d6e26caf96f  (unresolved)
+      elf_talisman_talisman03_ability     -> 7e190670 -> 965dc9490a86221e  (unresolved)
+      warrior_talisman_talisman02_ability -> d9e0d8b4 -> hud/action_icons/warrior_ultimate_moreofthor
+      elf_talisman_talisman01_ability     -> 9c69a6ee -> hud/action_icons/elf_ultimate_hypersniper
+
+  So the two hashes are the **potion-ability icons** the store shows for those talismans,
+  and that is now confirmed three ways: the ability Lua's `icon` field, `items.lua`'s
+  `ability_icon` id, and the game's own screen (`TALISMANS` -> *Thor's Crummy Necklace*,
+  `POTION ABILITY: Improvise`, "Throw the potion like a grenade..." - the blue potion in
+  a hand; and *Enchanted Willow Branch*, `POTION ABILITY: Spirit Guardians`, "Summons
+  three forest spirits that circle around the Elf" - the green wisps).
+
+  A note on the shape, because it is now pinned: all 33 *named* textures in the
+  `hud/action_icons` board are in the `hud/action_icons` namespace (2 are root), so the
+  two missing ones are `hud/action_icons/<hero>_ultimate_<flavour>` - the namespace and
+  the prefix are certain, only the flavour word is open.
+
+  The display names are *not* the flavour words: `improvise` (9) and `spiritguardians`
+  (15) were both tested directly (and singles over the whole 9,035-form pool), so the
+  artist used something else for these two, as he did for `souleater` (whose flow name is
+  `remnant`) and `hypersniper` (absent from the localisation pool).  What has now been
+  swept clean, all 0: singles over the pool (9,035) and loc_slugs (13,346); pairs
+  glued *and* underscored over pool x pool (163 M), loc x loc (356 M), pool x ic_all both
+  orders (8.9 G, local CPU) and loc x ic_all both orders (13 G, GPU); 12,645 curated
+  potion/wisp/spirit variants; masks over a-z at 5, 6 and 7 letters.  Queued next:
+  *three* pool words glued (1.5e12) - the one phrase space no earlier sweep could produce,
+  because `forest` is in the strings pool but in neither `loc_slugs` nor `ic_all`
+  (`tools/gpu_plate_cube.sh`), then the 8 and 9 letter masks.
+
