@@ -9118,3 +9118,72 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   unresolved hashes; the animation bucket 309 -> 305 distinct (543 unresolved rows, 141 of
   them spawner-owned).
 
+65. UNITS: READ THE BODY, AND READ THE TREE AS IT IS
+
+  The animation work kept stalling on one thing: the directory.  `characters/<unit>/animations`
+  is only right when the unit *is* the entity - and 42 unresolved hashes are `unit`s
+  themselves (54 rows), all in level modules (`modules/d01_crypt/resources`,
+  `modules/d01_lava/resources`, `modules/menu/resources`).  These are the modular level
+  geometry, and a unit's name *is* its animation directory, so naming a unit names a
+  directory.
+
+  65.1 THE BODY NAMES ITS OWN PIECES
+
+  A Stingray unit body embeds its node names as plain ASCII - material nodes (`m_*`),
+  sections (`s_*`), walkable zones (`z_*`).  Reading them out of
+  `~/Documents/Coding/Gauntlet-Export/unresolved/unit/<hash>.unit` gives, for example:
+
+    1f01e19947211248   m_crypt_railing_01, s_crypt_railing_straight_2c
+    34ad7dab78fa1dbf   m_crypt_railing_01, s_crypt_railing_end
+    05b95a956d2b2f06   m_lavastruct_floor_02, m_lavastruct_pillar_01, m_lavastruct_railing_01
+    2e5618907cc69809   z_platform_walkable_01 ... _11
+    71d81979402a0c01   m_lavastruct_goat_satan_statue
+    93f1d4141e624ab2   m_lava_warterfall_01, m_lava_waterfall_02
+
+  The `s_` strings are the *pieces*.  The `m_` strings are materials, and they sit close to
+  the unit name without being it: `m_lavastruct_railing_01` belongs to the unit
+  `blocks/d01_lava/railings/lavastruct_railing_2c`, so the trailing `_01` drops and a corner
+  suffix (`_2c`/`_4c`, the corner count) appears.  (Note `warterfall` - the typo is in the
+  game's own asset.)
+
+  65.2 THE THREE NAMES
+
+    blocks/d01_crypt/railings/crypt_railing_end          34ad7dab78fa1dbf
+    blocks/d01_crypt/railings/crypt_railing_straight_2c  1f01e19947211248
+    blocks/d01_crypt/railings/crypt_railing_straight_4c  b04f8e8773161d9d
+
+  All three are the *literal* `s_*` strings under `blocks/<level>/<family>/`.  `railings`
+  had never appeared in our known `d01_crypt` names - the family dirs we held for that level
+  were only pillars/borders/stairs/rocks/gigameshes/floors/walls - because no *named*
+  resource had ever put a file there.  So deriving the family list *per level from our own
+  corpus* silently excluded the one directory the answer lived in: that trap is what made two
+  passes of 1.6 M and 705 K candidates return 0.  What works is the union of families across
+  every level (plus the real unit-directory tree read out of the catalogue), which is what
+  `tools/unit_guess_by_body.py` now does.  Its control - a copy of the catalogue with those
+  three names blanked - reproduces all three (3,309,852 candidates, 3 matches).
+
+  65.3 THE NEGATIVES
+
+    * `m_` strings are usually *not* the unit name: `crypt_floor_01` is a texture
+      (`blocks/d01_crypt/crypt_floor_01_diff`) whose unit we still have not named.
+    * Only ~30% of these units carry any `s_`/`z_` string at all (18 of 54 rows), so the
+      method cannot reach the rest on its own.
+    * The referrer route is empty here: `modules/d01_lava/room_lava_floor_adventure_2_template`
+      and the `crypt_quilt_*` encounter templates reference their pieces **by hash**, and
+      their bodies embed only markers and connectors (`north2_open`, `south2_closed`,
+      `marker_unit`, `encounter_node_start`) - the pieces' names are not written down there.
+    * `Gauntlet-install/Gauntlet-Source-DO_NOT_EDIT` is Lua-only (927 files: lua, foundation,
+      gameobjects, gui, characters, equipment, ability_units, props) and has no `blocks/`
+      tree, so the level geometry was never shipped as source text.
+    * Stem x every known unit directory (10,270), stem x respellings x every known unit
+      directory (705,312) and the literal `s_`/`z_` stems x every known unit directory
+      (34,286) are all 0 - the directory, not the leaf, was the unknown.
+    * The 141 spawner-owned animation rows survive the same treatment: the concept-spelling
+      vocabulary (which named the four cultist clips, 64.7) crossed with every spawner
+      directory context (`gameobjects/spawners/{animations,animation}` and
+      `gameobjects/spawners/spawner_{beam,twister,t1,ghost}/{animations,animation}`) is
+      4,346,808 candidates, 0.
+
+  State after this round: overlay 6,902 names, 17,892/20,004 rows named, 906 unique
+  unresolved hashes; unit bucket 42 -> 39.
+
