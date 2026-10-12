@@ -6901,5 +6901,10 @@
   "34ad7dab78fa1dbf": "blocks/d01_crypt/railings/crypt_railing_end",
   "1f01e19947211248": "blocks/d01_crypt/railings/crypt_railing_straight_2c",
   "b04f8e8773161d9d": "blocks/d01_crypt/railings/crypt_railing_straight_4c",
-  "fc65a8a7da42eacc": "effects/trap_floor_blades_swipe"
+  "fc65a8a7da42eacc": "effects/trap_floor_blades_swipe",
+  "8bfbe6c5382be03a": "base:instanced:deferred_decals_group_floor:diffuse_map:normal_map",
+  "a0c3772f0de799e6": "base:instanced:deferred_decals_group_level:diffuse_map:normal_map",
+  "7701c677b29b25e0": "effects/wep_valkyrie_ultimate_vengeance_slash",
+  "71f47829a45b0f5d": "base:instanced:deferred_decals_group_other:diffuse_map:static_lighting",
+  "75fe5327ac8d781b": "base:instanced:deferred_decals_group_prop:diffuse_map:normal_map"
 }

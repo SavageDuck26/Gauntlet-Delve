@@ -9189,10 +9189,19 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 66. THE BUCKETS THAT DID NOT MOVE, AND WHY
 
-  66.1 ONE MORE FIND.  Re-running the standing battery (`sweeps/battery.sh`) after the three
-  units were named found `effects/trap_floor_blades_swipe` (`fc65a8a7da42eacc`) in its
-  `twin_by_refs` phase: the batch of new names is fuel for phases that had been exhausted at
-  the previous corpus size.  (`--write` folded it into the overlay itself.)
+  66.1 MORE FINDS.  Re-running the standing battery (`sweeps/battery.sh`) after the three
+  units were named has now produced **five** names - the batch of new names is fuel for
+  phases that had been exhausted at the previous corpus size:
+
+    fc65a8a7da42eacc  effects/trap_floor_blades_swipe
+    7701c677b29b25e0  effects/wep_valkyrie_ultimate_vengeance_slash
+    a0c3772f0de799e6  base:instanced:deferred_decals_group_level:diffuse_map:normal_map
+    71f47829a45b0f5d  base:instanced:deferred_decals_group_other:diffuse_map:static_lighting
+    75fe5327ac8d781b  base:instanced:deferred_decals_group_prop:diffuse_map:normal_map
+
+  Two of them are effects and three are shader-library *flag chains*, so the chain
+  enumeration of section 60.14 was not complete either - worth remembering before any
+  future round is called closed.
 
   66.2 TEXTURES (252 distinct unresolved).  All of these are 0:
 
@@ -9229,6 +9238,39 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   (`anim_shared_vocab`, `unit_guess_by_body`, `anim_twin_by_size`, `anim_mutate_loop`) and
   merges into the overlay.  Like the standing battery, it is meant to be re-run after every
   batch of new names.
+
+  66.7 WHICH BODIES ACTUALLY CARRY NAMES.  The "read the body" route (65.1) only exists where
+  a body stores names as plain ASCII, so every type was audited for it - bodies that contain
+  at least one `name`-shaped string (lower-case, `_` or `/` separated):
+
+    type            bodies  with names   strings   what they are
+    shader_library     362         357     7,084   parameter names (ambient_top_color), not
+                                                    resource names
+    shader              64          64       825   the same
+    unit                48          48       119   node names - these *are* the names (65.1)
+    texture            672          40        80   DDS header noise
+    timpani_bank        37          28       135   Ogg stream noise
+    level               12          12        75   references, i.e. real names - but only of
+                                                    resources we already hold (0 hits over the
+                                                    679 level bodies, all 60 distinct strings
+                                                    already resolved)
+    flow                 4           4        12
+    animation          539           0         0
+    particles          161           0         0
+    material           207           0         0
+    package              2           0         0
+
+  So the route is closed for animations, particles, materials and packages - their bodies are
+  rigged motion, DXBC, shader parameter blocks and hashed tables, none of which spell a name.
+  It is open exactly where it paid: units.
+
+  66.8 SHADER LIBRARY PARAMETERS DO NOT GIVE THE CHAIN.  A library body does carry its
+  parameter names, and those correlate with the flags in its name (`diffuse_map` ->
+  `diffuse_map`, `billboard` -> `c_billboard`, `static_lighting` -> `static_lighting`), so
+  the flags were recovered from the parameters and scored against the 453 known libraries:
+  recall 0.831, but only **5 of 453** libraries are recovered *exactly*, and an unresolved
+  body proposes ~62 flags - the marker sets are shared globals (`ambient_top_color`,
+  `c_per_object`) rather than discriminators.  Too broad to build a chain from; closed.
 
   State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
 
