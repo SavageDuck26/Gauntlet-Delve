@@ -8833,3 +8833,59 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   that board's 66 keys can be brute-forced to label them (the vocabulary to try is the
   shop's own relic flavour words, which the item ids clearly use).
 
+  63.7 THE ABILITY LUA NAMES THE PLATE, AND THE BOARD KEYS ON THE ICON ID (*)
+
+  The two shop plates that were still open (the warrior's potion-throw and the elf's
+  forest-spirits) turned out to be reachable by a mechanism worth recording, because it
+  is a *third* key formula and a clean oracle.
+
+  Every talisman ability file carries an **`icon`** field:
+
+      equipment/warrior/talisman01.lua:   icon = "warrior_ultimate_01",
+      equipment/elf/talisman03.lua:       icon = "elf_ultimate_03"      (etc., 15 files)
+
+  and the `hud/action_icons` board resolves that id with
+
+      key == murmur64(<icon id>) >> 32          (validated 15/15)
+
+  - i.e. that board is keyed on the *icon id*, **not** on `shop_<item id>` (which is the
+  equipment board's rule, §61.20) and not on the texture name.  So the board is a
+  complete oracle from the ability Lua to the plate texture, and all fifteen ids resolve:
+
+      warrior_ultimate_01 -> 402c8d6e26caf96f  MISSING   <- potion_throw
+      warrior_ultimate_02 -> hud/action_icons/warrior_ultimate_moreofthor
+      warrior_ultimate_03 -> hud/action_icons/warrior_ultimate_hunger
+      valkyrie_ultimate_01/02/03 -> ..._vengeance / ..._aegis / ..._valkyries
+      wizard_ultimate_01/02/03   -> ..._arcaneblast / ..._polymorph / ..._barrier
+      elf_ultimate_01/02         -> ..._hypersniper / ..._dryadssong
+      elf_ultimate_03     -> 965dc9490a86221e  MISSING   <- wisps_cast
+      necromagus_ultimate_01/02/03 -> ..._darkhunger / ..._souleater / ..._resurrect
+
+  So the *shape* of the answer is certain: `hud/action_icons/warrior_ultimate_<flavour>`
+  and `hud/action_icons/elf_ultimate_<flavour>`, with the flavour being the ability's own
+  name glued, lower-case a-z, 6-11 characters.
+
+  The **flow prefix is not the flavour** - `necromagus/talisman02.lua` flows as
+  `ultimate_remnant_*` while its plate is `souleater` - so the obvious shortcut
+  (`..._ultimate_throw`, `..._ultimate_wisp`) does not hold and both were tested anyway.
+
+  What the flavour words are *not*, all verified:
+    * 459,510 slug forms (glued / underscored / lower-cased) of all 12,157 strings in
+      `game_strings.strings`, under every plate shape - 0.  "Improvise" and "Spirit
+      Guardians" are real ability names in that pool and both were tested directly.
+    * 12,645 hand-curated potion / wisp / spirit / guardian variants - 0.
+    * on the GPU: `loc x loc` glued and underscored (356 M), `loc x ic_all` both orders
+      (6.5 G) and `loc x loc x loc` glued (4.8 G) - 0.  Note this only became meaningful
+      once the vocabularies were checked against each other: `spirit` and `guardians`
+      are in `loc_slugs` but *not* in `ic_all`, so every earlier pair sweep that crossed
+      `ic_all` with itself structurally could not have produced `spiritguardians`.
+    * masks over a-z for 5, 6 and 7 letters (2 heroes x 26^5..26^7) - 0; 8 and 9 are
+      running, 10-11 are left for later.
+
+  Two of the *resolved* flavours are absent from the localisation pool as well
+  (`hypersniper`, `souleater`), so a code-side word is the normal case here rather than
+  an anomaly, and the mask is the honest tool for the last two - or the in-game display
+  name of the two abilities, which the strings pool holds but which is not what the
+  artist used for the other thirteen (`Resurrect` -> `resurrect` holds, but `Remnant`
+  -> `souleater` does not).  `tools/gpu_plate_battery.sh` is the run.
+
