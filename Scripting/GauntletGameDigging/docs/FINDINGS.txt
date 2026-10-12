@@ -8931,3 +8931,122 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   because `forest` is in the strings pool but in neither `loc_slugs` nor `ic_all`
   (`tools/gpu_plate_cube.sh`), then the 8 and 9 letter masks.
 
+
+64. ANIMATIONS: EVERY TARGET HAS A CONTEXT, AND THE CORPUS IS SATURATED
+
+  The 309 distinct unresolved animation hashes (545 rows) are the largest single bucket
+  left, and they are the one family where the *context* of every target is known before
+  the sweep starts.
+
+  64.1 THE CONTEXT IS THE REFERRER, NOT THE CORPUS
+
+  `extract_anim_refs.py` maps unresolved animations to their owning unit through
+  `state_machine` bodies, and its output (`work/refs_animation.json`, 343 hashes) covers
+  **all 309** of them: every unresolved clip is referenced by a *named* resource, normally
+  its own unit file (`characters/boss_orox/boss_orox`, `gameobjects/spawners/spawner_beam`,
+  `characters/necromagus_summoned_soldier/...`), so the character - and therefore the
+  directory - of each target is known in advance, and a candidate only has to be right
+  about the leaf.
+
+  The directory list still has to be built with care.  The named corpus gives 47
+  directories (92 with both `animations/` and `animation/` spellings, which the shipped
+  data mixes: 156 clips under `skeleton_warrior/animation`, 53 under
+  `avatar_necromagus/animation`), and it *misses* any directory whose clips are all
+  unresolved (`cultist_zealot` has 11 unresolved and 0 resolved).  Adding
+  `<referrer dir>/{animations,animation}` for each of the 309 gives 102
+  (`data/vocab/anim_dirs_ctx.txt`) - a strict superset of the older
+  `data/vocab/animation_dirs.txt` (46).
+
+  Corpus shape: 2,276 animation rows, 1,731 named, 942 *distinct* names, 588 distinct
+  leaves.
+
+  64.2 SHARING ACROSS CHARACTERS IS NOT VERBATIM
+
+  The obvious hope - the same clip spelled the same under another character - is false.
+  92 directories x 588 resolved leaves = 54,096 candidates, and 0 of them match.  The
+  corpus even contradicts itself between characters: `mummy_priest` has `move_walk_back`,
+  `mummy_risen` has `move_walk_backwards`.  What is shared is the *vocabulary*, not the
+  spelling, so the win has to come from products of tokens - which is what the engine is
+  for, at 200 M candidates/s on the CPU path.
+
+
+
+  64.3 MEASURE THE SHAPE BEFORE SPENDING THE BUDGET
+
+  Every naive shape for this family is either tiny or enormous, so the shapes were
+  *benchmarked* first: run each one against the **1,731 names we already hold** and count
+  how many it can rebuild from tokens alone (`tools/anim_shape_bench.sh`).  Point
+  `--matches` at a fresh file or the engine dedups the known names away and every shape
+  scores 0.
+
+    shape                                        rebuilt   candidates
+    prefix_tail   %d/%p_%t   p=233 corpus prefixes, t=pool u tokens (9,394)
+                                                 819  47%     2.2e8
+    a_b           %d/%t1_%t2 (386 animation tokens)  358  21%     1.5e7
+    a_b_c         %d/%t1_%t2_%t3 (386^3)             352  20%     5.9e9
+    leaf_tail     %d/%l_%t  (588 leaves)             341  20%     5.6e8
+    pool_anim     %d/%pool_t_%anim_t                 58           3.6e8
+    a_b glued     %d/%t1t2                             3           1.5e7
+    a_b_c glued   %d/%t1t2t3                           2           5.9e9
+    leaf_suffix   %d/%l%s (258 suffixes)               1           1.5e7
+
+  Two conclusions, both worth more than the 20 minutes the bench cost.  First, **a third
+  token buys nothing**: 352 against 358 at 388x the cost, so the 1.2e11 anim-token and
+  token-x-pool-x-token rounds queued earlier were cancelled rather than run.  Second,
+  glued and suffix forms essentially do not occur in this family, so `attack_shieldbash`
+  is one glued word and not a shape.  What is left is `<prefix>_<one word>` (47%), and the
+  word has to come from outside the corpus.
+
+  64.4 WHAT WAS FOUND
+
+    characters/avatar_valkyrie/animations/move_jog_break_fwd   944beba296c3352d  mutate
+    characters/avatar_wizard/animations/wind_offset             4b70cbb14031b301  pattern
+
+  `move_jog_break_fwd` came from `mutate` (append a token plus a suffix to `move_jog`);
+  `wind_offset` came from `%d/<pool word>_<animation token>` - and `wind` is *not* an
+  animation token, it is in `strings_pool_slugs.txt`, which is exactly why the shapes that
+  cross the corpus with the pool earn their budget.  Both were verified by round trip
+  (`crack --candidates` against a fresh `--matches` file), which matters here because
+  `check_names.py` tests the *unresolved* set: 0 hits for an already-merged name is the
+  expected result, not a refutation.
+
+  64.5 SATURATION: THE VOCABULARY IS THE BOTTLENECK
+
+  With the corpus as the only vocabulary, the family is exhausted.  All of these are 0
+  new against the residual: `%d/%l`; `%d/%p_%l`; `%d/%l_%p`; `%d/%l_%k`; `%d/%k_%l`;
+  `%d/%p_%k`; `%d/%k_%k2`; `%d/%l_%l`; prefix^3 (1.3e9); corpus-token^3 (2.3e9);
+  **leaf^3 (2e10)** - and, more tellingly, the bench's *best* shapes aimed at the residual
+  rather than at the corpus: prefix_tail, tails x prefix, leaf x tails, tails x leaf
+  (2.2e8-5.6e8 each).  A cascading `mutate` loop (`tools/anim_mutate_loop.sh`: seeds = all
+  942 known names plus both new finds, tokens = their own tokens (338) and
+  corpus + pool (9,335), two variants per pass) saturates on pass 1 with 0 new.  The
+  control for that loop is the point: with a fresh matches file the *same* mutate rebuilds
+  **819 / 1,731** known names, so the plumbing is sound and what is missing is words.
+
+  The missing words can be shown directly.  `impact`, `summoned` and `grapple` - ordinary
+  animation words, and the kind of thing a boss clip is called - appear in *none* of
+  `strings_pool_slugs.txt`, `loc_slugs.txt` or `leaves/leaf.txt`.  No sweep over the
+  vocabularies we hold can produce a leaf built from words we do not hold.
+
+  State after this round: overlay 6,895 names, 17,882/20,004 rows named (89.39%), 913
+  unique unresolved; animation targets 309 -> 307.  The 19 icon plates are unaffected
+  (the box's `tal5`/`tal6` rounds are still the live line there).
+
+  64.6 TOOLS
+
+    tools/anim_battery.sh         dirs x (tokens, pool) products + mutate - the round that
+                                  found `wind_offset`; logs to /tmp/anim_battery.log
+    tools/anim_shape_bench.sh     the shape-vs-known-corpus measurement above
+    tools/anim_corpus_battery.sh  corpus-only products (leaves/prefixes/tokens), incl.
+                                  the 2e10 leaf^3; all 0 new
+    tools/anim_mutate_loop.sh     cascading mutate, seeds and tokens both grow from the
+                                  finds; saturates on pass 1
+
+  What would break the saturation, in order of promise: (a) a tooltip or asset-browser
+  view of any *one* remaining clip, which turns the vocabulary problem into a shape
+  problem; (b) the unit/state-machine body itself, since clips are named after the state
+  that plays them (§47.9) and `enumerate_anims.py`'s 55 M stream over the Lua event names
+  is a true zero (its space *does* contain the names we hold, so the negative is real;
+  `--candidates` was verified with a known pair for exactly this reason); (c) the same
+  cross-build hunt the icons used - a 2014/2015 snapshot's animation names for hashes that
+  are still live today.
