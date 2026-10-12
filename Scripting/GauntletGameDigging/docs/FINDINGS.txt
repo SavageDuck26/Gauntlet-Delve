@@ -9348,5 +9348,47 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   State after this hunt: overlay 6,916 names, 17,946/20,004 rows named (89.71%), 892 unique
   unresolved hashes.
 
+68. THE SHADER-CHAIN NEIGHBOURHOOD IS WORTH FIFTEEN NAMES
+
+  68.1 WHY THE CHAINS ARE WORTH CHASING.  The grouped view (§66.6) puts 350 of the missing
+  rows in three bundles - `core/rendering/renderer` 137, `mobile_renderer` 108,
+  `emulate_renderer` 105 - and they are the *same* chains in all three, so one name pays three
+  times.  A chain name is `<technique>:<flag>:<flag>...` with the flags alphabetically sorted
+  (§41), so the space is enumerable: 43 techniques, 110 flags, chain lengths 2-10 (the corpus
+  holds 88 chains of length 2, 66 of 3, 61 of 6, 56 of 5, 49 of 4, 41 of 7, 25 of 8).
+
+  68.2 WHAT FOUND THEM.  `tools/make_chain_candidates.py` - the project's own one-flag
+  neighbourhood (insert, drop or swap one flag, re-sorted) - run **greedily**: its seeds are
+  the chains we hold, so every find widens the next pass.  Four passes of ~5.3 M candidates:
+
+    pass 1   6    character:double_sided:enemy:one_bit_alpha:skinned_3weights, ...
+    pass 2   7    base:instanced:diffuse_map:material_map:normal_map, base:instanced:diffuse_map, ...
+    pass 3   2    base:instanced:diffuse_map:self_illumination_map, ...
+    pass 4   0    converged
+
+  Fifteen names, and because each is live in three renderer bundles they cleared 39 rows:
+  17,946 -> 17,985 named (89.91%), 892 -> 877 unique.
+
+  68.3 CLOSED AFTERWARDS, WITH NUMBERS.  With the fifteen in the corpus the space was re-swept
+  and everything reachable from here is exhausted: the same tool to convergence (pass 4); the
+  same flag set under every other technique (`<tech>:<flags of a known chain>`, 141,581
+  candidates - how a renderer variant would be found); the whole sorted-subset space of every
+  technique's own flag vocabulary at lengths 2-4 (38,455); and the decal family with two free
+  flags (`base:instanced:deferred_decals_group_*:<f1>:<f2>`, 141,581).  What is left of the
+  shader bucket is 5+ flag chains, where a technique's size band (§60.14) is the only
+  constraint - `hunt_shader_subsets.py`'s territory, already swept.
+
+  68.4 NOT FOR WANT OF TRYING: THE ACHIEVEMENT ICONS.  The thirteen unresolved 43,836-byte
+  textures are exactly the size of the `achievement_icons/*` pairs (`x` and `x_locked`), and
+  achievement names are English titles (`as_luck_would_have_it`, `besting_the_beast_of_orox`,
+  `captains_special`).  The *known* ones are only sporadically present in our mined strings
+  (`bombardier` in `loc_words`/`strings_pool`/`bundle_strings`, `artful_dodger` in
+  `bundle_strings` alone), and slugging every harvested string - 1,026,408 slugs, 3,079,204
+  candidates, with apostrophes dropped the way the game drops them (`Captain's Special` ->
+  `captains_special`) - finds none of the missing thirteen.  The achievement block is not in
+  the strings we harvested.
+
+  State: overlay 6,931 names, 17,985/20,004 rows named (89.91%), 877 unique unresolved.
+
   State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
 
