@@ -23,6 +23,7 @@ import csv
 import json
 import pathlib
 import re
+import sys
 import time
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -251,6 +252,7 @@ def main():
             ('bundle_manifest/08_progress.txt', 'this file'),
             ('bundle_manifest/09_reachability.tsv', 'per unresolved hash: named refs, unresolved refs, sample referrer'),
             ('bundle_manifest/10_unresolved_master.tsv', 'THE MASTER LIST: every unresolved resource with status reachable / UNREACHABLE'),
+            ('bundle_manifest/11_missing_by_bundle.tsv', 'the missing hashes grouped by package + bundle + type (rows, distinct hashes, bytes, the hashes)'),
             ('../hashcracker/matches.tsv', 'every hit ever, hash<TAB>name'),
             ('../hashcracker/work/*/status.log', 'per-sweep logs (current run only)'),
             ('../hashcracker/tools/status.sh', 'live score + what is running right now'),
@@ -274,6 +276,13 @@ def main():
         print(f'  wrote {MANIFEST / "08_progress.txt"}  ({len(L)} lines)')
         print(f'  {named_rows:,}/{total:,} rows named ({pct:.2f}%)   '
               f'unique unresolved {len(unres_hash):,}   overlay {len(ov):,}')
+        try:                  # the grouped gap view, refreshed with the same numbers
+            from make_missing_report import write_missing_by_bundle
+            groups, rows, hashes = write_missing_by_bundle()
+            print(f'  wrote {MANIFEST / "11_missing_by_bundle.tsv"}  '
+                  f'({groups} groups, {rows} rows, {hashes} hashes)')
+        except Exception as exc:      # never let the extra view break the report
+            print(f'  (11_missing_by_bundle.tsv not refreshed: {exc})', file=sys.stderr)
 
 
 if __name__ == '__main__':
