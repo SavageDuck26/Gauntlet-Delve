@@ -6876,5 +6876,20 @@
   "1c390fc44e58cba8": "props/d01_caves/swamp_stone_01_dif",
   "94c4e8676a6b9668": "blocks/d01_lava/floors/lavarock_floor_geyser_4c_4c",
   "11bf0dbf40951969": "base:instanced:deferred_decals_group_level",
-  "7084201b8f179000": "character:skinned_3weights:outline"
+  "7084201b8f179000": "character:skinned_3weights:outline",
+  "174111e70af497a6": "equippables_icons/eq_valkyrie_talisman_aegis",
+  "080223ab1c88aa0a": "equippables_icons/eq_necromagus_talisman_dreamcatcher",
+  "96399c5d85932a77": "equippables_icons/eq_wizard_talisman_mercuryvial",
+  "1644df1acbf87204": "equippables_icons/eq_elf_talisman_dryadsflute",
+  "42c45822bd6aca28": "equippables_icons/eq_necromagus_talisman_liliths",
+  "40a6467849f510ec": "equippables_icons/eq_wizard_talisman_magicite",
+  "12809bd4e1e66e32": "equippables_icons/eq_wizard_talisman_merlins",
+  "f952b5a5ef56ffed": "equippables_icons/eq_warrior_talisman_thors",
+  "0568fef95f147d6a": "equippables_icons/eq_valkyrie_talisman_thyras",
+  "999caa5fdf166f71": "equippables_icons/eq_elf_talisman_willowbranch",
+  "b1646965117fe21b": "equippables_icons/eq_elf_talisman_questors",
+  "d38580863759e074": "equippables_icons/eq_necromagus_talisman_reaper",
+  "c3b7936b7b1f52ba": "equippables_icons/eq_warrior_talisman_cup",
+  "7ddc5a5550256ad3": "equippables_icons/eq_valkyrie_talisman_laurels",
+  "250dfb341c8e915c": "equippables_icons/eq_warrior_talisman_medal"
 }

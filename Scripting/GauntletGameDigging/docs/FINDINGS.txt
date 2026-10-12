@@ -8672,3 +8672,121 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   State after this round: overlay 6,878 names, 17,865/20,004 rows named (89.31%),
   930 unique unresolved hashes of which 44 are UNREACHABLE.
 
+63. THE TALISMAN ICONS: THE PATTERN WAS THE PROBLEM
+
+  61.20b recorded this family as closed - a 21.5 M token sweep, the box's talglue
+  (32.5 M) and talhunt (91.9 M) rounds, four 1.2e11 pattern sweeps over the 348k probe
+  vocabulary, all 0 - and concluded that the leaf "is not derivable from shipped data".
+  That conclusion was wrong, and the mistake is worth naming: every one of those sweeps
+  tested `equippables_icons/eq_<hero>_talisman<NN>` - the *item id* the board's key
+  oracle had just handed us - and the artist never used the item id as the texture leaf.
+  A known prefix is not a known shape.
+
+  63.1 THE FIFTEEN NAMES
+
+  The leaves are `equippables_icons/eq_<hero>_talisman_<flavour>`, where the flavour is
+  a game word, often glued out of two:
+
+    warrior     thors        medal          cup
+    valkyrie    laurels      aegis          thyras
+    wizard      merlins      magicite       mercuryvial
+    elf         questors     dryadsflute    willowbranch
+    necromagus  liliths      dreamcatcher   reaper
+
+    f952b5a5ef56ffed  eq_warrior_talisman_thors
+    250dfb341c8e915c  eq_warrior_talisman_medal
+    c3b7936b7b1f52ba  eq_warrior_talisman_cup
+    7ddc5a5550256ad3  eq_valkyrie_talisman_laurels
+    174111e70af497a6  eq_valkyrie_talisman_aegis
+    0568fef95f147d6a  eq_valkyrie_talisman_thyras
+    12809bd4e1e66e32  eq_wizard_talisman_merlins
+    40a6467849f510ec  eq_wizard_talisman_magicite
+    96399c5d85932a77  eq_wizard_talisman_mercuryvial
+    b1646965117fe21b  eq_elf_talisman_questors
+    1644df1acbf87204  eq_elf_talisman_dryadsflute
+    999caa5fdf166f71  eq_elf_talisman_willowbranch
+    42c45822bd6aca28  eq_necromagus_talisman_liliths
+    080223ab1c88aa0a  eq_necromagus_talisman_dreamcatcher
+    d38580863759e074  eq_necromagus_talisman_reaper
+
+  63.2 WHAT FOUND THEM, IN ORDER OF USEFULNESS
+
+  One hand-built list of 9,842 candidates did the hard part first: the shape
+  `<dir>/eq_<hero>_talisman_<w>` over every *ability* word the already-resolved action
+  icons give us (`aegis`, `valkyries`, `vengeance`, `moreofthor`, `dryadssong`,
+  `hypersniper`, `darkhunger`, `souleater`, `arcaneblast`, ...) plus each hero's own
+  name (`thyras`, `merlins`, `liliths`).  It hit `_aegis` immediately, and that single
+  hit was the whole answer: it turned an unknown leaf into a **known prefix plus one
+  unknown word**, and that reduces the problem from "invent a name" to "use every
+  vocabulary you already have as a one-slot guess" - which is why the very next pass
+  (CPython `tools/check_names.py`, no GPU, no patterns) returned 11 more in about a
+  second of hashing: 3 from `ic_slug` (5,330 words), 8 from `loc_slugs` (13,346).
+  `ic_all`/`bundle_words`/`big2_dict` added `cup`; the box's GPU battery added `medal`.
+
+  The last one to fall was `laurels`, and it did not come from a list at all.  The
+  display-name strings were the lead: `game_strings.strings` holds the store text
+  ("Thyra's Vow", "Guardian Symbol", "Mark of the Commander", "Enchanted Willow
+  Branch", "Judgement Warplate", ...) - note "Enchanted Willow Branch" against the
+  recovered `willowbranch`, i.e. the flavour is the *significant words* of the item's
+  name - and the lore text next to it: "Thyra's locket, reminding her of her true
+  purpose. The inscription on the inside says \"Laurel\"."  Reading the item's own
+  description suggested `laurels`, and it was right.
+
+  So the general lesson is not "try harder": it is that a single confirmed hit converts
+  an exhausted space into a trivial one, and that the *first* thing to do with a
+  newly-known prefix is to re-run every existing vocabulary list against it - the lists
+  were never the problem, the shape was.
+
+  63.3 A REPEATED SLOT LETTER IS NOT A MASK (recorded) (*)
+
+  Chasing the last names with masks turned up an engine behaviour worth writing down:
+  the pattern engine **deduplicates slot letters**.  `--list a=mask_az --pattern
+  'x%a%a%a%a%a%a'` produced **130** candidates - 5 heroes x 26 - not 5 x 26^6.  A
+  repeated slot contributes one dimension however many times it is written, so a mask
+  needs one *distinct* letter per character, each bound to the same alphabet file:
+
+      --list a=az --list b=az --pattern '%a%b'          -> 676   (verified)
+
+  Two consequences.  First, the first GPU battery's "mask" phases ran in seven seconds
+  and reported 0 matches because they were testing 130 candidates and calling it a
+  mask - the phases were rewritten (the script that had them is superseded by
+  tools/gpu_talisman_battery.sh, which uses distinct letters).  Second, and more
+  important for the record: the same applies to *older* rounds, so any surviving 0 from
+  a pattern with a repeated letter - talhunt's `%h_%k%k` is one, at 84 candidates
+  reported - should be re-read as "0 over far fewer candidates than intended", not as
+  "that space is empty".
+
+  63.4 THE NEGATIVES, RECORDED SO THEY ARE NOT RUN AGAIN
+
+    * bundle index adjacency carries no naming signal: 03be10bb448c6133 sits at index
+      121 of resource_packages/menu between `hud/hud_gold_bracket_left`,
+      `menu/buttons/vertical_selection_over`, `menu/how_to_play/warrior_smash`,
+      `equippables_icons/relic_illusion_ring`, `equippables_icons/eq_warrior_head_set03`,
+      `menu/hero_coins/wizard_colored` and `hud/spells/lightning_burst`.  The order is
+      not name-grouped, so a neighbour cannot be used to guess a name.
+    * no byte-identical twin: md5 of all 1,525 named `.texture` bodies in the export
+      against all 18 targets - 0.  The art is unique, so no copy is hiding under a
+      second name.
+    * no near-twin family either (`tools/twin_by_image.py`): the nearest *named*
+      textures to the three valkyrie icons are `achievement_icons/*_locked` at L1
+      distance 0.05-0.08 - far too far to be a family, and these are talismans, not
+      badges.
+    * package and size do not discriminate: all 18 targets live in
+      `resource_packages/menu` and every one is 43,836 bytes, the same size as 275
+      named icon textures.
+    * the reference graph names only the three boards - `equippables_icons/equipment`,
+      `equippables_icons/shop_action_icons`, `hud/action_icons`.  Nothing else in the
+      catalogue draws them (they are UI-only, so no unit body carries a hint).
+    * the store flavour does **not** transfer to the two ability plates:
+      `hud/action_icons/<hero>_ultimate_<flavour>` over all flavours and 945 variants,
+      0.  §61.3's wall - hand-authored ability words that no shipped file spells out -
+      still stands for 402c8d6e26caf96f and 965dc9490a86221e.
+
+  63.5 STATE
+
+  17,880/20,004 rows named (89.38%), overlay 6,893, 915 unique unresolved hashes of
+  which 38 are UNREACHABLE.  Still open in this family: the 16th board entry
+  (`bcef7daa3a221c6c`, whose shop key matches no `shop_eq_<hero>_talisman*` spelling at
+  all, so its item id is a third spelling), and the two ability plates above.
+  `tools/gpu_talisman_battery.sh` is running the pairs-and-masks tail on the box.
+
