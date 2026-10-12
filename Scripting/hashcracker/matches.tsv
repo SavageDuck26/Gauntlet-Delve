@@ -6326,3 +6326,4 @@ ee64d9c4c7a6568a	base:instanced:diffuse_map:material_map:static_lighting
 86b9039fa0a38db6	base:instanced:deferred_decals_group_level:diffuse_map:one_bit_alpha
 555fb40807ed45f5	base:instanced:diffuse_map:self_illumination_map
 8a9d55cc4179c9cf	base:instanced:diffuse_map:material_map:material_tint_rgb:static_lighting
+eac8a73b860e2d94	effects/wep_necromagus_ultimate_remnant_die

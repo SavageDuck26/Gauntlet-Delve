@@ -9390,5 +9390,16 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   State: overlay 6,931 names, 17,985/20,004 rows named (89.91%), 877 unique unresolved.
 
+  68.5 WHY THE SUBSET SWEEPS ARE MOSTLY EMPTY - AND WHAT THAT MEANS.  A subset sweep only
+  works if its flag vocabulary matches the chains.  Per technique it does not: `base` has 31
+  flags, `character`/`mobile_filter`/`filter` 7 each, `billboard` 13 - so `base`'s own
+  sorted-subset space at length 5 is only 169,911 candidates and is 0.  Yet the chains found
+  here mix vocabularies (`character:double_sided:enemy:one_bit_alpha:skinned_3weights` is
+  filter-flavoured flags under `character`; `base:instanced:diffuse_map` is instancing under
+  `base`).  The follow-up therefore enumerates `<technique>:<sorted subset of the *global*
+  152-flag vocabulary>` - `tools/chain_global_subsets.py`, chunked by technique and k because
+  C(152,4) is 21 M and C(152,5) is 124 M.  Recorded so the next reader does not re-run the
+  per-technique version and conclude the space is closed.
+
   State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
 
