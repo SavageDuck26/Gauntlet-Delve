@@ -1,0 +1,128 @@
+GAUNTLET NAME-RECOVERY PROGRESS
+==================================================================================================
+generated 2026-10-13 00:27   (regenerate with: python3 make_progress_report.py)
+
+1. HEADLINE
+--------------------------------------------------------------------------------------------------
+  catalogue rows                   20,004
+  rows with a name                 17,987   (89.92%)
+  unique hashes in catalogue        7,808
+  unique hashes resolved            6,932
+  unique hashes UNRESOLVED            876
+  names in the overlay              6,932
+  hits in matches.tsv (ever)        6,329
+  sweeps with a status log             27
+  unreachable (no named ref)           38   of which orphans 38
+
+  note: 05_summary.txt reports "Unresolved 2017" - that is counted against the
+  static hash_database.json, not against this overlay, which is why it never moves
+  as names land.  The numbers above are the live ones (tools/status.sh prints the
+  same score).
+
+2. COVERAGE BY TYPE   (rows named / rows unresolved / unique unresolved)
+--------------------------------------------------------------------------------------------------
+  animation                    1,737 /    539 /    303
+  texture                      4,101 /    672 /    252
+  shader_library               1,227 /    311 /    122
+  material                     3,863 /    187 /     80
+  particles                    2,335 /    141 /     67
+  unit                         1,780 /     48 /     39
+  timpani_bank                    50 /     37 /     37
+  shader                         173 /     64 /     36
+  level                          707 /     12 /     10
+  package                         74 /      2 /      2
+  flow                           155 /      4 /      1
+  (17 further types are fully named: apb, bones, config, font, lua, mouse_cursor, network_config, physics_p)
+
+3. PACKAGES WITH THE MOST UNRESOLVED ROWS   (top 15)
+--------------------------------------------------------------------------------------------------
+     153  resource_packages/all_effects
+     132  resource_packages/menu
+     122  core/rendering/renderer
+     118  modules/d01_lava/resources
+     116  modules/d01_crypt/resources
+     111  modules/d01_caves/resources
+     109  resource_packages/d01_caves
+     106  resource_packages/d01_lava
+     104  resource_packages/morak
+      96  core/rendering/mobile_renderer
+      95  resource_packages/d01_crypt
+      93  core/rendering/emulate_renderer
+      90  resource_packages/d01_arcade
+      78  modules/menu/resources
+      57  modules/d01_hub_room/resources
+
+4. SWEEP HISTORY   (per-sweep status logs; +N summed over tier lines)
+--------------------------------------------------------------------------------------------------
+  sweep             rounds   hits +N  last round / outcome
+  tokpos                 7        31  === positional round 1 18:28:18  targets 109   POSITIONAL SWEEP DONE 
+  chains                 5        22  === chain round 1 00:13:03  shader_library t   CHAIN SWEEP DONE 00:13
+  types                  3        12  === type battery 2026-10-11 04:25:34               done in 1.2s (+0.0
+  numderive             12         4  === index-sibling round 1 03:41:33  range 0-   INDEX-SIBLING DONE 03:
+  family                 3         2  === family round 1 22:09:08  level targets 1   FAMILY SWEEP DONE 22:0
+  leaf                   1         2  === leaf round 1 22:56:43  leaves 120350       
+  sib                    2         2  === sibling round 2 23:18:03                   SIBLING SWEEP DONE 23:
+  battery                4         0  === battery 03:40:01 rounds 3 deep deep ===    BATTERY DONE 03:38:30
+  bundle                 1         0  === bundle round 1 23:10:43                    BUNDLE SWEEP DONE 23:1
+  extras                 2         0  === extras round 1 22:44:07  level targets 3   EXTRAS SWEEP DONE 22:4
+  hdir                   2         0  === harvest-dir round 1 23:53:47  new dirs 2   HARVEST-DIR SWEEP DONE
+  level                  3         0  === level round 1 20:08:08  targets 107  cod   LEVEL SWEEP DONE 20:15
+  leveltex               6         0  === round 3  2026-10-11 03:35:44               
+  localization           3         0  === done 2026-10-11 03:13:10                   === done 2026-10-11 03
+  modpat                 1         0  === modpat round 1 22:40:22  level targets 3   MOD PATTERN SWEEP DONE
+  pack                   2         0  === pack battery done 20:00:08                 === pack battery done 
+  pkgmut                 3         0  === done 2026-10-12 03:38:24                   === done 2026-10-12 03
+  prefab                 1         0  === prefab round 1 23:09:58  level targets 1   PREFAB SWEEP DONE 23:1
+  qcode                  1         0  === qcode round 1 22:21:49  level targets 10   
+  quilt                  5         0  === quilt round 1 22:04:22  level targets 10   QUILT SWEEP DONE 22:06
+  room                   1         0  === room round 1 22:17:07  level targets 101   ROOM SWEEP DONE 22:17:
+  subst                 11         0  === substitute round 2 21:38:23  per-type 16   SUBSTITUTE DONE 21:38:
+  talisman               4         0  === done 2026-10-11 03:10:41                   === done 2026-10-11 03
+  texderive             11         0  === map-sibling round 1 03:40:37  candidates   MAP-SIBLING DONE 03:40
+  tile                   1         0  === tile round 1 21:52:01  level targets 103   TILE SWEEP DONE 21:52:
+  tokcombo               3         0  === token-combo round 2 02:22:10  tokens 195   TOKEN COMBO SWEEP DONE
+  uni                    1         0  === universal round 1 23:07:09  vocab 125503   
+
+  total +N across these logs 75, which is a lower bound
+  only: each log is overwritten per run, so older rounds of the same sweep are
+  gone.  The authoritative total is the matches.tsv row count above, and the
+  timeline below is the real history.
+
+6. WHERE TO LOOK
+--------------------------------------------------------------------------------------------------
+  bundle_manifest/00_file_tree.txt             every file in the install
+  bundle_manifest/01_bundle_files.txt          the 75 bundle files
+  bundle_manifest/02_bundle_database.txt       bundle -> package map
+  bundle_manifest/03_bundle_resources.txt      all 20,000 rows
+  bundle_manifest/04_bundle_resources.csv      the catalogue the sweeps key off
+  bundle_manifest/05_summary.txt               catalogue stats (static-database metric)
+  bundle_manifest/06_names_by_name.txt         recovered names, A-Z
+  bundle_manifest/07_names_by_type.txt         recovered names grouped by type
+  bundle_manifest/08_progress.txt              this file
+  bundle_manifest/09_reachability.tsv          per unresolved hash: named refs, unresolved refs, sample referrer
+  bundle_manifest/10_unresolved_master.tsv     THE MASTER LIST: every unresolved resource with status reachable / UNREACHABLE
+  bundle_manifest/11_missing_by_bundle.tsv     the missing hashes grouped by package + bundle + type (rows, distinct hashes, bytes, the hashes)
+  bundle_manifest/12_names_by_bundle.txt       every name we hold, grouped by the bundle it ships in, alphabetical inside each (names only)
+  ../Data/matches.tsv                          every hit ever, hash<TAB>name
+  ../hashcracker/work/*/status.log             per-sweep logs (current run only)
+  ../hashcracker/tools/status.sh               live score + what is running right now
+  docs/FINDINGS.txt                            the full narrative, sections 1-69
+
+7. WHERE THE WORK IS RECORDED   (FINDINGS.txt, most recent last)
+--------------------------------------------------------------------------------------------------
+    67.3  CLOSED, WITH NUMBERS.  Every one of these is 0 against the residual:
+    67.4  WHAT IS LEFT.  `all_effects` 155 rows (61 effect names + 32 shared text
+      68  THE SHADER-CHAIN NEIGHBOURHOOD IS WORTH FIFTEEN NAMES
+    68.1  WHY THE CHAINS ARE WORTH CHASING.  The grouped view (§66.6) puts 350 of
+    68.2  WHAT FOUND THEM.  `tools/make_chain_candidates.py` - the project's own 
+    68.3  CLOSED AFTERWARDS, WITH NUMBERS.  With the fifteen in the corpus the sp
+    68.4  NOT FOR WANT OF TRYING: THE ACHIEVEMENT ICONS.  The thirteen unresolved
+      69  MUTATE, SIZED RIGHT, AND WHAT THE LAST LOOK ESTABLISHED
+    69.1  MUTATE'S COST MODEL, WHICH IS EASY TO GET WRONG.  `mutate` does `tokens
+    69.2  THE ANIMATION RESIDUAL IS ONE FAMILY.  Grouping the unresolved animatio
+    69.3  MY DIRECTORY LIST HAD A SCOPE GAP - AND FIXING IT DID NOT HELP.  Every 
+       0  The gap was real; it just was not the obstacle.
+    69.4  WHAT THE BLOCKS AND PROPS ARE MISSING.  `modules/d01_crypt/resources` (
+    68.5  WHY THE SUBSET SWEEPS ARE MOSTLY EMPTY - AND WHAT THAT MEANS.  A subset
+
+==================================================================================================

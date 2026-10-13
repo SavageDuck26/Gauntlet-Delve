@@ -17,55 +17,56 @@ Gauntlet-Reverse-Engineering/
 ├── .vscode/                     ← editor settings (local-only)
 ├── .venv/                       ← Python virtualenv (untracked, do not edit)
 │
-├── Scripting/GauntletGameDigging/   ← Python RE toolchain (the main work area)
-│   ├── docs/                        ← all documentation
-│   │   ├── FINDINGS.txt                 ← MASTER format document
-│   │   ├── CUSTOM_ASSET_LOADING_FINDINGS.md
-│   │   ├── Hash Dictionary.txt
-│   │   ├── DEP/                         ← dependency/guide docs (+ verify_bundle.py)
-│   │   └── Stingray_Documentation/      ← reference images
+├── scripts/                     ← Python RE toolchain (the main work area)
 │   ├── *.py, SCRIPTS.md             ← ~80 tools (flat module dir) + script index
 │   ├── resource_tools/              ← 16-type resource r/w suite
-│   ├── database_extractor/          ← bundle_database.data extraction
-│   ├── decoded_materials/           ← decoded material JSON
-│   ├── Exports/                     ← kept databases (extracted_materials, texture_database)
-│   ├── bundle_manifest/             ← generated catalogue (00_file_tree … 05_summary)
+│   ├── database_extractor/          ← bundle_database.data extraction (local-only)
+│   ├── decoded_materials/           ← decoded material JSON (local-only)
+│   ├── Exports/                     ← kept databases (local-only)
+│   ├── example_mod/ test_mod/ crane_mod/   ← mod projects (local-only)
+│   └── wwise-unpacker-revamped/     ← bundled audio unpacker (local-only)
+│
+├── hashcracker/                 ← Rust MurmurHash64A name brute-forcer (billions of candidates/s)
+│   ├── src/                         ← Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
+│   ├── tools/                       ← build_targets.py, make_*_vocab.py, merge_matches.py
+│   │   └── (*.sh local-only)        ← hc.sh, status.sh, pull-gpu.sh, guard …
+│   ├── generators/                  ← targeted_*.py (per-family candidate generators)
+│   ├── sweeps/ legacy/              ← per-family drivers / superseded scripts (LOCAL-ONLY, *.sh)
+│   ├── data/vocab/                  ← vocabularies + targets (see data/README.md)
+│   ├── work/                        ← run state, sweeps, harvest (local-only, regenerable)
+│   └── README.md, SCRIPTS.md
+│
+├── Data/                        ← every finding, in one place
+│   ├── FINDINGS.txt                 ← MASTER format document (all discoveries)
+│   ├── CUSTOM_ASSET_LOADING_FINDINGS.md
+│   ├── Hash Dictionary.txt
+│   ├── DEP/                         ← dependency/guide docs (+ verify_bundle.py)
+│   ├── Stingray_Documentation/      ← reference images (local-only)
 │   ├── hash_database.json / .txt    ← 142k name→hash database
 │   ├── *_overlay.json               ← brute-forced names (bundle + resource)
-│   ├── example_mod/ test_mod/ crane_mod/   ← mod projects (referenced by the loader)
-│   └── wwise-unpacker-revamped/     ← bundled audio unpacker tool
-│
-├── Scripting/hashcracker/           ← Rust MurmurHash64A name brute-forcer (billions of candidates/s)
-│   ├── src/                             ← Rust: murmur.rs, pattern.rs, gpu.rs (WGSL), main.rs
-│   ├── tools/                           ← build_targets.py, make_*_vocab.py, merge_matches.py
-│   │   └── (*.sh local-only)            ← hc.sh, status.sh, pull-gpu.sh, guard …
-│   ├── generators/                      ← targeted_*.py (per-family candidate generators)
-│   ├── sweeps/                          ← per-family driver scripts (LOCAL-ONLY, *.sh)
-│   ├── legacy/                          ← superseded cartesian scripts (LOCAL-ONLY, *.sh)
-│   ├── data/vocab/                      ← vocabularies + targets (see data/README.md)
-│   ├── matches.tsv                      ← append-only hit log (tracked)
-│   └── README.md, SCRIPTS.md
+│   ├── bundle_manifest/             ← the resource catalogue (00_file_tree … 12_…)
+│   ├── global_textures_manifest.json
+│   └── matches.tsv                  ← append-only hit log from every sweep
 │
 ├── game-source/Gauntlet-SourceCode-LUA/   ← game Lua source (927 files; local-only)
 ├── reference/                             ← reference projects (downloads; local-only)
-│   ├── Loremasters-Armoury-main/
-│   ├── Vermintide-Mod-Framework-master/
-│   └── Alloy/
-└── assets/                                ← *.glb models + exported samples (local-only)
+├── assets/                                ← *.glb models + exported samples (local-only)
+├── Gauntlet-install/                      ← current game install (local-only)
+└── Gauntlet-PreSlayer-*/                  ← older depot snapshots (local-only)
 ```
 
 ## Key entry points
 
-- **Catalogue everything**: `cd Scripting/GauntletGameDigging && python3 list_game_bundles.py`
-  (writes `bundle_manifest/00…05`).
+- **Catalogue everything**: `cd scripts && python3 list_game_bundles.py`
+  (writes `Data/bundle_manifest/00…05`).
 - **Harvest names from the depots** (the biggest single lever, `FINDINGS.txt` §45–48):
   `hashcracker/tools/harvest_depot.py` decompresses every zlib block in the
   `Gauntlet-PreSlayer-*/` bundle bodies — which `grep` reports as string-free —
   and writes `work/harvest/{raw,*_ids}.txt`; `mine_harvest_{names,ids,paths}.py`
   hash those against the unresolved set.
 - **Recover names (current workflow)**: build targets →
-  `Scripting/hashcracker/tools/build_targets.py`; generate candidates →
-  `Scripting/hashcracker/tools/make_*_vocab.py` /
+  `hashcracker/tools/build_targets.py`; generate candidates →
+  `hashcracker/tools/make_*_vocab.py` /
   `make_atlas_patterns.py` / `make_chain_candidates.py`; **crack on the GPU**
   (≈20–50× the CPU path) via the `*.sh` drivers `sweeps/auto_run.sh` +
   `subst_run.sh` / `leaf_sweep.sh` / `chain_sweep.sh` / `num_derive.sh`, always
@@ -74,9 +75,9 @@ Gauntlet-Reverse-Engineering/
   `list_game_bundles.py --only resources`.  Every engine is driven by the names we
   hold, so **re-run them after each batch** — see §48.7.  *(The `*.sh` drivers are
   local-only — see below; the `.py` builders they call are in this repo.)*
-- **Script indexes**: `Scripting/hashcracker/SCRIPTS.md` and
-  `Scripting/GauntletGameDigging/SCRIPTS.md` (every tool, grouped by purpose).
-- **Findings / current state**: `Scripting/GauntletGameDigging/docs/FINDINGS.txt`
+- **Script indexes**: `hashcracker/SCRIPTS.md` and
+  `scripts/SCRIPTS.md` (every tool, grouped by purpose).
+- **Findings / current state**: `Data/FINDINGS.txt`
   (§17 history; **§18 = state of play**; **§44–48 = the level grammar, the depot
   harvest, and the reference/atlas/chain levers**).  The live numbers live in
   `.clinerules` → *Resource-name recovery state*.
@@ -85,8 +86,8 @@ Gauntlet-Reverse-Engineering/
 
 - **The C++ mod loader is a separate repo at `../GauntletModLoader/`** (a sibling of
   this folder). Its `rebuild_bundles.py` hardcodes the path to this repo's
-  `Scripting/GauntletGameDigging/`, so keep that path. To build: `cd ../GauntletModLoader && ./build.sh`.
-- `Scripting/GauntletGameDigging/` is a **flat module directory** — the `.py` tools
+  `scripts/`, so keep that path. To build: `cd ../GauntletModLoader && ./build.sh`.
+- `scripts/` is a **flat module directory** — the `.py` tools
   import each other by module name, so keep them together in one folder.
 - Regenerable outputs were deleted (`test_*`, `output_*`, `my_textures`, `CONTEXT`,
   bulk `Exports/*`); re-run the relevant tool to recreate them.
@@ -99,18 +100,20 @@ git add -A && git commit -m "…"
 ```
 
 Ignored (see [`.gitignore`](.gitignore)): `.venv/`, `__pycache__/`, **every `*.sh`**,
-the generated catalogue (`bundle_manifest/`), `reference/` downloads, and
-`wwise-unpacker-revamped/` binaries.
+`reference/` downloads, and `wwise-unpacker-revamped/` binaries.
 
 **Game-derived exports/assets are NOT versioned** (copyright + repo size) — they
-stay on disk but are excluded from git: `assets/`, `Exports/`, `crane_mod/`,
-`example_mod/`, `test_mod/`, `decoded_materials/`, `database_extractor/`,
-`.unit orig/`, and the test/extract output dirs.
+stay on disk but are excluded from git: `assets/`, `scripts/Exports/`,
+`scripts/crane_mod/`, `scripts/example_mod/`, `scripts/test_mod/`,
+`scripts/decoded_materials/`, `scripts/database_extractor/`, `scripts/.unit orig/`,
+and the test/extract output dirs.
 
-Versioned here: all tooling (`*.py`, `resource_tools/`), `docs/` (findings), the
-name/hash databases (`hash_database.*`, `*_overlay.json`) and the resource
-catalogue.  The game **Lua** source (`game-source/`) is **local-only**
-(game-derived), like `reference/` and `assets/`.
+Versioned here: all tooling (`scripts/*.py`, `scripts/resource_tools/`,
+`hashcracker/`) and **the whole `Data/` findings tree** — `FINDINGS.txt`, the
+name/hash databases (`hash_database.*`, `*_overlay.json`), the resource catalogue
+(`Data/bundle_manifest/`) and the hit log (`Data/matches.tsv`).  The game **Lua**
+source (`game-source/`), the game install (`Gauntlet-install/`), the older depot
+snapshots (`Gauntlet-PreSlayer-*/`), `reference/` and `assets/` are all **local-only**.
 
 ## Shell scripts & privacy
 

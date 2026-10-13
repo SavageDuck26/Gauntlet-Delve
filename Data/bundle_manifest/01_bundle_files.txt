@@ -1,0 +1,84 @@
+BUNDLE FILES IN contents/
+====================================================================================================
+
+bundle                       size        .stream  inDB     res# layOK package_path
+--------------------------------------------------------------------------------------------------------------
+0164ad48615ba9ed        133170572       22590612   yes     1629   yes modules/d01_crypt/resources
+07c9b8511b5aff2e          5745363              0   yes      395   yes resource_packages/misc_units
+07cdebae91f29fae         64799694              0   yes      592   yes modules/menu/resources
+099d12829b617a9b         99262116       17983567   yes      182   yes resource_packages/base
+0bd097fa120382fe          2852372              0   yes        5   yes resource_packages/elias/crypt_arena
+0da292f5dd41ec27          2415947              0   yes        4   yes resource_packages/elias/crypt_boss
+0f07a1cb5132485b        114498493       33396922   yes     1290   yes modules/d01_lava/resources
+11a95e9c862b533e          1621290              0   yes       89   yes resource_packages/heroes/valkyrie_ability
+1a9c33dcd0301dfd          4348574              0   yes      646   yes core/rendering/renderer
+1bbcb9610a009446         49047792              0   yes      771   yes resource_packages/d01_lava
+2366c0121dc7d2de            96082              0   yes       42   yes resource_packages/surface_effects
+2b0c2ed671742eb7          2563964              0   yes        4   yes resource_packages/elias/crypt_labyrinth
+2c8fb6cb55aba416          2353457              0   yes      237   yes resource_packages/heroes/elf_base
+2dcf25b90002fc07         51832337        6468154   yes      384   yes modules/d01_hub_room/resources
+2fec63f0ef51b6fc          2337848              0   yes        3   yes resource_packages/elias/cave_arena
+322cb1ff2f3d5116          7703509              0   yes       86   yes resource_packages/heroes/warrior_capes
+3b9ebc71f9a5cb61          7688129              0   yes       85   yes resource_packages/heroes/wizard_capes
+3ee1f740a8e57e21        111661794       16551600   yes     1341   yes modules/d01_caves/resources
+40d0e0479ffe0c4c          2381224              0   yes      227   yes resource_packages/heroes/necromagus_base
+44bcc04093e5c506              499              0   yes        1   yes core/editor_slave/level_editor/baked_lighting
+47adcf8355608941              182              0   yes        2   yes 
+47f1b7369bdf82c5              807              0   yes        1   yes core/editor_slave/level_editor/terrain_editor
+49d4d51fb4291f95          4462364              0   yes      183   yes resource_packages/heroes/wizard_equipment
+4ba749ebdb5c9069              163              0   yes        2   yes 
+4bbbfb1c3f6a00b8         15441924              0   yes       20   yes resource_packages/elias/cave_labyrinth
+4df89a0790c4f425          5933222              0   yes       82   yes resource_packages/heroes/valkyrie_capes
+4f2d313d15f129af          1037118              0   yes      363   yes resource_packages/scripts_base
+527777ee34e0cfeb         55281670        4361777   yes        2   yes resource_packages/heroes/necromagus_banks
+5b0efd8d9d8d995c          2503483              0   yes        3   yes resource_packages/elias/lava_labyrinth
+5c5954828b367156          1203046              0   yes      156   yes resource_packages/heroes/wizard_ability
+61205c3db6984ce3          2988268              0   yes       63   yes resource_packages/heroes/necromagus_equipment
+62bed773ef95d36e         21721501              0   yes      330   yes resource_packages/heroes/necromagus_ability
+67e5459af7473498           232345              0   yes       42   yes resource_packages/particle_effects
+67fdaf59c0374dce          2901727              0   yes      264   yes resource_packages/heroes/warrior_base
+695b9dc585a733f4          4143451              0   yes     1963   yes resource_packages/all_effects
+732347b485af0928          1445025              0   yes      147   yes resource_packages/heroes/elf_ability
+857014775d3c8471          2670842              0   yes        3   yes resource_packages/elias/lava_boss
+8c75217fc3fad29b          2531649              0   yes      262   yes resource_packages/heroes/wizard_base
+8cbde06d754ef613          2788124              0   yes      448   yes core/rendering/emulate_renderer
+8d83784c3ee9305b         43446782              0   yes      734   yes resource_packages/d01_caves
+8f2f35367ac8cfd3          6813497              0   yes      436   yes resource_packages/relic_units
+930b66b9ee7ef882          3312780              0   yes      105   yes resource_packages/heroes/valkyrie_equipment
+94ee4ec8ce37c085         41590976        1094240   yes        2   yes resource_packages/heroes/elf_banks
+96438abc757b9f23              410              0   yes        1   yes core/rendering/voxel_resource_generators
+9cf71054ea26dddf           788917              0   yes      182   yes foundation/foundation
+9d3b8b7390ff306d          7660118              0   yes       85   yes resource_packages/heroes/elf_capes
+9e13b2414b41b842         19748234        6121174   yes       88   yes resource_packages/boot
+9ef06ee5819e0b42         67599755              0   yes       42   yes resource_packages/elias/lava_adventure
+a380093809366c56          3692512              0   yes       69   yes resource_packages/heroes/elf_equipment
+ac41695a61976cfe          1927788              0   yes        4   yes resource_packages/elias/cave_boss
+af66175d2487bb0d         16365956              0   yes      124   yes resource_packages/crypt_boss
+b22560b172a4cff8             2550              0   yes       13   yes resource_packages/elias
+b4d3a1fda591b2a4          2811830              0   yes      508   yes core/rendering/mobile_renderer
+b7c2fc166aae10f8          2478751              0   yes        4   yes resource_packages/elias/lava_arena
+b9d9ffddb95c9a3f           284075              0   yes       50   yes resource_packages/gore_effects
+bae044c9a0ccef3d          5875353              0   yes       83   yes resource_packages/heroes/necromagus_capes
+bc1322b850aa1afd          2059845              0   yes       17   yes resource_packages/splash
+bd1ab48c3674ac20         45223560              0   yes      856   yes resource_packages/d01_arcade
+bd89f473071db9ba          2696373              0   yes        5   yes resource_packages/elias/hubroom
+c0aff80d521aa29b         22179398              0   yes       22   yes resource_packages/elias/cave_adventure
+c71709da31b1d305         15948799              0   yes      208   yes resource_packages/d01_hub_room
+cd241d5192024482           507514              0   yes       50   yes resource_packages/food_units
+d08e4ae297a0acdf         41200087        4338503   yes        2   yes resource_packages/heroes/warrior_banks
+d17420e999bf5431         45987874              0   yes      871   yes resource_packages/d01_crypt
+d2fac3c70e7333f9          2225799              0   yes      261   yes resource_packages/heroes/valkyrie_base
+db47e7a6d2fca03b         31795350              0   yes       38   yes resource_packages/elias/crypt_adventure
+dd5d5b00fde9b0fb          1070776              0   yes        1   yes resource_packages/localization
+e06f540aaee65d0d         15012991              0   yes      221   yes resource_packages/cave_boss
+e4e607d799ef7acc            78699              0   yes      108   yes resource_packages/scripts_gui
+e5bb1b8f09ce5bea           521208              0   yes       35   yes resource_packages/heroes/warrior_ability
+e5ee602fbae852df           237970              0   yes      283   yes resource_packages/scripts_settings
+e6701c5788f2c2e6         40417656        2407188   yes        2   yes resource_packages/heroes/wizard_banks
+ec181385e7000cf1         37630107              0   yes     1058   yes resource_packages/menu
+ec33816f62983aac            84003              0   yes        6   yes resource_packages/modules
+f3830d1c26ef30ee         35717477         985613   yes        2   yes resource_packages/heroes/valkyrie_banks
+f76548f0d3e1077d          5365172              0   yes      157   yes resource_packages/heroes/warrior_equipment
+feec2c9522011d13         54478480              0   yes      922   yes resource_packages/morak
+----------------------------------------------------------------------------------------------------
+Total: 77 bundles, 1.3 GiB packed + 110.9 MiB stream = 1.4 GiB

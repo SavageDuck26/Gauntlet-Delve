@@ -83,8 +83,8 @@ desktop.ini
 # ---- Third-party downloads / reference repos -----------------------------
 # (reference projects are re-downloadable; kept on disk but not versioned)
 reference/
-Scripting/GauntletGameDigging/wwise-unpacker-revamped/
-Scripting/GauntletGameDigging/third_party/
+scripts/wwise-unpacker-revamped/
+scripts/third_party/
 
 # ---- Compiled binaries ---------------------------------------------------
 *.dll
@@ -94,38 +94,38 @@ Scripting/GauntletGameDigging/third_party/
 *.exe
 *.mod_bundle
 
-# ---- Generated catalogues (regenerable) ----------------------------------
-Scripting/GauntletGameDigging/bundle_manifest/
-# raw string dump harvested from bundle resource bodies (scan_bundle_strings.py)
-Scripting/GauntletGameDigging/bundle_strings.txt
+# ---- Raw string dumps harvested from bundle bodies -----------------------
+# (scan_bundle_strings.py / scan_binaries.py output; regenerable from the game)
+scripts/bundle_strings.txt
+scripts/bin_strings.txt
 
 # ---- Game-derived exports / assets --------------------------------------
 # NOT redistributed: extracted game content + derived data dumps (copyright +
 # size). Only our own code, docs and the game LUA source are versioned here.
 assets/
-Scripting/GauntletGameDigging/Exports/
-Scripting/GauntletGameDigging/crane_mod/
-Scripting/GauntletGameDigging/example_mod/
-Scripting/GauntletGameDigging/test_mod/
-Scripting/GauntletGameDigging/decoded_materials/
-Scripting/GauntletGameDigging/database_extractor/
-Scripting/GauntletGameDigging/.unit orig/
-Scripting/GauntletGameDigging/my_textures/
-Scripting/GauntletGameDigging/test_textures/
-Scripting/GauntletGameDigging/test_bundle_output/
-Scripting/GauntletGameDigging/test_materials/
-Scripting/GauntletGameDigging/output_packages/
-Scripting/GauntletGameDigging/output_icons/
-Scripting/GauntletGameDigging/output_models/
-Scripting/GauntletGameDigging/small_test/
-Scripting/GauntletGameDigging/CONTEXT/
+scripts/Exports/
+scripts/crane_mod/
+scripts/example_mod/
+scripts/test_mod/
+scripts/decoded_materials/
+scripts/database_extractor/
+scripts/.unit orig/
+scripts/my_textures/
+scripts/test_textures/
+scripts/test_bundle_output/
+scripts/test_materials/
+scripts/output_packages/
+scripts/output_icons/
+scripts/output_models/
+scripts/small_test/
+scripts/CONTEXT/
 
 # ---- Per-mod build output ------------------------------------------------
-Scripting/GauntletGameDigging/crane_mod/output/
-Scripting/GauntletGameDigging/test_mod/output/
-Scripting/GauntletGameDigging/example_mod/output/
-Scripting/GauntletGameDigging/**/build/
-Scripting/GauntletGameDigging/**/*.stream
+scripts/crane_mod/output/
+scripts/test_mod/output/
+scripts/example_mod/output/
+scripts/**/build/
+scripts/**/*.stream
 
 # ---- Scratch -------------------------------------------------------------
 *.tmp.*
@@ -140,7 +140,7 @@ Stingray_Documentation/
 Stingray-Web-Mine/
 
 # Big-run scratch (mutate seeds/tokens/logs - regenerated constantly)
-Scripting/hashcracker/work/
+hashcracker/work/
 
 # transfer bundles (tools/make_transfer_bundle.sh)
 hashcracker-state-*.tar.gz
@@ -153,3 +153,18 @@ Gauntlet-install/
 # published (see .clinerules - "personal data in a tool must never be pushed").
 # The Python tools + their data are the repo; the .sh plumbing runs on the machine.
 *.sh
+
+# ---- Local-only (machine/personal; never published) ----------------------
+.clinerules
+.githooks/
+ARCHIVE-CONTENTS.md
+hashcracker/TRANSFER.md
+hashcracker/REMOTE-GPU.md
+
+# ---- Game-derived, local-only (kept on disk, never pushed) ---------------
+# the shipped Lua source tree, copied in for mining; not redistributed
+game-source/
+# locally-cached liveness probe results
+scripts/.liveness_cache/
+# reference images extracted from the Stingray docs
+Data/Stingray_Documentation/

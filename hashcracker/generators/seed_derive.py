@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""
+Derive new candidates from names we already have (seed-and-expand).
+
+Families (all bounded, all learned from the corpus rather than guessed):
+
+  tiles    modules/d01_<env>/dungeon_tiles/<style>_<W>c_<H>c_<4 cell letters>_NN
+           cell alphabet + style/size set mined from the tile names, then every
+           4-letter combination enumerated for each style/size with a few indices
+  maps     a block unit implies its map textures and vice versa
+           (.../borders/caverock_border_low_2c <-> blocks/d01_caves/caverock_border_low_2c_diff)
+           plus _diff/_norm/_spec/_mask/_high swaps and _NN sibling indices
+  anims    per unit: clip variants (numbers 1..4, direction words, speed words)
+  shaders  <base>:<flag>[:<flag>] permutations - flag vocabulary mined from every
+           colon-bearing name (diffuse_map, one_bit_alpha, flipbook_animation, ...)
+
+    python3 generators/seed_derive.py --seeds FILE --out FILE [--cap N]
+"""
+import argparse
+import collections
+import csv
+import itertools
+import json
+import re
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent.parent
+DIG = REPO / "Data"
+CATALOGUE = DIG / "bundle_manifest/04_bundle_resources.csv"
+OVERLAY = DIG / "resource_name_overlay.json"
+
+TILE = re.compile(r"^modules/(d01_[a-z_]+)/dungeon_tiles/([a-z0-9]+)_(\d+c)_(\d+c)_"
+                  r"([a-z])_([a-z])_([a-z])_([a-z])_(\d+)$")
+MAPS = ("_diff", "_norm", "_spec", "_mask", "_high", "_illum", "_alpha", "_glow")
+SPEED = ["walk", "run", "jog", "sprint", "fast", "slow", "sneak", "strafe"]
+DIRS = ["left", "right", "forward", "backwards", "backward", "in", "out"]
+
+
+def known_names(seeds_file=None):
+    names = set(json.loads(OVERLAY.read_text()).values())
+    for r in csv.DictReader(CATALOGUE.open()):
+        if r["name"]:
+            names.add(r["name"])
+    if seeds_file:
+        names |= {l.split("\t", 1)[1].strip() for l in
+                  Path(seeds_file).read_text().splitlines() if "\t" in l}
+    return names
+
+
+def derive_tiles(names):
+    styles, cells = collections.Counter(), collections.Counter()
+    for n in names:
+        m = TILE.match(n)
+        if not m:
+            continue
+        env, style, w, h, a, b, c, d, _i = m.groups()
+        styles[(env, style, w, h)] += 1
+        cells.update([a, b, c, d])
+    alpha = "".join(sorted(set(cells) | {"g", "u", "x", "e", "i", "o", "w"}))
+    out = set()
+    for (env, style, w, h), _n in styles.items():
+        for combo in itertools.product(alpha, repeat=4):
+            for i in range(1, 9):
+                out.add(f"modules/{env}/dungeon_tiles/"
+                        f"{style}_{w}_{h}_{'_'.join(combo)}_{i:02d}")
+    return out
+
+
+def derive_maps(names):
+    out = set()
+    for n in names:
+        if not n.startswith(("blocks/", "props/")):
+            continue
+        segs = n.split("/")
+        leaf = segs[-1]
+        dirs = ["/".join(segs[:-1])] + (["/".join(segs[:2])] if len(segs) >= 3 else [])
+        for d in dirs:
+            for suf in MAPS:
+                out.add(f"{d}/{leaf}{suf}")
+        for suf in MAPS:
+            if not leaf.endswith(suf):
+                continue
+            base = leaf[: -len(suf)]
+            for d in dirs:
+                for s2 in MAPS:
+                    out.add(f"{d}/{base}{s2}")
+            m = re.search(r"_(\d{1,2})$", base)
+            if m:
+                stem = base[: m.start()]
+                for d in dirs:
+                    for i in range(1, 13):
+                        out.add(f"{d}/{stem}_{i:02d}")
+            break
+    return out
+
+
+def derive_anims(names):
+    by_unit = collections.defaultdict(set)
+    for n in names:
+        if "/animations/" not in n and "/animation/" not in n:
+            continue
+        d, _, leaf = n.rpartition("/")
+        by_unit[d].add(leaf)
+    out = set()
+    for d, clips in by_unit.items():
+        for clip in clips:
+            toks = clip.split("_")
+            for i, t in enumerate(toks):
+                if t.isdigit():
+                    pad = len(t) > 1
+                    for k in range(1, 5):
+                        tok = f"{k:02d}" if pad else str(k)
+                        out.add(f"{d}/" + "_".join(toks[:i] + [tok] + toks[i + 1:]))
+                if t in SPEED:
+                    for s in SPEED:
+                        out.add(f"{d}/" + "_".join(toks[:i] + [s] + toks[i + 1:]))
+                if t in DIRS:
+                    for s in DIRS:
+                        out.add(f"{d}/" + "_".join(toks[:i] + [s] + toks[i + 1:]))
+            out.add(f"{d}/{clip}_01")
+            out.add(f"{d}/{clip}_02")
+    return out
+
+
+ANIM_VERB = ("attack move idle hit die death carry walk run legs turn jump "
+             "land spawn taunt block dodge cast shoot aim draw sheathe reload "
+             "special ability ultimate heavy light fast slow charge windup "
+             "winddown dash blink kick punch stomp slam throw pickup drop enter "
+             "exit start end loop react offset look back backwards forward left "
+             "right strafe ready hold release fire barrage beam bolt orb explosion "
+             "summon revive celebrate victory stagger stun knockback slide smash "
+             "whirlwind chop stab swing thrust parry guard").split()
+ANIM_MOD = ("01 02 03 04 fast1 fast2 fast3 fast4 slow1 slow2 light1 light2 light3 "
+            "heavy1 heavy2 heavy3 forward backwards backward left right in out "
+            "up down 30 -30 45 -45 60 -60 90 -90 180 default default1 offset "
+            "offset1 windup winddown loop start end").split()
+
+
+def derive_anims_medium(names):
+    """Per-unit clips from that unit's own prefix vocabulary.
+
+    New clips look like bow_attack_fast1, legs_turn_left-60,
+    axe_attack_heavy3_chop, die_default1, move_jog: a per-unit weapon/limb
+    prefix, a verb and a modifier (number / direction / angle / light|heavy).
+    Mined prefixes are crossed with the shared verb and modifier lists.
+    """
+    by_unit = collections.defaultdict(list)
+    for n in names:
+        if "/animations/" not in n and "/animation/" not in n:
+            continue
+        d, _, leaf = n.rpartition("/")
+        by_unit[d].append(leaf)
+    out = set()
+    for d, clips in by_unit.items():
+        prefixes = collections.Counter(c.split("_")[0] for c in clips)
+        for p, _ in prefixes.most_common(4):
+            for v in ANIM_VERB:
+                out.add(f"{d}/{p}_{v}")
+                for m in ANIM_MOD:
+                    out.add(f"{d}/{p}_{v}_{m}")
+                    for m2 in DIRS:
+                        out.add(f"{d}/{p}_{v}_{m}_{m2}")
+    return out
+
+
+def shader_bases():
+    """Every shader_library name we know - a base may not carry a colon yet."""
+    out = set()
+    for r in csv.DictReader(CATALOGUE.open()):
+        if r["type"] == "shader_library" and r["name"]:
+            out.add(r["name"].split(":")[0])
+    return out
+
+
+def derive_shaders(names, max_len=12, cap=4_000_000):
+    """
+    `<base>:<flag>[:<flag>...]` permutations.
+
+    The flag list is an ORDERED chain in this engine (e.g.
+    `billboard:blend_additive:diffuse_map:soft_particles:vertex_color`), so the
+    canonical order is learned from the corpus and then ordered subsets up to
+    `max_len` are enumerated for every known base.
+    """
+    flags, order, bases = collections.Counter(), {}, set()
+    base_freq = collections.Counter()
+    for n in names:
+        if ":" not in n:
+            continue
+        parts = n.split(":")
+        bases.add(parts[0])
+        base_freq[parts[0]] += 1
+        for i, f in enumerate(parts[1:]):
+            flags[f] += 1
+            order.setdefault(f, i)
+    seq = [f for f in sorted(flags, key=lambda f: (order[f], -flags[f], f))][:40]
+    per_base = {}
+    for n in names:
+        if ":" not in n:
+            continue
+        parts = n.split(":")
+        per_base.setdefault(parts[0], set()).update(parts[1:])
+    bases |= shader_bases()
+    out = set()
+    for b in sorted(bases, key=lambda x: -base_freq.get(x, 0)):
+        own = sorted(per_base.get(b, ()), key=lambda f: (order.get(f, 99), f))
+        extra = [f for f in seq if f not in own][:max(0, 18 - len(own))]
+        own = (own + extra)[:18]
+        for L in range(1, min(max_len, len(own)) + 1):
+            for combo in itertools.combinations(own, L):
+                out.add(f"{b}:" + ":".join(combo))
+                if len(out) > cap:
+                    return out
+    for b in sorted(bases):
+        for L in range(1, max_len + 1):
+            for combo in itertools.combinations(seq, L):
+                out.add(f"{b}:" + ":".join(combo))
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--seeds", help="TSV of <hash>\\t<name> to include as seeds")
+    ap.add_argument("--out", default="/tmp/seed_c.txt")
+    ap.add_argument("--cap", type=int, default=30_000_000)
+    args = ap.parse_args()
+
+    names = known_names(args.seeds)
+    fams = {
+        "tiles": derive_tiles(names),
+        "maps": derive_maps(names),
+        "anims": derive_anims(names),
+        "anims2": derive_anims_medium(names),
+        "shaders": derive_shaders(names),
+    }
+    out = set()
+    for f, s in fams.items():
+        print(f"  {f:8s} {len(s):>9} candidates")
+        out |= s
+    new = sorted(n for n in out if n not in names)
+    if len(new) > args.cap:
+        new = new[: args.cap]
+    Path(args.out).write_text("\n".join(new) + "\n")
+    print(f"  {'TOTAL':8s} {len(new):>9} -> {args.out}")
+
+
+if __name__ == "__main__":
+    main()
