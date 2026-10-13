@@ -1,6 +1,6 @@
-# Gauntlet-Reverse-Engineering
+# Gauntlet Delve
 
-Reverse-engineering + modding toolchain for **Gauntlet: Slayer Edition**
+Reverse-engineering for **Gauntlet: Slayer Edition**
 (Bitsquid/Stingray engine): two tool trees (`scripts/`, `hashcracker/`) and one
 data tree (`Data/`).
 
