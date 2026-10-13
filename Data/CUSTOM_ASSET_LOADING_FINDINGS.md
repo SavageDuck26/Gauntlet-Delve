@@ -214,9 +214,9 @@ the RenderDevice per-type resource arrays).
 
 - Bundle tooling: `replace_textures_v4.py` (authoritative parser/compressor),
   `bundle_tools.py`, `add_bundle_to_db.py`.
-- Crane assets: `crane_mod/` (unit `Medieval_Crane.unit`, `build/checker_diff.dds`,
+- Crane assets: the crane test mod (unit `Medieval_Crane.unit`, `build/checker_diff.dds`,
   `build/m_crane_custom.material`).
-- Loader: `GauntletModLoader/src/bundle_manager.cpp` (manifest validation, DB patch,
+- Loader: the loader's `bundle_manager.cpp` (manifest validation, DB patch,
   contents/ copy).
 - exe: flush `0x6381f0`, has_loaded `0x638240`, per-resource wait `0x6361f0`,
   process-one `0x635f80`, availability `0x635e80`→`0x632730` (`[loader+0x48]`),
@@ -269,8 +269,8 @@ from the full chain) and waits on mips that never arrive → completion never po
   material/unit that aren't in the bundle — an independent hang).
 
 ### Fix applied + test staged
-- Root defect in `crane_mod/build/checker_diff.dds`: built with `mip_count=1`.
-- Generated `crane_mod/build/checker_diff_mips.dds` — 128×128 DXT5, **full 8-mip**
+- Root defect in the crane mod's `build/checker_diff.dds`: built with `mip_count=1`.
+- Generated `build/checker_diff_mips.dds` — 128×128 DXT5, **full 8-mip**
   magenta/cyan checker (byte-exact full-chain size, verified).
 - Installed test bundle `mods/bundles/CraneTexTest/5bfdd50f98f5d0d9` was already a
   clean texture-only isolation (package lists exactly the 1 texture). Swapped its

@@ -16,9 +16,9 @@ Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format docume
 | `build_hash_database.py` / `build_complete_hash_database.py` | Build `hash_database.json` / `.txt` (the 142k-entry dictionary the catalogue resolves against). |
 | `make_family_vocab.py` | Per-family token/dir vocabularies (used by the older sweeps). |
 | `mine_localization.py` | Mines the localization bundle (English block) into a name dictionary. |
-| `scan_binaries.py` | Path-like strings from `binaries/*.exe|dll` → `bin_strings.txt`. |
+| `scan_binaries.py` | Path-like strings from the game's `binaries/*.exe|dll` → `bin_strings.txt`. |
 | `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
-| `make_progress_report.py` | The overall progress view → `../Data/bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the sweep history from `work/*/status.log`, the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its `Unresolved` line is the static `hash_database.json` metric, not ours — the note in `08_progress.txt` reads that number out of the file so it cannot go stale. |
+| `make_progress_report.py` | The overall progress view → `../Data/bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its `Unresolved` line is the static `hash_database.json` metric, not ours — the note in `08_progress.txt` reads that number out of the file so it cannot go stale. |
 | `make_missing_report.py` | `../Data/bundle_manifest/11_missing_by_bundle.tsv` — the missing view **grouped**: one row per `(package, bundle, type)` with the missing-row count, the distinct-hash count, the bytes, and the hashes themselves (size-ordered) in the last column. The missing rule is the sweeps' own (catalogue `name` empty **and** the hash absent from `resource_name_overlay.json`), so its totals are exactly the score line's complement — 162 groups, 2,092 rows, 900 hashes at the time of writing, per type: texture 672/252, animation 539/303, shader_library 350/137, material 205/89, particles 159/76, shader 64/36, unit 48/39, timpani_bank 37/37, level 12/10, flow 4/1, package 2/2. `make_progress_report.py` calls `write_missing_by_bundle()`, so every progress run refreshes it next to `08_progress.txt` (`--stdout` prints instead). |
 | `make_names_by_bundle.py` | `../Data/bundle_manifest/12_names_by_bundle.txt` — every name we hold **grouped by the bundle it ships in**, alphabetical inside each bundle, names only (no hashes): a `### <bundle>   <package>   (N names)` header then one name per line. 13,972 name-rows in 76 bundles, which is more than the 6,932 distinct names because duplicated resources appear under each bundle that carries them — that duplication is the point of the view. `make_progress_report.py` calls it, so it refreshes with 08/11. |
 | `reachability_audit.py` | Walks every bundle body, records which resources reference which (8-byte-aligned catalogue hashes), and reports per unresolved hash how many **named** resources point at it → `../Data/bundle_manifest/09_reachability.tsv`. 1,044 of the 1,096 are referenced; 52 are orphaned (FINDINGS 60.14). |
@@ -31,9 +31,9 @@ Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format docume
 
 | script | purpose |
 | --- | --- |
-| `hunt_old_names.py` | Mines a snapshot's own harvested strings against that snapshot's *own* resource hashes → `work/old_names_<snap>.json` (2014: 2,785 names, 2015-01: 3,102). |
-| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename — → `work/renames_<snap>.json` (341 moves 2015-01→2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
-| `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. Caches per-snapshot hash sets in `.liveness_cache/`. |
+| `hunt_old_names.py` | Mines a snapshot's own harvested strings against that snapshot's *own* resource hashes (2014: 2,785 names, 2015-01: 3,102). |
+| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename (341 moves 2015-01→2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
+| `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. |
 | `tools/apply_renames.py` (hashcracker) | Joins the two above: old name → new name, and a token-translation pass over the old corpus. |
 
 A harvest (`_names.txt`) is evidence of a *string*, never of a live resource, so it
@@ -41,16 +41,16 @@ always needs `check_build_liveness.py` (or `hunt_old_names.py`) behind it. Keep 
 control name in every batch: `characters/gator_brute/gator_brute` should read live in
 2014 and 2015-01 and absent in 2015-08.
 
-## Runtime name capture (GauntletModLoader)
+## Runtime name capture
 
 | script | purpose |
 | --- | --- |
 | `hunt_runtime_names.py` | Turns a `runtime_names.tsv` capture from the loader's name mining into three classes — **KNOWN** (the hash is a row we had already named: the control that proves the capture-and-hash chain end to end), **RECOVERED** (a previously unresolved row, now named by the engine itself) and **NEW** (no catalogue row at all). Reads the catalogue and `10_unresolved_master.tsv` read-only and writes its report *next to the capture*, so a session can be gone over before anything is folded into the overlay. `--list known|recovered|new`, `--out`. |
 
-The loader writes its own log (`binaries/name_mining.log`) and its own dump
-(`binaries/runtime_names.tsv`); `modloader.log` keeps one line pointing at them. The
-engine's string hasher for this build is at RVA `0xBCD0` (`HashNameAbi=3`) — see
-FINDINGS 60.15 for how it was located.
+A runtime capture is a TSV of hash/name pairs produced by the C++ loader's name
+mining; `hunt_runtime_names.py` reads one and classifies it. The engine's string
+hasher for this build is at RVA `0xBCD0` (`HashNameAbi=3`) — see FINDINGS 60.15
+for how it was located.
 
 
 ## Bundle inspection / analysis
@@ -121,7 +121,7 @@ to inherit `characters/demon_heavy`'s maps (`FINDINGS.txt` §38).
 
 ```bash
 python3 hunt_unit_textures.py \
-  --bundle ../../Gauntlet-PreSlayer-2015-08-11/depot_258972/contents/1bbcb9610a009446 \
+  --bundle <game install>/contents/<bundle-id> \
   --name characters/demon_overlord_mini/demon_overlord_mini --type unit
 ```
 
@@ -140,9 +140,7 @@ python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
 
 ## Subdirectories
 
-`resource_tools/` (16-type resource read/write suite), `database_extractor/`,
-`wwise-unpacker-revamped/`, `Exports/` (kept databases: extracted materials,
-texture database), `example_mod/`, `test_mod/`, `crane_mod/`.
+`resource_tools/` — the 16-type resource read/write suite.
 
 The findings and the catalogue no longer live here — they are in the repo's
 **`Data/`** tree: `Data/FINDINGS.txt`, `Data/DEP/`, `Data/*_overlay.json`,
@@ -201,7 +199,7 @@ python3 ../hashcracker/tools/build_targets.py      # catalogue         -> target
 The two exports are the other half of the same idea:
 
 ```bash
-python3 export_all_resources.py --dds-view         # -> ~/Documents/Coding/Gauntlet-Export
+python3 export_all_resources.py --dds-view         # -> <the export dir you pass>
 python3 convert_export.py --jobs 8 --overwrite     # -> that folder's view/{png,mp3,glb}
 ```
 
@@ -212,10 +210,8 @@ because a resource whose name changed would otherwise leave its old file behind.
 Current state: overlay **6,893** names · catalogue **17,880/20,004 rows named (89.38%)**
 · **915** unique unresolved hashes (see `../Data/FINDINGS.txt` §61–63).
 
-Note: `list_game_bundles.decompress_bundle` now tolerates the **Pre-Slayer
-packing** (raw 64 KiB chunks mixed with zlib chunks), so the older depot's art
-bundles can be parsed too. `hashcracker/generators/scan_depot_names.py` harvests
-names from any install/depot with a colon-tolerant filter — that is how 549 more
-names were recovered from `Gauntlet-PreSlayer-2015-01-21/` (the 549-name depot
-snapshot).  Snapshots live in the repo root named `Gauntlet-PreSlayer-<date>/`,
-one per SteamDB manifest; the 2014-10-10 build is also there.
+Note: `list_game_bundles.decompress_bundle` tolerates the older **Pre-Slayer
+packing** (raw 64 KiB chunks mixed with zlib chunks), so older depot snapshots can
+be parsed too. `hashcracker/generators/scan_depot_names.py` harvests names from any
+install/depot with a colon-tolerant filter — that is how 549 more names were
+recovered from a 2015-01-21 depot snapshot.

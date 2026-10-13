@@ -6,7 +6,7 @@ A multithreaded **MurmurHash64A** brute-forcer for Gauntlet resource/bundle
 candidate paths from templates + word lists and reports the ones that match.
 
 It is the fast complement to the Python toolchain
-(`../Data/crack_*_names.py`): where Python handles a few million
+(`../scripts/crack_*_names.py`): where Python handles a few million
 candidates, this handles **billions** in seconds.
 
 ## Layout
@@ -16,16 +16,19 @@ hashcracker/
 ├── src/                  Rust: murmur.rs, pattern.rs, arena.rs, gpu.rs (WGSL), main.rs
 ├── tools/                target + vocabulary builders (the maintainer entry points)
 │   ├── build_targets.py      catalogue -> data/vocab/targets_<type>.txt
-│   ├── merge_matches.py      matches.tsv -> resource_name_overlay.json
+│   ├── merge_matches.py      ../Data/matches.tsv -> ../Data/resource_name_overlay.json
 │   └── make_*_vocab.py       one word-list builder per family (tex/lvl/par/unit)
 ├── generators/           candidate generators (name-derived, context constrained)
 │   ├── targeted_*.py         per-family generators (anim, unit, level, tex, gui…)
 │   └── *_cands.py, *_check.py, scan_bundle_paths.py   supporting miners
-├── sweeps/               driver scripts (loop a family set to a fixpoint)
 ├── legacy/               superseded scripts, kept for reference (see legacy/README.md)
-├── data/vocab/           vocabularies + targets (see data/README.md)
-├── matches.tsv           append-only hit log, `<hash>\t<name>` (tracked)
+├── data/                 generated vocabularies + targets (see data/README.md)
+├── Cargo.toml, Cargo.lock
 └── README.md, SCRIPTS.md
+```
+
+The shared, append-only hit log is **`../Data/matches.tsv`** (`<hash>\t<name>`),
+tracked alongside the overlay it is merged into.
 ```
 
 See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
@@ -39,13 +42,12 @@ See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 Remaining by family (unique): `texture 527 · animation 346 · shader_library 245 ·
 material 145 · particles 115 · level 103 · unit 66 · shader 46 · timpani_bank 37`.
 
-**One hashcracker at a time**: every sweep calls `tools/hc.sh`, which `flock`s
-`work/hc.lock` so a second run queues instead of halving the first one's speed
-(see `.clinerules` → *One hashcracker at a time*).
+**One at a time**: the engine will happily use the whole machine, so run a
+single instance — two at once halve each other's throughput.
 
 For the uniform families the win is **context conditioning**, not brute force:
 pin the fixed part of the name in the pattern and escalate one field at a time
-(`sweeps/level_context.sh`, `FINDINGS.txt` §37 - the level schema crosses to
+(`FINDINGS.txt` §37 - the level schema crosses to
 68 G globally but is 1,780 candidates as a closed form per (env, sub) context).
 
 That set is now limited by **missing source data**, not by generation strategy —
@@ -67,8 +69,8 @@ builders — kept in `legacy/` for reference):
 ```bash
 python3 legacy/prepare.py \
   --csv  ../Data/bundle_manifest/04_bundle_resources.csv \
-  --lua  ~/.local/share/Steam/steamapps/common/Gauntlet/Gauntlet-Source-DO_NOT_EDIT \
-  --binaries ~/.local/share/Steam/steamapps/common/Gauntlet/binaries \
+  --lua  <game install>/Gauntlet-Source-DO_NOT_EDIT \
+  --binaries <game install>/binaries \
   --out data
 ```
 
@@ -79,7 +81,6 @@ Current workflow — see [SCRIPTS.md](SCRIPTS.md) for the full index and
 python3 tools/build_targets.py          # targets_<type>.txt from the catalogue
 python3 tools/make_tex_vocab.py         # one vocabulary per family (tex_*, lvl_*, …)
 python3 generators/targeted_unit.py     # name-derived candidates
-./sweeps/auto_run.sh 3                  # cycle every family to a fixpoint
 ```
 
 ## Crack
@@ -90,16 +91,17 @@ python3 generators/targeted_unit.py     # name-derived candidates
   --list d=data/dirs.txt --list n=data/names.txt \
   --list p=data/prefixes.txt --list s=data/suffixes.txt \
   --pattern '%d/%n' --pattern '%d/%n%s' --pattern '%p/%n%s' --pattern '%n%s' \
-  --matches matches.tsv
+  --matches ../Data/matches.tsv
 ```
 
-Matches are **streamed to `--matches` (default `matches.tsv`) the moment they are
+Matches are **streamed to `--matches` (the repo's shared log is
+`../Data/matches.tsv`) the moment they are
 found** — one TSV line each, `<hash-hex><TAB><name>`. The file is opened in
 append mode and its hashes are loaded at start-up, so **re-runs never write a
 duplicate**. Just sort it however you like:
 
 ```bash
-sort -k2 matches.tsv
+sort -k2 ../Data/matches.tsv
 ```
 
 ### Pattern language
@@ -162,7 +164,7 @@ CPU. Force it with `--gpu` (fail if unavailable) or `--cpu`.
 ```bash
 ./target/release/hashcracker crack --targets data/vocab/unresolved_targets.txt \
   --list d=data/dirs.txt --list a=data/vocab/medium_dict.txt --list b=data/vocab/medium_dict.txt \
-  --pattern '%d/%a_%b' --matches matches.tsv      # picks GPU automatically
+  --pattern '%d/%a_%b' --matches ../Data/matches.tsv      # picks GPU automatically
 ```
 
 Measured on an AMD RX 6600 XT (RADV): **~1.12 G candidates/s** for `%a_%b` and
@@ -175,8 +177,7 @@ Correctness: the kernel only ever reports candidate **indices**; the host
 re-emits each index from the same arena and re-hashes it before recording, so a
 GPU arithmetic bug can never write a wrong name. `crack --gpu` output has been
 diffed against the fast CPU path on a 2,789-target planted space and against
-`--safe` — both byte-identical, and `tools/gpu_smoke_test.sh` is the standing
-gate.
+`--safe` — both byte-identical.
 
 Implementation notes (src/gpu.rs):
 
@@ -194,7 +195,7 @@ Implementation notes (src/gpu.rs):
   Leverage is therefore bounded: two engine processes on one card raise the
   *combined* rate by only 14% (1112 → 1267 M/s), so interleaving candidate chains
   has little headroom, and the hashcat fork is not the answer either (it cannot
-  express N-way token products — see `REMOTE-GPU.md` for the measured numbers).
+  express N-way token products).
 * MurmurHash64A needs 64-bit multiplies -> the device must expose
   `wgpu::Features::SHADER_INT64`.
 * Dispatches are sized to ~0.3 s of work because amdgpu's scheduler watchdog
@@ -221,9 +222,6 @@ millions of candidates, seconds of runtime, and hits the cartesian scripts miss
 entirely (4-token clips like `axe_move_walk_left_back`, extension-less Lua
 paths, unit/material names referenced as Lua strings).
 
-```bash
-./sweeps/context_sweep.sh 4     # merge -> rebuild targets -> regenerate -> crack
-```
 
 | tool | what it generates |
 | --- | --- |
@@ -245,7 +243,7 @@ paths, unit/material names referenced as Lua strings).
    status effects are bare Lua identifiers — invisible to string mining. Mine
    `^\t+key\s*=` inside the relevant tables as well.
 
-`tools/merge_matches.py` folds `matches.tsv` into the overlay, then re-run
+`tools/merge_matches.py` folds `../Data/matches.tsv` into the overlay, then re-run
 `list_game_bundles.py --only resources` (in `scripts/`) to refresh
 `03_bundle_resources.txt` + `04_bundle_resources.csv` with the new names.
 
@@ -290,7 +288,7 @@ python3 tools/make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab
   --list n=data/vocab/lvl_nn.txt   --list m=data/vocab/lvl_mod.txt \
   --pattern 'modules/d01_%a/%b/%a_quilt_%s__%e__%n' \
   --pattern 'modules/d01_%a/%b/%a_quilt_%s__%e__%n_%m' \
-  --matches matches.tsv
+  --matches ../Data/matches.tsv
 ```
 
 Level bodies are compiled modules with **no embedded names** (checked with
@@ -300,7 +298,7 @@ give no alphabetical bracketing either — the grammar is the only lever.
 
 ## Results
 
-All hits accumulate in **`matches.tsv`** (append + dedup). To fold them into the
+All hits accumulate in **`../Data/matches.tsv`** (append + dedup). To fold them into the
 catalogue, merge that TSV into `../Data/resource_name_overlay.json`
 (which `list_game_bundles.py` loads automatically):
 
@@ -309,7 +307,7 @@ python3 - <<'EOF'
 import json, pathlib
 p = pathlib.Path('../Data/resource_name_overlay.json')
 ov = json.loads(p.read_text())
-for line in pathlib.Path('matches.tsv').read_text().splitlines():
+for line in pathlib.Path('../Data/matches.tsv').read_text().splitlines():
     if '\t' in line:
         h, n = line.split('\t', 1); ov[h] = n
 p.write_text(json.dumps(ov, indent=2, sort_keys=True))
