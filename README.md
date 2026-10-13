@@ -19,15 +19,13 @@ Gauntlet-Reverse-Engineering/
 │   ├── Cargo.toml, Cargo.lock
 │   └── README.md, SCRIPTS.md
 │
-└── Data/                        ← every finding, in one place
+└── Data/                        ← every finding, in one place (see Data/README.md)
     ├── FINDINGS.txt                 ← MASTER format document (all discoveries)
     ├── CUSTOM_ASSET_LOADING_FINDINGS.md
-    ├── Hash Dictionary.txt
-    ├── DEP/                         ← archived + guide docs (DEP/README.md, verify_bundle.py)
-    ├── hash_database.json / .txt    ← 142k name→hash database
+    ├── DEP/                         ← archived + guide docs (DEP/README.md)
+    ├── hash_database.json           ← 142k name→hash dictionary
     ├── bundle_name_overlay.json     ← recovered bundle names
     ├── resource_name_overlay.json   ← recovered resource names
-    ├── global_textures_manifest.json
     ├── bundle_manifest/             ← the resource catalogue (00_file_tree … 12_…)
     └── matches.tsv                  ← append-only hit log from every sweep
 ```
@@ -51,6 +49,8 @@ Gauntlet-Reverse-Engineering/
   (every tool, grouped by purpose).
 - **Findings / current state**: `Data/FINDINGS.txt` (§17 history;
   §18 = state of play; §44–48 = the level grammar and the atlas/chain levers).
+- **Data index**: [`Data/README.md`](Data/README.md) — which files are canonical
+  sources and which are derived from them.
 
 ## Notes
 
@@ -59,16 +59,3 @@ Gauntlet-Reverse-Engineering/
 - `Data/bundle_manifest/` is built by `scripts/list_game_bundles.py` from the game
   install plus the recovered-name overlays; `Data/matches.tsv` is the append-only
   hit log the cracker writes.
-
-## Git
-
-```bash
-git status            # tracked files
-git add -A && git commit -m "…"
-```
-
-Versioned here: the tooling (`scripts/`, `hashcracker/`) and the whole `Data/`
-findings tree — `FINDINGS.txt`, the name/hash databases (`hash_database.*`,
-`*_overlay.json`), the resource catalogue (`Data/bundle_manifest/`) and the hit
-log (`Data/matches.tsv`).
-

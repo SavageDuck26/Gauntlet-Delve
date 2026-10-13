@@ -64,7 +64,6 @@ INSTALL_CANDIDATES = [
 TOOL_DIR = Path(__file__).resolve().parent
 HASH_DB_CANDIDATES = [
     TOOL_DIR.parent / "Data" / "hash_database.json",
-    TOOL_DIR.parent / "Data" / "hash_database.txt",
 ]
 
 BUNDLE_SIG_OLD = 0xF0000004

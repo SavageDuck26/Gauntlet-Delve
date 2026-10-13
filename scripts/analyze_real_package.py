@@ -152,7 +152,7 @@ for i in range(entry_count):
                 if 4 + i + 8 > len(res_data):
                     break
                 val = struct.unpack('<Q', res_data[4+i:4+i+8])[0]
-                # Check if it's a known type (from Hash Dictionary.txt)
+                # Check if it's a known type (type-hash table, Data/FINDINGS.txt)
                 if val == 0x712D6E3DD1024C9C:
                     label = " <- ugg TYPE"
                 elif val == 0xCD4238C6A0C69E32:
@@ -199,7 +199,7 @@ for i in range(entry_count):
                 e_name = struct.unpack('<Q', res_data[poff+8:poff+16])[0]
                 e_count = struct.unpack('<I', res_data[poff+16:poff+20])[0]
                 
-                # Type lookup from Hash Dictionary
+                # Type lookup from the known type-hash table
                 type_names = {
                     0x712D6E3DD1024C9C: "ugg",
                     0xCD4238C6A0C69E32: "texture",

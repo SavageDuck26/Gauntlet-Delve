@@ -13,7 +13,7 @@ Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format docume
 | --- | --- |
 | `crack_resource_names.py` | The original brute-forcer: 8 generators (lua paths, exe/ini strings, dir×stem×suffix…) → `resource_name_overlay.json`. |
 | `crack_bundle_names.py` | Same idea for *bundle* names → `bundle_name_overlay.json`. |
-| `build_hash_database.py` / `build_complete_hash_database.py` | Build `hash_database.json` / `.txt` (the 142k-entry dictionary the catalogue resolves against). |
+| `build_hash_database.py` / `build_complete_hash_database.py` | Build `hash_database.json` (the 142k-entry name dictionary the catalogue resolves against). |
 | `make_family_vocab.py` | Per-family token/dir vocabularies (used by the older sweeps). |
 | `mine_localization.py` | Mines the localization bundle (English block) into a name dictionary. |
 | `scan_binaries.py` | Path-like strings from the game's `binaries/*.exe|dll` → `bin_strings.txt`. |
