@@ -12,7 +12,7 @@ and which hashes are they" is one grep away:
 
 A row counts as missing exactly the way the sweeps count it - the catalogue's `name`
 column is empty *and* `resource_name_overlay.json` has no name for the hash - which is the
-same rule as `hashcracker/tools/build_targets.py` and `tools/status.sh`, so the totals here
+same rule as `../hashcracker/tools/build_targets.py`, so the totals here
 agree with the score line (2,092 rows / 900 hashes at the time of writing; `08_progress.txt`
 carries the live headline).
 

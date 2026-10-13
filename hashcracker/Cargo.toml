@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 rayon = "=1.12.0"          # data-parallel candidate evaluation
 aho-corasick = "=1.1.4"    # fast multi-pattern scan for the `mine` subcommand
 anyhow = "=1.0.102"        # ergonomic errors
-# GPU path (optional at runtime; same deps Duckomp-v5 uses on this box)
+# GPU path (optional at runtime; the same deps used on this box)
 wgpu = "=22.1.0"           # Vulkan compute via WGSL
 pollster = "=0.3.0"        # block_on for wgpu's async setup
 bytemuck = { version = "=1.25.0", features = ["derive"] }

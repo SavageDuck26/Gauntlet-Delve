@@ -117,7 +117,7 @@ def main():
             if line.strip():
                 args_pat += ["--pattern", line]
         res = subprocess.run(
-            [str(HC / "tools" / "hc.sh"), "crack", "--gpu", "--targets", str(ctrl),
+            [str(HC / "target" / "release" / "hashcracker"), "crack", "--gpu", "--targets", str(ctrl),
              *lint, *args_pat, "--matches", str(TMP / "matches.tsv")],
             capture_output=True, text=True, cwd=HC)
         got = (TMP / "matches.tsv").read_text().lower() if (TMP / "matches.tsv").exists() else ""

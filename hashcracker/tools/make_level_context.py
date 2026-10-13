@@ -23,7 +23,7 @@ product) and let the driver escalate one field at a time:
 
 Writes `manifest.tsv` (`slug <TAB> env <TAB> sub`, `-` = no sub dir) plus one
 dir per context holding `codes.txt`, `nn.txt`, `mods.txt`, `shapes.txt` = the
-values actually observed in that context.  `sweeps/level_context.sh` reads it.
+values actually observed in that context.  the context sweep reads it.
 """
 import argparse
 import collections

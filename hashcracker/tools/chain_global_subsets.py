@@ -10,7 +10,7 @@ one_bit_alpha:skinned_3weights` uses filters-in-character style flags, and
 
     python3 tools/chain_global_subsets.py --tech base --k 4 [--out FILE]
 
-Writes `<tech>:<flag>:...` for every sorted subset, for `tools/chain_walk.sh`-style feeding
+Writes `<tech>:<flag>:...` for every sorted subset, for chain-walk-style feeding
 into the engine (chunk it by technique and k - C(110,5) is 124 M, which is a 1.2 GB file).
 """
 import argparse

@@ -4,7 +4,7 @@
 Read from the catalogue, so it must run *after* `list_game_bundles.py --only
 resources` for a round of the level loop to see names found in the previous round.
 `tools/make_level_texture_variants.py` uses the same harvest for a candidate file;
-this writes the per-position lists that `sweeps/level_tex_hunt.sh` feeds to the
+this writes the per-position lists that the level-texture sweep feeds to the
 pattern engine instead.
 
     python3 tools/make_level_tex_vocab.py

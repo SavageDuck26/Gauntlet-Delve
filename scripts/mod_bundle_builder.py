@@ -5,7 +5,7 @@ Gauntlet Mod Bundle Builder
 Builds a complete mod bundle folder from a mod.json definition.
 Supports textures (DDS/PNG), units (GLB/OBJ), materials, Lua scripts, and more.
 
-The output is a ready-to-use mod folder for the GauntletModLoader:
+The output is a ready-to-use mod folder for the companion C++ loader:
     mods/bundles/<ModName>/
         bundle.ini
         <hash>           <- compressed bundle file

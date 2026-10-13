@@ -10,7 +10,7 @@
 //!   * MurmurHash64A needs 64-bit multiplies -> requires
 //!     `wgpu::Features::SHADER_INT64` (available on the RX 6600 XT / Vulkan).
 //!   * Dispatches are kept short (~0.3 s): amdgpu's scheduler watchdog kills
-//!     long-running dispatches (same batching trick as Duckomp-v5).
+//!     long-running dispatches (a standard batching trick).
 //!   * The GPU reports MATCHING INDICES only; the host rebuilds the name with
 //!     the trusted CPU emitter and re-hashes it before recording, so a GPU
 //!     arithmetic bug can never write a wrong name.

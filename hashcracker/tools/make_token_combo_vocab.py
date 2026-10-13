@@ -5,7 +5,7 @@ Token-combination attack inputs (FINDINGS.txt #52).
 The universal sweep (`make_universal_vocab.py`) crosses each known directory with
 the vocabulary as a **single slot** (`dir%m`), so it can only ever propose
 `<dir><leaf we already hold>` or `<dir><single token>`.  Every other sweep that
-touches combinations is scoped - `pack_sweep.sh` combines tokens but only inside
+touches combinations is scoped - the pack sweep combines tokens but only inside
 one package and only with its own tokens, `make_guess_patterns.py` only for
 levels with a twin.
 

@@ -199,7 +199,7 @@ Implementation notes (src/gpu.rs):
 * MurmurHash64A needs 64-bit multiplies -> the device must expose
   `wgpu::Features::SHADER_INT64`.
 * Dispatches are sized to ~0.3 s of work because amdgpu's scheduler watchdog
-  kills long-running dispatches (same batching trick as Duckomp-v5).
+  kills long-running dispatches (a standard batching trick).
 * WGSL gotchas worked around: `meta` is a reserved word; integer literals above
   `i64::MAX` cannot be represented (the 64-bit constants are stored as negative
   `i64` bit patterns and `bitcast` to `u64`); shift amounts must be `u32`;

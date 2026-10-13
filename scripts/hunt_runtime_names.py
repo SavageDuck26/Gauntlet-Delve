@@ -2,7 +2,7 @@
 """
 Consume a runtime name capture and turn it into recovered resource names.
 
-`GauntletModLoader` (`src/name_mining.cpp`) logs every resource name the running
+The companion C++ loader logs every resource name the running
 game touches - first through the engine's `can_get_resource` / `resource_package`
 call sites, and then, once `HashNameAddress` points at the string hasher (FINDINGS
 60.15), through the name->hash function itself, which sees far more names.  The

@@ -7,7 +7,7 @@ string.  `localization/game_strings.strings` holds "More of Thor" and the icon i
 `elf_ultimate_dryadssong`; "Heart of Vlad" gives
 `equippables_icons/relic_heart_of_vlad`.  So the language file *is* the vocabulary:
 this writes every 1-4 word n-gram that starts on a capitalised word, in glued and
-underscored form, ready for `sweeps/localization_hunt.sh`.
+underscored form, ready for the localization sweep.
 
 The `.strings` resource is a null-separated value list (a language index + offset
 table, no text keys), so it is read as text.

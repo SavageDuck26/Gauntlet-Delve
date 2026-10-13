@@ -49,7 +49,7 @@ def main():
     ap.add_argument('--out', default=None,
                     help='write the candidates here instead of hashing them locally; '
                          'then feed the file to the GPU with '
-                         'tools/hc.sh crack --gpu --candidates FILE')
+                         './target/release/hashcracker crack --gpu --candidates FILE')
     ap.add_argument('--write', action='store_true', help='append hits to matches.tsv')
     args = ap.parse_args()
     extra = set()
@@ -128,7 +128,7 @@ def main():
     if out_fh:
         print(f'\nwrote {tested:,} candidates to {args.out}')
         print('now hash them on the GPU:')
-        print(f'  tools/hc.sh crack --gpu --targets data/vocab/targets_shader_library.txt \\')
+        print(f'  ./target/release/hashcracker crack --gpu --targets data/vocab/targets_shader_library.txt \\')
         print(f'      --candidates {args.out} --matches matches.tsv')
         return
     print(f'\ntested {tested:,} candidates -> {len(hits)} hits')

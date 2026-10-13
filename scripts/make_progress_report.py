@@ -8,14 +8,13 @@ not against what we have actually recovered, so it does not move as names land.
 This writes the missing view: one file that answers "how far are we, what did each
 sweep find, and where do I look next".
 
-    python3 make_progress_report.py            # -> bundle_manifest/08_progress.txt
+    python3 make_progress_report.py            # -> ../Data/bundle_manifest/08_progress.txt
     python3 make_progress_report.py --stdout   # print instead
 
 Inputs, all read-only:
-    04_bundle_resources.csv            the catalogue (20,000 rows)
-    resource_name_overlay.json         names we have recovered
-    ../Data/matches.tsv         every hit ever recorded by any sweep
-    ../hashcracker/work/*/status.log   the per-sweep histories
+    ../Data/bundle_manifest/04_bundle_resources.csv   the catalogue (20,000 rows)
+    ../Data/resource_name_overlay.json                names we have recovered
+    ../Data/matches.tsv                               every hit ever recorded by any sweep
 """
 import argparse
 import collections
@@ -181,8 +180,7 @@ def main():
                 break
     w(f'  note: 05_summary.txt reports "Unresolved {static_metric}" - that is counted against the')
     w('  static hash_database.json, not against this overlay, which is why it never moves')
-    w('  as names land.  The numbers above are the live ones (tools/status.sh prints the')
-    w('  same score).')
+    w('  as names land.  The numbers above are the live ones.')
     w()
 
     w('2. COVERAGE BY TYPE   (rows named / rows unresolved / unique unresolved)')
@@ -241,23 +239,21 @@ def main():
                              FINDINGS.read_text(errors='replace'), re.M):
             top_section = max(top_section, int(m.group(1)))
     for name, what in [
-            ('bundle_manifest/00_file_tree.txt', 'every file in the install'),
-            ('bundle_manifest/01_bundle_files.txt', 'the 75 bundle files'),
-            ('bundle_manifest/02_bundle_database.txt', 'bundle -> package map'),
-            ('bundle_manifest/03_bundle_resources.txt', 'all 20,000 rows'),
-            ('bundle_manifest/04_bundle_resources.csv', 'the catalogue the sweeps key off'),
-            ('bundle_manifest/05_summary.txt', 'catalogue stats (static-database metric)'),
-            ('bundle_manifest/06_names_by_name.txt', 'recovered names, A-Z'),
-            ('bundle_manifest/07_names_by_type.txt', 'recovered names grouped by type'),
-            ('bundle_manifest/08_progress.txt', 'this file'),
-            ('bundle_manifest/09_reachability.tsv', 'per unresolved hash: named refs, unresolved refs, sample referrer'),
-            ('bundle_manifest/10_unresolved_master.tsv', 'THE MASTER LIST: every unresolved resource with status reachable / UNREACHABLE'),
-            ('bundle_manifest/11_missing_by_bundle.tsv', 'the missing hashes grouped by package + bundle + type (rows, distinct hashes, bytes, the hashes)'),
-            ('bundle_manifest/12_names_by_bundle.txt', 'every name we hold, grouped by the bundle it ships in, alphabetical inside each (names only)'),
+            ('../Data/bundle_manifest/00_file_tree.txt', 'every file in the install'),
+            ('../Data/bundle_manifest/01_bundle_files.txt', 'the 75 bundle files'),
+            ('../Data/bundle_manifest/02_bundle_database.txt', 'bundle -> package map'),
+            ('../Data/bundle_manifest/03_bundle_resources.txt', 'all 20,000 rows'),
+            ('../Data/bundle_manifest/04_bundle_resources.csv', 'the catalogue the sweeps key off'),
+            ('../Data/bundle_manifest/05_summary.txt', 'catalogue stats (static-database metric)'),
+            ('../Data/bundle_manifest/06_names_by_name.txt', 'recovered names, A-Z'),
+            ('../Data/bundle_manifest/07_names_by_type.txt', 'recovered names grouped by type'),
+            ('../Data/bundle_manifest/08_progress.txt', 'this file'),
+            ('../Data/bundle_manifest/09_reachability.tsv', 'per unresolved hash: named refs, unresolved refs, sample referrer'),
+            ('../Data/bundle_manifest/10_unresolved_master.tsv', 'THE MASTER LIST: every unresolved resource with status reachable / UNREACHABLE'),
+            ('../Data/bundle_manifest/11_missing_by_bundle.tsv', 'the missing hashes grouped by package + bundle + type (rows, distinct hashes, bytes, the hashes)'),
+            ('../Data/bundle_manifest/12_names_by_bundle.txt', 'every name we hold, grouped by the bundle it ships in, alphabetical inside each (names only)'),
             ('../Data/matches.tsv', 'every hit ever, hash<TAB>name'),
-            ('../hashcracker/work/*/status.log', 'per-sweep logs (current run only)'),
-            ('../hashcracker/tools/status.sh', 'live score + what is running right now'),
-            ('docs/FINDINGS.txt', f'the full narrative, sections 1-{top_section}'),
+            ('../Data/FINDINGS.txt', f'the full narrative, sections 1-{top_section}'),
     ]:
         w(f'  {name:44s} {what}')
     w()

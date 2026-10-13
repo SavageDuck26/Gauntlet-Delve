@@ -24,7 +24,7 @@ or re-using only the 42 codes we have.
 
     python3 tools/make_quilt_vocab.py [--out data/vocab/quilt] [--cap N]
 
-Writes, for `hc.sh crack --pattern 'modules/d01_%e/%s/%e_quilt_%p__%n'` style use:
+Writes, for `./target/release/hashcracker crack --pattern 'modules/d01_%e/%s/%e_quilt_%p__%n'` style use:
     env.txt     caves crypt lava
     sub.txt     quilts/base, quilts/encounters, ... (as seen, plus bare "")
     pair.txt    `<shape>__<cells>` - ONE slot, so shape and cells can never

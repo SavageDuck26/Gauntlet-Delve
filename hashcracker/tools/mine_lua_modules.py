@@ -21,7 +21,7 @@ their package).
     python3 tools/mine_lua_modules.py [--source game-source] [--out FILE]
 
 Writes one candidate per line, lowercased, de-duplicated; feed it to
-`tools/hc.sh crack --candidates FILE`.
+`./target/release/hashcracker crack --candidates FILE`.
 """
 import argparse
 import pathlib

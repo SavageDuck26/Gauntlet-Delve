@@ -21,7 +21,7 @@ needs (`prefab_words.txt`, `prefab_words_small.txt`, `prefab_cats.txt`,
 `prefab_envs.txt`, `prefab_suffix.txt`) into DIR, so that run is reproducible:
 
     python3 generators/level_units.py --prefab-vocab data/vocab
-    tools/hc.sh crack --gpu --targets data/vocab/unresolved_targets.txt \
+    ./target/release/hashcracker crack --gpu --targets data/vocab/unresolved_targets.txt \
         --list e=data/vocab/prefab_envs.txt --list c=data/vocab/prefab_cats.txt \
         --list a=data/vocab/prefab_words.txt --list b=data/vocab/prefab_words.txt \
         --list d=data/vocab/prefab_suffix.txt \
