@@ -54,7 +54,7 @@ KNOWN_TYPE_HASHES: Dict[str, str] = {
 
 
 def decode_package(blob: bytes) -> Dict[str, Any]:
-    """Parse raw .package blob → dict."""
+    """Parse raw .package blob -> dict."""
     if len(blob) < 5:
         raise ValueError("blob too short")
 
@@ -88,7 +88,7 @@ def decode_package(blob: bytes) -> Dict[str, Any]:
 
 
 def encode_package(data: Dict[str, Any]) -> bytes:
-    """Encode package dict → binary blob."""
+    """Encode package dict -> binary blob."""
     entries = data["entries"]
     n = len(entries)
     body = bytearray(struct.pack('<I', n))
@@ -111,7 +111,7 @@ def decode_package_file(src: str, dst: str | None = None) -> str:
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
     n = len(data["entries"])
-    print(f"Decoded {src} → {dst}  ({n} entries)")
+    print(f"Decoded {src} -> {dst}  ({n} entries)")
     return dst
 
 
@@ -121,7 +121,7 @@ def encode_package_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.package'
     open(dst, 'wb').write(encode_package(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

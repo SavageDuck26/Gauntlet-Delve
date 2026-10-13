@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Icon vocabulary for the HUD/item atlases (FINDINGS.txt §48.4).
+Icon vocabulary for the HUD/item atlases (FINDINGS.txt #48.4).
 
 The atlas rule is `D/L/<icon>` and the icons are the game's own item names.  For
 relics and talismans those names are already in the corpus:

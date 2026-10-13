@@ -9,12 +9,12 @@ Binary format:
   bytes  luajit_bytecode  -- starts with \x1bLJ\x01 marker
 
 Round-trip:
-  decode → extracts .luajit bytecode file
-  encode → compiles .lua source with luajit, wraps in Stingray header
+  decode -> extracts .luajit bytecode file
+  encode -> compiles .lua source with luajit, wraps in Stingray header
 
 Usage:
-  python3 lua_tools.py decode <file.lua>   → writes <file>.luajit + <file>.src.lua
-  python3 lua_tools.py encode <source.lua> → writes <source>.lua.bin
+  python3 lua_tools.py decode <file.lua>   -> writes <file>.luajit + <file>.src.lua
+  python3 lua_tools.py encode <source.lua> -> writes <source>.lua.bin
   python3 lua_tools.py selftest
 """
 
@@ -158,7 +158,7 @@ def main():
         print(f"Decoded: {path}")
         print(f"  version={info['version']}, bytecode_size={info['bytecode_size']}")
         print(f"  source_path={info['source_path']!r}")
-        print(f"  → {out_jit}")
+        print(f"  -> {out_jit}")
         print("  To disassemble: luajit -ds <file>.luajit")
 
     elif cmd == 'encode':
@@ -168,7 +168,7 @@ def main():
         out = path + '.bin'
         with open(out, 'wb') as f:
             f.write(blob)
-        print(f"Encoded {path} → {out}  ({len(blob)} bytes)")
+        print(f"Encoded {path} -> {out}  ({len(blob)} bytes)")
 
     elif cmd == 'disasm':
         path = sys.argv[2]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Token-combination attack inputs (FINDINGS.txt §52).
+Token-combination attack inputs (FINDINGS.txt #52).
 
 The universal sweep (`make_universal_vocab.py`) crosses each known directory with
 the vocabulary as a **single slot** (`dir%m`), so it can only ever propose

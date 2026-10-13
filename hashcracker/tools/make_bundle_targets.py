@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bundle-scoped candidates (FINDINGS.txt §47).
+Bundle-scoped candidates (FINDINGS.txt #47).
 
 A resource's bundle is a strong hint about its directory: a texture sitting in
 the `characters/mummy_risen` bundle is almost certainly

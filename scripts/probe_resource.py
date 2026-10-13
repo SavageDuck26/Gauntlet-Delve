@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Probe one resource: what it says, and what it references (FINDINGS.txt §51).
+Probe one resource: what it says, and what it references (FINDINGS.txt #51).
 
 A body answers two questions and this prints both:
 

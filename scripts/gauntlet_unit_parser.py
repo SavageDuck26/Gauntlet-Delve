@@ -480,12 +480,12 @@ if __name__ == "__main__":
                 
                 # Print material summary
                 total_materials = sum(len(mesh.materials) for mesh in meshes)
-                print(f"  ✓ Exported {len(meshes)} mesh(es), {total_materials} material(s)")
+                print(f"  [ok] Exported {len(meshes)} mesh(es), {total_materials} material(s)")
                 success_count += 1
                 
             except Exception as e:
                 import traceback
-                print(f"  ✗ Failed: {e}")
+                print(f"  [X] Failed: {e}")
                 if '--verbose' in sys.argv:
                     traceback.print_exc()
                 failed_files.append((filename, str(e)))

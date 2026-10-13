@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 HERE = Path(__file__).parent
 
 
-# ── OBJ reader ────────────────────────────────────────────────────────────────
+# -- OBJ reader ----------------------------------------------------------------
 
 def read_obj(path: str):
     """
@@ -74,7 +74,7 @@ def read_obj(path: str):
     return meshes
 
 
-# ── GLB builder ───────────────────────────────────────────────────────────────
+# -- GLB builder ---------------------------------------------------------------
 
 def _pack_f32(v: float) -> bytes:
     return struct.pack('<f', v)
@@ -161,7 +161,7 @@ def build_glb(meshes: list, mtl_names: list | None = None) -> bytes:
         # Pack position buffer
         pos_bytes = b''.join(struct.pack('<fff', *p) for p in pos_list)
         nor_bytes = b''.join(struct.pack('<fff', *n) for n in nor_list)
-        # glTF UV: V=0 at top (same as Stingray – no flip needed here, OBJ already flipped by unit_to_obj)
+        # glTF UV: V=0 at top (same as Stingray - no flip needed here, OBJ already flipped by unit_to_obj)
         uv_bytes = b''.join(struct.pack('<ff', u, v) for u, v in uv_list)
 
         # Min/max for positions
@@ -246,7 +246,7 @@ def convert_obj_to_glb(obj_path: str, out_path: Optional[str] = None) -> str:
     return out_path
 
 
-# ── batch conversion ──────────────────────────────────────────────────────────
+# -- batch conversion ----------------------------------------------------------
 
 def batch_convert(in_dir: str, out_dir: str, verbose: bool = False):
     in_path  = Path(in_dir)
@@ -255,7 +255,7 @@ def batch_convert(in_dir: str, out_dir: str, verbose: bool = False):
 
     # Use the non-_all OBJs (each shape merged into one file)
     obj_files = sorted(p for p in in_path.glob('*.obj') if '_all' not in p.name)
-    print(f"Found {len(obj_files)} OBJ files → {out_path}")
+    print(f"Found {len(obj_files)} OBJ files -> {out_path}")
 
     success = fail = skip = 0
     for i, obj in enumerate(obj_files, 1):
@@ -273,13 +273,13 @@ def batch_convert(in_dir: str, out_dir: str, verbose: bool = False):
             glb_data = build_glb(meshes)
             glb.write_bytes(glb_data)
             if verbose:
-                print(f"[{i}] {obj.name} → {glb.name}  ({len(glb_data):,} bytes)")
+                print(f"[{i}] {obj.name} -> {glb.name}  ({len(glb_data):,} bytes)")
             success += 1
         except Exception as e:
             print(f"[{i}] FAIL {obj.name}: {e}")
             fail += 1
 
-    print(f"Done: {success} converted, {skip} skipped, {fail} failed → {out_path}")
+    print(f"Done: {success} converted, {skip} skipped, {fail} failed -> {out_path}")
 
 
 if __name__ == '__main__':
@@ -300,7 +300,7 @@ if __name__ == '__main__':
     elif inp.is_file():
         out = args.output or args.out
         result = convert_obj_to_glb(str(inp), out)
-        print(f"Converted → {result}")
+        print(f"Converted -> {result}")
     else:
         print(f"Error: {inp} not found")
         sys.exit(1)

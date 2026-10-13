@@ -39,8 +39,8 @@ from pathlib import Path
 from bundle_tools import murmur_hash64
 
 # The Gauntlet material format embeds texture hashes at MULTIPLE locations:
-# 1. The header "texture entries" (24 + i*16 + 8) — these use a different hash system
-# 2. The trailing data sections — these use full MurmurHash64 values keyed by ThinHash
+# 1. The header "texture entries" (24 + i*16 + 8) - these use a different hash system
+# 2. The trailing data sections - these use full MurmurHash64 values keyed by ThinHash
 #
 # Instead of trying to parse both systems (which we don't fully understand),
 # we use a byte-level SEARCH-AND-REPLACE approach:
@@ -113,8 +113,8 @@ def clone_material(native_path: str, output_path: str,
                     if struct.pack('<Q', oh) == old_bytes:
                         old_path_str = ok
                         break
-                print(f"  ✓ Replaced @ 0x{pos:04x}: 0x{struct.unpack('<Q', old_bytes)[0]:016x} "
-                      f"→ 0x{struct.unpack('<Q', new_bytes)[0]:016x} ({old_path_str})")
+                print(f"  [ok] Replaced @ 0x{pos:04x}: 0x{struct.unpack('<Q', old_bytes)[0]:016x} "
+                      f"-> 0x{struct.unpack('<Q', new_bytes)[0]:016x} ({old_path_str})")
             count += 1
             pos += 8  # Skip past the replaced bytes to avoid infinite loop
         total_replacements += count
@@ -136,7 +136,7 @@ def clone_material(native_path: str, output_path: str,
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_bytes(bytes(blob))
 
-    print(f"  Cloned: {os.path.basename(native_path)} → {output_path}")
+    print(f"  Cloned: {os.path.basename(native_path)} -> {output_path}")
     print(f"  {total_replacements} hash(es) replaced in {len(blob)}-byte material")
     return True
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stingray .unit → glTF 2.0 exporter
+Stingray .unit -> glTF 2.0 exporter
 
 Exports a Gauntlet .unit file to a self-contained glTF Binary (.glb) file that
 Blender (and other tools) can import directly:
@@ -10,7 +10,7 @@ Blender (and other tools) can import directly:
   - Material slots with names matching texture hash filenames
   - Vertex skin weights and joint indices (if present in the file)
   - Bone hierarchy read from a companion .bones file (if provided)
-  - Proper Stingray→Blender coordinate transform (Z-up, right-hand → same)
+  - Proper Stingray->Blender coordinate transform (Z-up, right-hand -> same)
 
 Usage:
   python unit_to_gltf.py  <file.unit>  [file.bones]  [output.glb]
@@ -19,7 +19,7 @@ Usage:
 The .glb output can be imported into Blender via: File > Import > glTF 2.0
 
 Round-trip note:
-  This file handles decode ONLY (unit → glTF). For encode (glTF → unit) see
+  This file handles decode ONLY (unit -> glTF). For encode (glTF -> unit) see
   unit_tools.py which implements a basic re-encoder from OBJ/glTF vertex data.
 """
 
@@ -30,7 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-# ── import unit parser ────────────────────────────────────────────────────────
+# -- import unit parser --------------------------------------------------------
 
 HERE = Path(__file__).parent
 PARENT = HERE.parent
@@ -44,7 +44,7 @@ from unit_to_obj import (
     UnitParser, ElementType, Mesh, Vertex, Shape, Vector3, Vector2
 )
 
-# ── import bones decoder ──────────────────────────────────────────────────────
+# -- import bones decoder ------------------------------------------------------
 _bones_mod = None
 try:
     import importlib.util as _ilu
@@ -56,7 +56,7 @@ except Exception:
     pass
 
 
-# ── glTF constants ────────────────────────────────────────────────────────────
+# -- glTF constants ------------------------------------------------------------
 
 GLTF_COMPONENT = {
     'BYTE':           (5120, 1),
@@ -74,7 +74,7 @@ GLTF_TYPE_COUNTS = {
 
 
 class GltfBuilder:
-    """Minimal glTF 2.0 builder — produces a self-contained .glb."""
+    """Minimal glTF 2.0 builder - produces a self-contained .glb."""
 
     def __init__(self):
         self.asset = {'version': '2.0', 'generator': 'Gauntlet-Stuff unit_to_gltf'}
@@ -91,7 +91,7 @@ class GltfBuilder:
         self._bin_offset = 0
         self._mat_index: Dict[str, int] = {}
 
-    # ── buffer helpers ────────────────────────────────────────────────────────
+    # -- buffer helpers --------------------------------------------------------
 
     def _pad4(self, data: bytes) -> bytes:
         rem = len(data) % 4
@@ -133,7 +133,7 @@ class GltfBuilder:
         self.accessors.append(acc)
         return len(self.accessors) - 1
 
-    # ── material helpers ──────────────────────────────────────────────────────
+    # -- material helpers ------------------------------------------------------
 
     def get_or_create_material(self, name: str) -> int:
         if name in self._mat_index:
@@ -151,7 +151,7 @@ class GltfBuilder:
         self._mat_index[name] = idx
         return idx
 
-    # ── mesh prim builder ─────────────────────────────────────────────────────
+    # -- mesh prim builder -----------------------------------------------------
 
     def add_mesh_primitive(self, mesh_name: str,
                            positions: np.ndarray,
@@ -243,7 +243,7 @@ class GltfBuilder:
         self.scenes[0]['nodes'].append(node_idx)
         return mesh_idx, node_idx
 
-    # ── skeleton helpers ──────────────────────────────────────────────────────
+    # -- skeleton helpers ------------------------------------------------------
 
     def add_skeleton(self, bone_names: List[str],
                      parent_indices: List[int]) -> Tuple[int, List[int]]:
@@ -263,7 +263,7 @@ class GltfBuilder:
             self.nodes.append(node)
             joint_nodes.append(idx)
 
-        # Wire up parent → children
+        # Wire up parent -> children
         for i, parent in enumerate(parent_indices):
             if parent >= 0 and parent < len(joint_nodes):
                 parent_node = self.nodes[joint_nodes[parent]]
@@ -274,7 +274,7 @@ class GltfBuilder:
         if roots:
             self.scenes[0]['nodes'].extend(roots)
 
-        # Inverse bind matrices — identity for all bones (we don't have bind pose)
+        # Inverse bind matrices - identity for all bones (we don't have bind pose)
         ibm_count = len(bone_names)
         identity = np.eye(4, dtype=np.float32)
         ibm_data = np.tile(identity.flatten(), ibm_count).astype(np.float32).tobytes()
@@ -289,7 +289,7 @@ class GltfBuilder:
         })
         return skin_idx, joint_nodes
 
-    # ── GLB serialization ─────────────────────────────────────────────────────
+    # -- GLB serialization -----------------------------------------------------
 
     def to_glb(self) -> bytes:
         """Serialize to GLB binary format."""
@@ -335,7 +335,7 @@ class GltfBuilder:
         return header + chunk_json + json_bytes + chunk_bin + bin_data
 
 
-# ── main converter ─────────────────────────────────────────────────────────────
+# -- main converter -------------------------------------------------------------
 
 def convert_unit_to_gltf(unit_path: str,
                           bones_path: Optional[str] = None,
@@ -396,7 +396,7 @@ def convert_unit_to_gltf(unit_path: str,
                 for v in verts
             ], dtype=np.float32)
 
-        # UVs (flip V from Stingray→OpenGL convention, which Blender uses)
+        # UVs (flip V from Stingray->OpenGL convention, which Blender uses)
         uvs = None
         if any(v.uv for v in verts):
             uvs = np.array([
@@ -420,7 +420,7 @@ def convert_unit_to_gltf(unit_path: str,
         # Group by shape (submesh / material group)
         shapes = mesh.shapes
         if not shapes:
-            # No shape info — one big group
+            # No shape info - one big group
             all_indices = np.array(mesh.indices, dtype=np.uint32)
             mat_name = mesh.materials[0] if mesh.materials else f'material_{mesh_idx}'
             builder.add_mesh_primitive(
@@ -466,14 +466,14 @@ def convert_unit_to_gltf(unit_path: str,
 
     mesh_count = len(parser.meshes)
     total_verts = sum(len(m.vertices) for m in parser.meshes)
-    print(f"unit → glTF: {unit_path}")
-    print(f"  {mesh_count} mesh(es), {total_verts:,} vertices → {out_path}  ({len(glb):,} bytes)")
+    print(f"unit -> glTF: {unit_path}")
+    print(f"  {mesh_count} mesh(es), {total_verts:,} vertices -> {out_path}  ({len(glb):,} bytes)")
     if bone_names:
         print(f"  Skeleton: {len(bone_names)} bones")
     return out_path
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# -- CLI -----------------------------------------------------------------------
 
 def selftest():
     unit = str(HERE / 'Exports' / 'samples' / 'unit_015febcb203ebaaf.unit')

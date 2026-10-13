@@ -10,7 +10,7 @@
 //! across threads and evaluated in parallel.
 //!
 //! Compiling also flattens every byte the pattern can emit into an [`Arena`]
-//! (`arena.rs`) — the CPU hot loop hashes candidates straight out of it without
+//! (`arena.rs`) - the CPU hot loop hashes candidates straight out of it without
 //! ever building a string, and the GPU kernel reads the same bytes.
 
 use crate::arena::Arena;
@@ -34,7 +34,7 @@ pub struct Compiled {
     pub used: Vec<usize>,
     /// per used-slot list length
     pub lens: Vec<u64>,
-    /// Every byte this pattern can emit, flattened once — shared with the GPU
+    /// Every byte this pattern can emit, flattened once - shared with the GPU
     /// kernel, so the CPU no longer walks `Vec<Vec<Vec<u8>>>` per candidate.
     pub arena: Arena,
 }
@@ -59,7 +59,7 @@ impl Compiled {
         let mut rem = idx;
         for i in 0..self.lens.len() {
             // SAFETY: lens.len() == used.len() <= MAX_SLOTS (enforced in
-            // `compile`), and `picks` covers at least that many entries — the
+            // `compile`), and `picks` covers at least that many entries - the
             // debug assertion above states it.
             unsafe {
                 let l = *self.lens.get_unchecked(i);
@@ -75,7 +75,7 @@ impl Compiled {
     pub fn bump(&self, picks: &mut [usize]) -> bool {
         debug_assert!(picks.len() >= self.lens.len(), "picks must cover every slot");
         for i in 0..self.lens.len() {
-            // SAFETY: as in `decode` — the bounds are a compile-time invariant
+            // SAFETY: as in `decode` - the bounds are a compile-time invariant
             // (MAX_SLOTS), asserted in debug builds.
             unsafe {
                 let l = *self.lens.get_unchecked(i);
@@ -103,7 +103,7 @@ impl Compiled {
     }
 
     /// Write candidate #`idx` into `out` (cleared first). No longer on the hot
-    /// path — the crack loop hashes with `hash_fast` — but kept as the reference
+    /// path - the crack loop hashes with `hash_fast` - but kept as the reference
     /// implementation the arena is validated against (and used to rebuild a name
     /// for the rare GPU-reported index).
     #[allow(dead_code)]
@@ -239,7 +239,7 @@ mod tests {
 
     /// The arena is a second implementation of the same maths from a different
     /// layout, so it is checked against the reference (`build` + `hash_bytes`)
-    /// across the *whole* space — every part boundary, block boundary and slot
+    /// across the *whole* space - every part boundary, block boundary and slot
     /// combination. This is the contract the crack loop relies on.
     #[test]
     fn arena_agrees_with_reference_over_the_whole_space() {

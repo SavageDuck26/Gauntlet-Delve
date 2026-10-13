@@ -237,8 +237,8 @@ fn plan(c: &Ctx, comp: &mut Compiler, depth: usize, top: usize) -> Vec<String> {
 }
 
 /// CPU fallback: walk the pattern's index space with the odometer emitter.
-/// Same fast path as `crack` — fill a slacked buffer out of the arena and hash
-/// it with the padded hasher — with the reference re-hash guarding every hit.
+/// Same fast path as `crack` - fill a slacked buffer out of the arena and hash
+/// it with the padded hasher - with the reference re-hash guarding every hit.
 fn run_cpu(pat: &crate::pattern::Compiled, targets: &HashSet<u64>) -> Vec<(u64, Vec<u8>)> {
     let total = pat.total();
     if total == 0 {

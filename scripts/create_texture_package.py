@@ -10,7 +10,7 @@ HOW GAUNTLET'S RESOURCE SYSTEM WORKS (IMPORTANT!)
 =============================================================================
 
 1. ALL resources are identified by MurmurHash64 of their path:
-   "characters/avatar_warrior/warrior_diff" → 0x67111D9E39E1CABC
+   "characters/avatar_warrior/warrior_diff" -> 0x67111D9E39E1CABC
    
 2. Materials contain HARDCODED texture hashes, not paths.
    This means a material will always look for a specific hash.
@@ -31,9 +31,9 @@ Use this to override existing game textures globally.
 
 Your folder structure MUST match the game's original paths:
     my_mod/
-    └── characters/
-        └── avatar_warrior/
-            └── warrior_diff.dds      ← Becomes "characters/avatar_warrior/warrior_diff"
+    +-- characters/
+        +-- avatar_warrior/
+            +-- warrior_diff.dds      <- Becomes "characters/avatar_warrior/warrior_diff"
                                         Hash: 0x67111D9E39E1CABC (matches original!)
 
 When loaded, your texture REPLACES the original everywhere in the game.
@@ -51,7 +51,7 @@ Use this to add NEW textures (not replacing existing ones).
 
 Your textures get a custom path prefix:
     my_mod/
-    └── cool_sword.dds                ← Becomes "custom/my_pack/cool_sword"
+    +-- cool_sword.dds                <- Becomes "custom/my_pack/cool_sword"
                                         Hash: 0xNEW_UNIQUE_HASH
 
 These textures won't automatically appear on existing objects.
@@ -69,23 +69,23 @@ WHY THINGS DON'T WORK (COMMON ISSUES)
 =============================================================================
 
 "My texture isn't showing up!"
-  → Check if your texture hash matches what materials expect.
-  → Use --replace mode if replacing existing textures.
-  → Verify bundle is in Gauntlet/contents/ folder.
+  -> Check if your texture hash matches what materials expect.
+  -> Use --replace mode if replacing existing textures.
+  -> Verify bundle is in Gauntlet/contents/ folder.
 
 "I put the file in the game folder but nothing changed!"
-  → Gauntlet doesn't load loose files! Only bundles.
-  → You MUST use this tool to create a bundle.
+  -> Gauntlet doesn't load loose files! Only bundles.
+  -> You MUST use this tool to create a bundle.
 
 "The original texture still shows!"
-  → Your package might load before the game's.
-  → Ensure your package loads AFTER core game packages.
-  → Or use the game's package as a dependency.
+  -> Your package might load before the game's.
+  -> Ensure your package loads AFTER core game packages.
+  -> Or use the game's package as a dependency.
 
 "Replacement mode hashes don't match!"
-  → Your folder structure doesn't match the original.
-  → Check the game's texture paths in the documentation.
-  → Path must be EXACT: "characters/avatar_warrior/warrior_diff"
+  -> Your folder structure doesn't match the original.
+  -> Check the game's texture paths in the documentation.
+  -> Path must be EXACT: "characters/avatar_warrior/warrior_diff"
 
 =============================================================================
 USAGE
@@ -290,7 +290,7 @@ def create_materials_for_textures(textures: List[TextureResource]) -> List[Mater
     
     for tex in textures:
         # Extract just the filename without path or extension
-        # e.g., "custom/global_textures/93fd6865a4093d17" → "93fd6865a4093d17"
+        # e.g., "custom/global_textures/93fd6865a4093d17" -> "93fd6865a4093d17"
         material_name = Path(tex.name).name  # Get filename part
         
         # Create material data that references this texture
@@ -349,7 +349,7 @@ def build_package_data(package_name: str, texture_names: List[str],
       uint32: dependency_count    (number of 4-byte dependency refs)
       uint32[dependency_count]: dependency_references
     
-    Entry size = 20 + (dependency_count × 4) bytes
+    Entry size = 20 + (dependency_count x 4) bytes
     Trailer = one byte (native packages typically use 0x01)
     
     For simple standalone textures, we use dependency_count=0 
@@ -553,11 +553,11 @@ def create_texture_package(texture_folder: str, package_name: str,
     Any material or code requesting a texture by hash will find it.
     
     REPLACEMENT MODE (--replace):
-        Your texture path matches the original → same hash → your texture wins!
+        Your texture path matches the original -> same hash -> your texture wins!
         Example: "characters/avatar_warrior/warrior_diff" replaces the original
     
     NEW CONTENT MODE (default):
-        Your texture gets a unique path/hash → won't conflict with game textures
+        Your texture gets a unique path/hash -> won't conflict with game textures
         Example: "custom/my_pack/sword_diff" is a brand new texture
     
     ==========================================================================
@@ -702,9 +702,9 @@ def create_texture_package(texture_folder: str, package_name: str,
     
     if replacement_mode:
         print(f"""
-╔══════════════════════════════════════════════════════════════════════╗
-║  REPLACEMENT MODE - Your textures will GLOBALLY override originals  ║
-╚══════════════════════════════════════════════════════════════════════╝
++======================================================================+
+|  REPLACEMENT MODE - Your textures will GLOBALLY override originals  |
++======================================================================+
 
 1. INSTALL: Copy the bundle to Gauntlet's contents folder:
    
@@ -723,9 +723,9 @@ TEXTURES THAT WILL BE REPLACED:
 """)
     else:
         print(f"""
-╔══════════════════════════════════════════════════════════════════════╗
-║  NEW CONTENT MODE - Textures available for custom materials/units   ║
-╚══════════════════════════════════════════════════════════════════════╝
++======================================================================+
+|  NEW CONTENT MODE - Textures available for custom materials/units   |
++======================================================================+
 
 1. INSTALL: Copy the bundle to Gauntlet's contents folder:
    
@@ -762,14 +762,14 @@ AVAILABLE TEXTURES:
 To verify your hashes match the originals, check against known hashes:
 
   Warrior Textures:
-    characters/avatar_warrior/warrior_diff → 0x67111D9E39E1CABC
-    characters/avatar_warrior/warrior_norm → 0xF8C23D1F8B219C6D
-    characters/avatar_warrior/warrior_spec → 0x6A77D7C1FF442EE7
+    characters/avatar_warrior/warrior_diff -> 0x67111D9E39E1CABC
+    characters/avatar_warrior/warrior_norm -> 0xF8C23D1F8B219C6D
+    characters/avatar_warrior/warrior_spec -> 0x6A77D7C1FF442EE7
     
   Elf Textures:
-    characters/avatar_elf/elf_diff → 0x5A946011CD458AA6
-    characters/avatar_elf/elf_norm → 0x6F9F0047B68BC00E
-    characters/avatar_elf/elf_spec → 0x7E3347EB6249EBFF
+    characters/avatar_elf/elf_diff -> 0x5A946011CD458AA6
+    characters/avatar_elf/elf_norm -> 0x6F9F0047B68BC00E
+    characters/avatar_elf/elf_spec -> 0x7E3347EB6249EBFF
 
 If your hashes don't match, your folder structure is wrong!
 The path from your texture folder root must exactly match the game's paths.
@@ -788,11 +788,11 @@ MODES
 =============================================================================
 
 REPLACEMENT MODE (--replace):
-  Textures use exact game paths → same hash → overrides originals globally!
+  Textures use exact game paths -> same hash -> overrides originals globally!
   
   Your folder structure must match the game's:
     my_mod/characters/avatar_warrior/warrior_diff.dds
-           ↓
+           v
     Path: "characters/avatar_warrior/warrior_diff"
     Hash: 0x67111D9E39E1CABC (matches original!)
   
@@ -815,11 +815,11 @@ EXAMPLES
    
    # Folder structure:
    #   warrior_reskin/
-   #   └── characters/
-   #       └── avatar_warrior/
-   #           ├── warrior_diff.dds
-   #           ├── warrior_norm.dds
-   #           └── warrior_spec.dds
+   #   +-- characters/
+   #       +-- avatar_warrior/
+   #           +-- warrior_diff.dds
+   #           +-- warrior_norm.dds
+   #           +-- warrior_spec.dds
    
    python create_texture_package.py warrior_reskin my_warrior --replace
 
@@ -827,8 +827,8 @@ EXAMPLES
    
    # Folder structure:
    #   my_weapons/
-   #   ├── cool_sword_diff.dds
-   #   └── cool_sword_norm.dds
+   #   +-- cool_sword_diff.dds
+   #   +-- cool_sword_norm.dds
    
    python create_texture_package.py my_weapons weapon_pack
 

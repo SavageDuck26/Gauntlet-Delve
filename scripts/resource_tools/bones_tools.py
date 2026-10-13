@@ -6,15 +6,15 @@ Type hash: 0x18DEAD01056B72E9
 Binary layout (confirmed, 363-byte sample):
   uint32  bone_count
   uint32  unknown = 1     (possibly format version or flags)
-  bone_count × uint32     name_hash32  (MurmurHash32 of each bone name)
+  bone_count x uint32     name_hash32  (MurmurHash32 of each bone name)
   uint32  string_count    = bone_count (redundant, always matches)
-  string_count × str\0    null-terminated bone name strings, packed
+  string_count x str\0    null-terminated bone name strings, packed
 
 NOTE: This resource contains only the bone name list.
 The parent hierarchy is stored in the .unit resource (node tree).
 The hashes allow animation tracks to reference bones efficiently.
 
-Round-trip: binary ↔ JSON
+Round-trip: binary <-> JSON
 """
 
 import struct, json, sys, os
@@ -169,7 +169,7 @@ def main():
         out = path.rsplit('.', 1)[0] + '.json'
         with open(out, 'w') as f:
             json.dump(data, f, indent=2)
-        print(f"Decoded {data['bone_count']} bones → {out}")
+        print(f"Decoded {data['bone_count']} bones -> {out}")
 
     elif cmd == 'encode':
         path = sys.argv[2]
@@ -179,7 +179,7 @@ def main():
         blob = encode_bones(data)
         with open(out, 'wb') as f:
             f.write(blob)
-        print(f"Encoded {len(data['bones'])} bones → {out}  ({len(blob)} bytes)")
+        print(f"Encoded {len(data['bones'])} bones -> {out}  ({len(blob)} bytes)")
 
     elif cmd == 'bvh':
         # bones_tools bvh <file.bones>  [out.bvh]
@@ -202,7 +202,7 @@ def main():
         sys.exit(1)
 
 
-# ── Blender / BVH export ──────────────────────────────────────────────────────
+# -- Blender / BVH export ------------------------------------------------------
 
 def export_bvh(bones_json: dict, out_path: str,
                parent_indices: list | None = None) -> str:
@@ -261,13 +261,13 @@ def export_bvh(bones_json: dict, out_path: str,
     lines.append('MOTION')
     lines.append('Frames: 1')
     lines.append('Frame Time: 0.033333')
-    # 6 channels per bone × n bones, all zero (identity)
+    # 6 channels per bone x n bones, all zero (identity)
     lines.append(' '.join(['0.00'] * 6 * n))
 
     with open(out_path, 'w') as f:
         f.write('\n'.join(lines) + '\n')
 
-    print(f"Exported {n} bones → {out_path}")
+    print(f"Exported {n} bones -> {out_path}")
     return out_path
 
 
@@ -300,7 +300,7 @@ def export_armature_json(bones_json: dict, out_path: str,
     }
     with open(out_path, 'w') as f:
         json.dump(armature, f, indent=2)
-    print(f"Exported armature JSON ({n} bones) → {out_path}")
+    print(f"Exported armature JSON ({n} bones) -> {out_path}")
     return out_path
 
 

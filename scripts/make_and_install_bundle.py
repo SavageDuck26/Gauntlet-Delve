@@ -28,15 +28,15 @@ WHAT THIS DOES:
 TEXTURE FOLDER SETUP:
     For --replace mode, mirror the game's folder structure:
         my_textures/
-        └── characters/
-            └── avatar_warrior/
-                ├── warrior_diff.dds
-                └── warrior_norm.dds
+        +-- characters/
+            +-- avatar_warrior/
+                +-- warrior_diff.dds
+                +-- warrior_norm.dds
 
     For new content mode, just put DDS files in a folder:
         my_textures/
-        ├── cool_sword.dds
-        └── shield_diff.dds
+        +-- cool_sword.dds
+        +-- shield_diff.dds
 """
 
 import struct
@@ -329,7 +329,7 @@ EXAMPLES:
         print(f"ERROR: Texture folder not found: {folder}")
         sys.exit(1)
 
-    # ── Determine package path and prefix ──
+    # -- Determine package path and prefix --
     if args.replace:
         pkg_path = f"resource_packages/replacements/{args.package_name}"
         tex_prefix = ""
@@ -349,7 +349,7 @@ EXAMPLES:
     print(f"  Bundle hash  : 0x{pkg_hash:016X}")
     print()
 
-    # ── Step 1: Collect DDS textures ──
+    # -- Step 1: Collect DDS textures --
     print("[1/5] Scanning for textures...")
     dds_files = sorted(set(folder.glob('**/*.dds')) | set(folder.glob('**/*.DDS')))
     if not dds_files:
@@ -377,14 +377,14 @@ EXAMPLES:
 
         res = Resource(TYPE_TEXTURE, res_name, name_hash, data)
         textures.append(TextureInfo(res, w, h, fmt, str(dds_path)))
-        print(f"  {dds_path.name:40s}  {w}x{h} {fmt:5s}  → {res_name}")
+        print(f"  {dds_path.name:40s}  {w}x{h} {fmt:5s}  -> {res_name}")
         print(f"  {'':40s}  hash 0x{name_hash:016X}")
 
     print(f"  Found {len(textures)} valid texture(s)")
     if not textures:
         sys.exit(1)
 
-    # ── Step 2: Build resources ──
+    # -- Step 2: Build resources --
     print("\n[2/5] Building bundle...")
     all_resources: List[Resource] = []
 
@@ -417,16 +417,16 @@ EXAMPLES:
 
     if args.dry_run:
         print("\n[DRY RUN] Would perform the following actions:")
-        print(f"  • Write bundle to {CONTENTS_DIR / bundle_name}")
-        print(f"  • Create empty stream {CONTENTS_DIR / (bundle_name + '.stream')}")
-        print(f"  • Register {len(all_resources)} entries in {BUNDLE_DB}")
+        print(f"  - Write bundle to {CONTENTS_DIR / bundle_name}")
+        print(f"  - Create empty stream {CONTENTS_DIR / (bundle_name + '.stream')}")
+        print(f"  - Register {len(all_resources)} entries in {BUNDLE_DB}")
         if not args.no_lua:
             mod_dir = MODS_DIR / f"{args.package_name}(FF)v1.0"
-            print(f"  • Create Lua mod at {mod_dir / 'script_main.lua'}")
+            print(f"  - Create Lua mod at {mod_dir / 'script_main.lua'}")
         print("\nNo files were written.")
         return
 
-    # ── Step 3: Register in bundle_database.data ──
+    # -- Step 3: Register in bundle_database.data --
     print("\n[3/5] Updating bundle_database.data...")
     with open(BUNDLE_DB, 'rb') as f:
         db_data = f.read()
@@ -434,7 +434,7 @@ EXAMPLES:
     existing_bundles = {e['bundle'] for e in entries}
 
     if bundle_name in existing_bundles:
-        print(f"  Bundle {bundle_name} already in database — skipping registration")
+        print(f"  Bundle {bundle_name} already in database - skipping registration")
     else:
         backup = BUNDLE_DB.with_suffix('.data.backup')
         if not backup.exists():
@@ -449,7 +449,7 @@ EXAMPLES:
             f.write(new_db)
         print(f"  Added {len(all_resources)} entries (total now: {len(entries)})")
 
-    # ── Step 4: Install bundle ──
+    # -- Step 4: Install bundle --
     print("\n[4/5] Installing bundle...")
     bundle_dst = CONTENTS_DIR / bundle_name
     with open(bundle_dst, 'wb') as f:
@@ -461,7 +461,7 @@ EXAMPLES:
         stream_dst.touch()
         print(f"  Created empty {stream_dst.name}")
 
-    # ── Step 5: Generate Lua mod ──
+    # -- Step 5: Generate Lua mod --
     if args.no_lua:
         print("\n[5/5] Lua mod generation skipped (--no-lua)")
     else:
@@ -478,7 +478,7 @@ EXAMPLES:
             f.write(lua_code)
         print(f"  Wrote {lua_path}")
 
-    # ── Save manifest ──
+    # -- Save manifest --
     manifest = {
         "package_name": args.package_name,
         "package_path": pkg_path,
@@ -505,7 +505,7 @@ EXAMPLES:
         json.dump(manifest, f, indent=2)
     print(f"\n  Manifest: {manifest_path}")
 
-    # ── Done ──
+    # -- Done --
     print()
     print("=" * 70)
     print("  DONE!  Start the game and your bundle will load automatically.")

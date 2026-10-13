@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Name the *older* build's resources (FINDINGS.txt §50).
+Name the *older* build's resources (FINDINGS.txt #50).
 
 A name hash depends only on the name, so a hash that exists in an old snapshot
 but not in the current one is a name that was removed or renamed - and the

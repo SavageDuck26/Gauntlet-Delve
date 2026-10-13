@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Per-atlas family recombination (FINDINGS.txt §48.4).
+Per-atlas family recombination (FINDINGS.txt #48.4).
 
 Each referring atlas is a directory, and the icons in it are *members of a
 family*, so the resolved leaves of that directory carry the whole grammar:
 
     menu/level_select/level_button_adventure[_completed|_silver|_locked|_over]
     menu/level_select/flow_background_{horizontal,vertical}[_silver]
-    menu/shop/shop_relic_tier_{1,2,3}      shop_item_background_{owned,equipped…}
-    menu/hero_coins/{warrior,elf,…}_{colored,over,standard}
+    menu/shop/shop_relic_tier_{1,2,3}      shop_item_background_{owned,equipped...}
+    menu/hero_coins/{warrior,elf,...}_{colored,over,standard}
 
 i.e. `<stem>[_<state>]`.  So for every atlas directory: take the stems and the
 state suffixes seen in it (plus the global state set), and enumerate the cross

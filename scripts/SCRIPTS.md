@@ -1,28 +1,28 @@
-# scripts/ — RE toolchain index
+# scripts/ - RE toolchain index
 
 The Python RE toolchain. Files are imported as modules by their neighbours, so
 they stay in a flat directory (the 7 files marked **lib** are imported by
-others — don't move them without updating importers).
+others - don't move them without updating importers).
 
-Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format document,
-§17–18 = current state) and [`../Data/DEP/`](../Data/DEP/).
+Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format document;
+sections 17-18 = current state) and [`../Data/DEP/`](../Data/DEP/).
 
 ## Name recovery (the pipeline that produced the overlays)
 
 | script | purpose |
 | --- | --- |
-| `crack_resource_names.py` | The original brute-forcer: 8 generators (lua paths, exe/ini strings, dir×stem×suffix…) → `resource_name_overlay.json`. |
-| `crack_bundle_names.py` | Same idea for *bundle* names → `bundle_name_overlay.json`. |
+| `crack_resource_names.py` | The original brute-forcer: 8 generators (lua paths, exe/ini strings, dirxstemxsuffix...) -> `resource_name_overlay.json`. |
+| `crack_bundle_names.py` | Same idea for *bundle* names -> `bundle_name_overlay.json`. |
 | `build_hash_database.py` / `build_complete_hash_database.py` | Build `hash_database.json` (the 142k-entry name dictionary the catalogue resolves against). |
 | `make_family_vocab.py` | Per-family token/dir vocabularies (used by the older sweeps). |
 | `mine_localization.py` | Mines the localization bundle (English block) into a name dictionary. |
-| `scan_binaries.py` | Path-like strings from the game's `binaries/*.exe|dll` → `bin_strings.txt`. |
-| `scan_bundle_strings.py` | Strings from bundle bodies → `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
-| `make_progress_report.py` | The overall progress view → `../Data/bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its `Unresolved` line is the static `hash_database.json` metric, not ours — the note in `08_progress.txt` reads that number out of the file so it cannot go stale. |
-| `make_missing_report.py` | `../Data/bundle_manifest/11_missing_by_bundle.tsv` — the missing view **grouped**: one row per `(package, bundle, type)` with the missing-row count, the distinct-hash count, the bytes, and the hashes themselves (size-ordered) in the last column. The missing rule is the sweeps' own (catalogue `name` empty **and** the hash absent from `resource_name_overlay.json`), so its totals are exactly the score line's complement — 162 groups, 2,092 rows, 900 hashes at the time of writing, per type: texture 672/252, animation 539/303, shader_library 350/137, material 205/89, particles 159/76, shader 64/36, unit 48/39, timpani_bank 37/37, level 12/10, flow 4/1, package 2/2. `make_progress_report.py` calls `write_missing_by_bundle()`, so every progress run refreshes it next to `08_progress.txt` (`--stdout` prints instead). |
-| `make_names_by_bundle.py` | `../Data/bundle_manifest/12_names_by_bundle.txt` — every name we hold **grouped by the bundle it ships in**, alphabetical inside each bundle, names only (no hashes): a `### <bundle>   <package>   (N names)` header then one name per line. 13,972 name-rows in 76 bundles, which is more than the 6,932 distinct names because duplicated resources appear under each bundle that carries them — that duplication is the point of the view. `make_progress_report.py` calls it, so it refreshes with 08/11. |
-| `reachability_audit.py` | Walks every bundle body, records which resources reference which (8-byte-aligned catalogue hashes), and reports per unresolved hash how many **named** resources point at it → `../Data/bundle_manifest/09_reachability.tsv`. 1,044 of the 1,096 are referenced; 52 are orphaned (FINDINGS 60.14). |
-| `hunt_shader_subsets.py` | Shader chains scoped by body size: each technique has its own size band and, within a technique, size predicts the flag count (`base` 1 flag ≈ 68.6 KB … 9 flags ≈ 131.4 KB), so the sorted-subset enumeration is bounded. Pair it with the `shader_pass_flags` mined out of `render_config` (FINDINGS 60.14). |
+| `scan_binaries.py` | Path-like strings from the game's `binaries/*.exe|dll` -> `bin_strings.txt`. |
+| `scan_bundle_strings.py` | Strings from bundle bodies -> `bundle_strings.txt`. `--grep` also reports *which* bundle and entry hash holds a string (how a cut name is told from a name live code still references). |
+| `make_progress_report.py` | The overall progress view -> `../Data/bundle_manifest/08_progress.txt`: live coverage (headline, by type, by package), the recovery timeline from git, and pointers to everything else. `05_summary.txt` is catalogue-only and its `Unresolved` line is the static `hash_database.json` metric, not ours - the note in `08_progress.txt` reads that number out of the file so it cannot go stale. |
+| `make_missing_report.py` | `../Data/bundle_manifest/11_missing_by_bundle.tsv` - the missing view **grouped**: one row per `(package, bundle, type)` with the missing-row count, the distinct-hash count, the bytes, and the hashes themselves (size-ordered) in the last column. The missing rule is the sweeps' own (catalogue `name` empty **and** the hash absent from `resource_name_overlay.json`), so its totals are exactly the score line's complement - 162 groups, 2,092 rows, 900 hashes at the time of writing, per type: texture 672/252, animation 539/303, shader_library 350/137, material 205/89, particles 159/76, shader 64/36, unit 48/39, timpani_bank 37/37, level 12/10, flow 4/1, package 2/2. `make_progress_report.py` calls `write_missing_by_bundle()`, so every progress run refreshes it next to `08_progress.txt` (`--stdout` prints instead). |
+| `make_names_by_bundle.py` | `../Data/bundle_manifest/12_names_by_bundle.txt` - every name we hold **grouped by the bundle it ships in**, alphabetical inside each bundle, names only (no hashes): a `### <bundle>   <package>   (N names)` header then one name per line. 13,972 name-rows in 76 bundles, which is more than the 6,932 distinct names because duplicated resources appear under each bundle that carries them - that duplication is the point of the view. `make_progress_report.py` calls it, so it refreshes with 08/11. |
+| `reachability_audit.py` | Walks every bundle body, records which resources reference which (8-byte-aligned catalogue hashes), and reports per unresolved hash how many **named** resources point at it -> `../Data/bundle_manifest/09_reachability.tsv`. 1,044 of the 1,096 are referenced; 52 are orphaned (FINDINGS 60.14). |
+| `hunt_shader_subsets.py` | Shader chains scoped by body size: each technique has its own size band and, within a technique, size predicts the flag count (`base` 1 flag ~ 68.6 KB ... 9 flags ~ 131.4 KB), so the sorted-subset enumeration is bounded. Pair it with the `shader_pass_flags` mined out of `render_config` (FINDINGS 60.14). |
 | `extract_anim_refs.py` | Maps unresolved animation resources to their owning unit via `state_machine` bodies. |
 | `catalog_bundles.py`, `add_bundle_to_db.py`, `bundle_database_manager.py` | Bundle catalogue + `bundle_database.data` bookkeeping. |
 | `render_config_tools.py` | `render_config` resource handling. |
@@ -32,9 +32,9 @@ Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format docume
 | script | purpose |
 | --- | --- |
 | `hunt_old_names.py` | Mines a snapshot's own harvested strings against that snapshot's *own* resource hashes (2014: 2,785 names, 2015-01: 3,102). |
-| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** — a rename (341 moves 2015-01→2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
+| `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** - a rename (341 moves 2015-01->2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
 | `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. |
-| `tools/apply_renames.py` (hashcracker) | Joins the two above: old name → new name, and a token-translation pass over the old corpus. |
+| `tools/apply_renames.py` (hashcracker) | Joins the two above: old name -> new name, and a token-translation pass over the old corpus. |
 
 A harvest (`_names.txt`) is evidence of a *string*, never of a live resource, so it
 always needs `check_build_liveness.py` (or `hunt_old_names.py`) behind it. Keep a
@@ -45,11 +45,11 @@ control name in every batch: `characters/gator_brute/gator_brute` should read li
 
 | script | purpose |
 | --- | --- |
-| `hunt_runtime_names.py` | Turns a `runtime_names.tsv` capture from the loader's name mining into three classes — **KNOWN** (the hash is a row we had already named: the control that proves the capture-and-hash chain end to end), **RECOVERED** (a previously unresolved row, now named by the engine itself) and **NEW** (no catalogue row at all). Reads the catalogue and `10_unresolved_master.tsv` read-only and writes its report *next to the capture*, so a session can be gone over before anything is folded into the overlay. `--list known|recovered|new`, `--out`. |
+| `hunt_runtime_names.py` | Turns a `runtime_names.tsv` capture from the loader's name mining into three classes - **KNOWN** (the hash is a row we had already named: the control that proves the capture-and-hash chain end to end), **RECOVERED** (a previously unresolved row, now named by the engine itself) and **NEW** (no catalogue row at all). Reads the catalogue and `10_unresolved_master.tsv` read-only and writes its report *next to the capture*, so a session can be gone over before anything is folded into the overlay. `--list known|recovered|new`, `--out`. |
 
 A runtime capture is a TSV of hash/name pairs produced by the C++ loader's name
 mining; `hunt_runtime_names.py` reads one and classifies it. The engine's string
-hasher for this build is at RVA `0xBCD0` (`HashNameAbi=3`) — see FINDINGS 60.15
+hasher for this build is at RVA `0xBCD0` (`HashNameAbi=3`) - see FINDINGS 60.15
 for how it was located.
 
 
@@ -70,17 +70,17 @@ and the scratch `_check_db.py`, `_check_entry_table.py`, `_compare_db.py`,
 
 | script | purpose |
 | --- | --- |
-| `export_all_resources.py` | Walks every bundle and writes each resource body to a file named after it, with the type name as its extension (`named/<resource path>.unit`, `named/lua/managers/x.lua`, …). Rows we could not name go to `unresolved/<type>/<hash>.<ext>`, one file per distinct hash — the gaps, kept visible. Also writes `index.tsv` (every catalogue row: status, type, name, hash, package, size, bundle, index, path) and `summary.txt`. `--dds-view` adds `view/dds/**`, a hardlink per texture whose body really is a DDS, so image viewers open them at no disk cost. `--only TYPE`, `--limit N`, `--named-only`, `--view-only`. |
-| `convert_export.py` | Turns the dump into types you can just open: `view/png/**` (a `.texture` body is a DDS blob), `view/mp3/**` (`.ugg` is 16 bytes then an Ogg stream, through ffmpeg) and `view/glb/**` (`.unit` → glTF, using its companion `.bones` when it has one). Unnamed rows land under `view/<kind>/_unresolved/`. Failures are counted, not fatal — cubemaps and BC6/BC7 defeat Pillow. Each job now gets its **own** temp file: `named/elias/*/audio/` is full of identical stems (`1_0_1.ugg`, `completed.ugg`, …) and a stem-keyed temp path let parallel workers clobber and unlink each other's stream, which silently lost 10 of the 144 tracks on a clean rebuild. |
+| `export_all_resources.py` | Walks every bundle and writes each resource body to a file named after it, with the type name as its extension (`named/<resource path>.unit`, `named/lua/managers/x.lua`, ...). Rows we could not name go to `unresolved/<type>/<hash>.<ext>`, one file per distinct hash - the gaps, kept visible. Also writes `index.tsv` (every catalogue row: status, type, name, hash, package, size, bundle, index, path) and `summary.txt`. `--dds-view` adds `view/dds/**`, a hardlink per texture whose body really is a DDS, so image viewers open them at no disk cost. `--only TYPE`, `--limit N`, `--named-only`, `--view-only`. |
+| `convert_export.py` | Turns the dump into types you can just open: `view/png/**` (a `.texture` body is a DDS blob), `view/mp3/**` (`.ugg` is 16 bytes then an Ogg stream, through ffmpeg) and `view/glb/**` (`.unit` -> glTF, using its companion `.bones` when it has one). Unnamed rows land under `view/<kind>/_unresolved/`. Failures are counted, not fatal - cubemaps and BC6/BC7 defeat Pillow. Each job now gets its **own** temp file: `named/elias/*/audio/` is full of identical stems (`1_0_1.ugg`, `completed.ugg`, ...) and a stem-keyed temp path let parallel workers clobber and unlink each other's stream, which silently lost 10 of the 144 tracks on a clean rebuild. |
 
 What the dump actually contains, learned the hard way: `.texture` bodies begin with
 `DDS `, so they are real DDS files; `.lua` bodies are **LuaJIT bytecode** behind a
 12-byte resource header, not source (the chunk name is embedded, which is why the
 runtime capture named Lua so well); `.shader_library` names carry the chain form
-(`base:…:diffuse_map:normal_map:static_lighting`); only 40 catalogue rows have a
+(`base:...:diffuse_map:normal_map:static_lighting`); only 40 catalogue rows have a
 `.stream` sidecar, so the dump is otherwise self-contained. 8,891 of the 17,880 named
-rows are distinct resources — the rest are the same resource shipped in more than one
-package — and the 2,124 unnamed rows are 915 distinct hashes, kept as 999 files (one
+rows are distinct resources - the rest are the same resource shipped in more than one
+package - and the 2,124 unnamed rows are 915 distinct hashes, kept as 999 files (one
 per (type, hash) pair).
 
 
@@ -102,22 +102,22 @@ per (type, hash) pair).
 
 ## Libraries (imported by the above)
 
-`list_game_bundles.py` **(lib)** — bundle/database parser + **the catalogue
-builder** (`--only resources` regenerates `../Data/bundle_manifest/03_…txt` and
-`04_…csv`); `bundle_tools.py` **(lib)**; `unit_to_obj.py` **(lib)**;
+`list_game_bundles.py` **(lib)** - bundle/database parser + **the catalogue
+builder** (`--only resources` regenerates `../Data/bundle_manifest/03_...txt` and
+`04_...csv`); `bundle_tools.py` **(lib)**; `unit_to_obj.py` **(lib)**;
 `unit_to_gltf.py` **(lib)**; `gltf_to_unit.py` **(lib)**;
 `create_texture_package.py` **(lib)**; `clone_material.py` **(lib)**.
 
 ## Reading a resource for what it uses
 
-`hunt_unit_textures.py` — point it at a depot `contents/<bundle-id>` file and a
+`hunt_unit_textures.py` - point it at a depot `contents/<bundle-id>` file and a
 resource, and it lists what that resource references.  It picks the right entry
 when one name hash carries several types (bones/unit/material, `--type`), matches
 body references against the **bundle's own TOC** (so references we cannot name
 yet show up as targets), names what it can by convention (including Stingray's
 `m_<name>` material form), and with `--materials` decodes referenced materials
 for their texture slots.  This is how `characters/demon_overlord_mini` was shown
-to inherit `characters/demon_heavy`'s maps (`FINDINGS.txt` §38).
+to inherit `characters/demon_heavy`'s maps (`FINDINGS.txt` #38).
 
 ```bash
 python3 hunt_unit_textures.py \
@@ -127,7 +127,7 @@ python3 hunt_unit_textures.py \
 
 ## Probing one resource directly
 
-`probe_resource.py` — the one-shot version of the above: give it a name and it
+`probe_resource.py` - the one-shot version of the above: give it a name and it
 dumps what the resource *says* (printable strings) and what it *points at*
 (every 8-byte window matched against **every name we hold**, not just the
 bundle's TOC, so cross-bundle references resolve too).  Use it to ask whether a
@@ -140,9 +140,9 @@ python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
 
 ## Subdirectories
 
-`resource_tools/` — the 16-type resource read/write suite.
+`resource_tools/` - the 16-type resource read/write suite.
 
-The findings and the catalogue no longer live here — they are in the repo's
+The findings and the catalogue no longer live here - they are in the repo's
 **`Data/`** tree: `Data/FINDINGS.txt`, `Data/DEP/`, `Data/*_overlay.json`,
 `Data/hash_database.*`, `Data/bundle_manifest/` and `Data/matches.tsv`.
 
@@ -181,7 +181,7 @@ regenerated after every batch of new names.
 
 The manifest is a *derived* artefact: everything under `../Data/bundle_manifest/` is built from
 the game install, `resource_name_overlay.json` and `matches.tsv`, and the whole lot can
-be rebuilt in about a minute.  Run it in this order — `09_`/`10_` must precede `08_`,
+be rebuilt in about a minute.  Run it in this order - `09_`/`10_` must precede `08_`,
 which reads the master list to count the unreachable.
 
 ```bash
@@ -207,11 +207,11 @@ python3 convert_export.py --jobs 8 --overwrite     # -> that folder's view/{png,
 new name has changed; delete the folder (or move it aside) for a genuinely clean tree,
 because a resource whose name changed would otherwise leave its old file behind.
 
-Current state: overlay **6,893** names · catalogue **17,880/20,004 rows named (89.38%)**
-· **915** unique unresolved hashes (see `../Data/FINDINGS.txt` §61–63).
+Current state: overlay **6,893** names - catalogue **17,880/20,004 rows named (89.38%)**
+- **915** unique unresolved hashes (see `../Data/FINDINGS.txt` #61-63).
 
 Note: `list_game_bundles.decompress_bundle` tolerates the older **Pre-Slayer
 packing** (raw 64 KiB chunks mixed with zlib chunks), so older depot snapshots can
 be parsed too. `hashcracker/generators/scan_depot_names.py` harvests names from any
-install/depot with a colon-tolerant filter — that is how 549 more names were
+install/depot with a colon-tolerant filter - that is how 549 more names were
 recovered from a 2015-01-21 depot snapshot.

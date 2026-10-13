@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Directory patterns x harvested leaves for every resource type (FINDINGS.txt §46).
+Directory patterns x harvested leaves for every resource type (FINDINGS.txt #46).
 
 Full harvested paths answered only part of the question.  The rest needs the two
 things the harvest *does* give in bulk:

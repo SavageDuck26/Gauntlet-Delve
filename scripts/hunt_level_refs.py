@@ -45,7 +45,7 @@ def unresolved_rows(level_only=True):
 
 
 def signature(body, hashes):
-    """The set of resources a body references (its 8-byte windows ∩ the TOC)."""
+    """The set of resources a body references (its 8-byte windows & the TOC)."""
     out = set()
     for off in range(0, max(0, len(body) - 7)):
         v = int.from_bytes(body[off:off + 8], "little")

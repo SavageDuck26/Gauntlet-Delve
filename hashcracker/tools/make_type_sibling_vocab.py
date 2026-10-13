@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Per-type sibling vocabularies from the names we hold (FINDINGS.txt §47).
+Per-type sibling vocabularies from the names we hold (FINDINGS.txt #47).
 
 For a type, the leaf vocabulary is not arbitrary: the leaves we already hold for
 that type are the game's own vocabulary for it (animation clips are shared

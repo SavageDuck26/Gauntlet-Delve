@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Universal directory x vocabulary sweep inputs (FINDINGS.txt §47).
+Universal directory x vocabulary sweep inputs (FINDINGS.txt #47).
 
 Two observations drive this:
 

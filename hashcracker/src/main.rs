@@ -1,4 +1,4 @@
-//! hashcracker — multithreaded MurmurHash64A brute-forcer for Gauntlet
+//! hashcracker - multithreaded MurmurHash64A brute-forcer for Gauntlet
 //! resource/bundle names.
 //!
 //! Subcommands:
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 
 fn print_help() {
     println!(
-        "hashcracker — MurmurHash64A name brute-forcer
+        "hashcracker - MurmurHash64A name brute-forcer
 
 USAGE
   hashcracker crack  --targets <file> --list <X=file>... --pattern <pat>... [opts]
@@ -156,7 +156,7 @@ pub(crate) fn read_targets(path: &str) -> Result<HashSet<u64>> {
     Ok(set)
 }
 
-/// Open-addressed u64 set with a cheap multiply-hash (no SipHash) — used for
+/// Open-addressed u64 set with a cheap multiply-hash (no SipHash) - used for
 /// the per-candidate membership test in the hot loop. `0` marks an empty slot
 /// (the GPU's table uses the same convention), so the callers reject a target
 /// hash of 0 when they load targets.
@@ -176,7 +176,7 @@ impl TargetSet {
         while cap < v.len() * 2 {
             cap <<= 1;
         }
-        // A single array, `0` = empty — one line per probe instead of a value
+        // A single array, `0` = empty - one line per probe instead of a value
         // array plus a bit-packed "used" bitmap (the bit test cost a load, a
         // shift and a mask per candidate). The GPU table has always used this
         // convention, so both paths now probe identical tables.
@@ -381,7 +381,7 @@ fn crack(argv: &[String]) -> Result<()> {
         // The fast path fills a stack-sized buffer straight out of the arena and
         // hashes it with the padded hasher; `--safe`, or a pattern whose longest
         // candidate will not fit, uses the build-a-Vec reference path instead.
-        // (Measured: emission dominates — the hash is a third of the cost — so
+        // (Measured: emission dominates - the hash is a third of the cost - so
         // what matters is touching the word bytes once and copying them wide.)
         let cap = (pat.arena.max_len() + 8).max(64);
         let use_fast = !safe && cap <= 4096;
@@ -412,7 +412,7 @@ fn crack(argv: &[String]) -> Result<()> {
                     if tset.contains(h) {
                         // Rare. Rebuild the name and re-hash it with the reference
                         // hasher before recording, so a fast-path bug can lose a
-                        // find but can never write a *wrong* name — the same
+                        // find but can never write a *wrong* name - the same
                         // contract the GPU path works under.
                         pat.emit(&comp.lists, &picks[..nslots], &mut buf);
                         let h2 = murmur::hash_bytes(&buf);
@@ -496,7 +496,7 @@ fn mutate(argv: &[String]) -> Result<()> {
         numbers.push(i.to_string().into_bytes());
     }
 
-    // precompute (dir-with-slash, leaf tokens) per known name — all byte-based
+    // precompute (dir-with-slash, leaf tokens) per known name - all byte-based
     // so the hot loop never allocates a String.
     let mut ents: Vec<(Vec<u8>, Vec<Vec<u8>>)> = Vec::new();
     for line in read_lines(&names_path)? {

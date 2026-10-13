@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diff one package between two depot snapshots (FINDINGS.txt §50).
+Diff one package between two depot snapshots (FINDINGS.txt #50).
 
 Same package name -> same bundle id, so a bundle id that exists in two snapshots
 is the same package at two points in time, and its TOC entries line up by name

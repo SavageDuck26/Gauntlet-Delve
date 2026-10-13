@@ -4,12 +4,12 @@ Stingray .animation resource decode (partial).
 Format (confirmed from binary analysis):
   Header (16 bytes):
     uint32  flags           = 0
-    uint32  bone_count      (e.g. 26 — matches companion .bones file)
+    uint32  bone_count      (e.g. 26 - matches companion .bones file)
     float   duration        animation duration in seconds
     uint32  data_size       TOTAL blob size in bytes (= entire file including header)
 
   Keyframe data (data_size bytes):
-    Compressed bone track data — Stingray's internal format.
+    Compressed bone track data - Stingray's internal format.
     Likely uses per-bone compressed quaternion tracks (QTangent or similar).
     NOT standard BVH/FBX keyframe format.
 
@@ -70,7 +70,7 @@ def decode_animation_file(src: str, dst: str | None = None) -> str:
         dst = os.path.splitext(src)[0] + '.json'
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
-    print(f"Decoded {src} → {dst}  ({data['bone_count']} bones, {data['duration_seconds']:.3f}s)")
+    print(f"Decoded {src} -> {dst}  ({data['bone_count']} bones, {data['duration_seconds']:.3f}s)")
     return dst
 
 
@@ -80,7 +80,7 @@ def encode_animation_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.animation'
     open(dst, 'wb').write(encode_animation(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

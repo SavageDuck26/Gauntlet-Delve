@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mine harvested *paths* for every resource type (FINDINGS.txt §46).
+Mine harvested *paths* for every resource type (FINDINGS.txt #46).
 
 The raw harvest holds complete paths for the non-level families, not just leaves:
 

@@ -13,18 +13,18 @@ candidates, this handles **billions** in seconds.
 
 ```
 hashcracker/
-├── src/                  Rust: murmur.rs, pattern.rs, arena.rs, gpu.rs (WGSL), main.rs
-├── tools/                target + vocabulary builders (the maintainer entry points)
-│   ├── build_targets.py      catalogue -> data/vocab/targets_<type>.txt
-│   ├── merge_matches.py      ../Data/matches.tsv -> ../Data/resource_name_overlay.json
-│   └── make_*_vocab.py       one word-list builder per family (tex/lvl/par/unit)
-├── generators/           candidate generators (name-derived, context constrained)
-│   ├── targeted_*.py         per-family generators (anim, unit, level, tex, gui…)
-│   └── *_cands.py, *_check.py, scan_bundle_paths.py   supporting miners
-├── legacy/               superseded scripts, kept for reference (see legacy/README.md)
-├── data/                 generated vocabularies + targets (see data/README.md)
-├── Cargo.toml, Cargo.lock
-└── README.md, SCRIPTS.md
++-- src/                  Rust: murmur.rs, pattern.rs, arena.rs, gpu.rs (WGSL), main.rs
++-- tools/                target + vocabulary builders (the maintainer entry points)
+|   +-- build_targets.py      catalogue -> data/vocab/targets_<type>.txt
+|   +-- merge_matches.py      ../Data/matches.tsv -> ../Data/resource_name_overlay.json
+|   +-- make_*_vocab.py       one word-list builder per family (tex/lvl/par/unit)
++-- generators/           candidate generators (name-derived, context constrained)
+|   +-- targeted_*.py         per-family generators (anim, unit, level, tex, gui...)
+|   +-- *_cands.py, *_check.py, scan_bundle_paths.py   supporting miners
++-- legacy/               superseded scripts, kept for reference (see legacy/README.md)
++-- data/                 generated vocabularies + targets (see data/README.md)
++-- Cargo.toml, Cargo.lock
++-- README.md, SCRIPTS.md
 ```
 
 The shared, append-only hit log is **`../Data/matches.tsv`** (`<hash>\t<name>`),
@@ -35,25 +35,25 @@ See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 
 ## Current state (2026-10-06)
 
-* overlay: **6,037** names · **1,507** unique unresolved hashes
+* overlay: **6,037** names - **1,507** unique unresolved hashes
 * catalogue: 20,000 resources, **16,676 named** (83.4%), 3,324 unresolved rows
-* GPU: ~0.7–1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
+* GPU: ~0.7-1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
 
-Remaining by family (unique): `texture 527 · animation 346 · shader_library 245 ·
-material 145 · particles 115 · level 103 · unit 66 · shader 46 · timpani_bank 37`.
+Remaining by family (unique): `texture 527 - animation 346 - shader_library 245 -
+material 145 - particles 115 - level 103 - unit 66 - shader 46 - timpani_bank 37`.
 
 **One at a time**: the engine will happily use the whole machine, so run a
-single instance — two at once halve each other's throughput.
+single instance - two at once halve each other's throughput.
 
 For the uniform families the win is **context conditioning**, not brute force:
 pin the fixed part of the name in the pattern and escalate one field at a time
-(`FINDINGS.txt` §37 - the level schema crosses to
+(`FINDINGS.txt` #37 - the level schema crosses to
 68 G globally but is 1,780 candidates as a closed form per (env, sub) context).
 
-That set is now limited by **missing source data**, not by generation strategy —
+That set is now limited by **missing source data**, not by generation strategy -
 the shipped Lua, bundle bodies and binaries contain no further name material.
 The audit of everything tried (and why it failed) is in
-`../Data/FINDINGS.txt` §17.18–17.20 and §18.
+`../Data/FINDINGS.txt` #17.18-17.20 and #18.
 
 ## Build
 
@@ -64,7 +64,7 @@ cargo build --release            # (offline: cargo build --release --offline)
 ## Prepare inputs
 
 Legacy (superseded by `tools/build_targets.py` + the `tools/make_*_vocab.py`
-builders — kept in `legacy/` for reference):
+builders - kept in `legacy/` for reference):
 
 ```bash
 python3 legacy/prepare.py \
@@ -74,12 +74,12 @@ python3 legacy/prepare.py \
   --out data
 ```
 
-Current workflow — see [SCRIPTS.md](SCRIPTS.md) for the full index and
+Current workflow - see [SCRIPTS.md](SCRIPTS.md) for the full index and
 [`data/README.md`](data/README.md) for the vocabulary files:
 
 ```bash
 python3 tools/build_targets.py          # targets_<type>.txt from the catalogue
-python3 tools/make_tex_vocab.py         # one vocabulary per family (tex_*, lvl_*, …)
+python3 tools/make_tex_vocab.py         # one vocabulary per family (tex_*, lvl_*, ...)
 python3 generators/targeted_unit.py     # name-derived candidates
 ```
 
@@ -96,7 +96,7 @@ python3 generators/targeted_unit.py     # name-derived candidates
 
 Matches are **streamed to `--matches` (the repo's shared log is
 `../Data/matches.tsv`) the moment they are
-found** — one TSV line each, `<hash-hex><TAB><name>`. The file is opened in
+found** - one TSV line each, `<hash-hex><TAB><name>`. The file is opened in
 append mode and its hashes are loaded at start-up, so **re-runs never write a
 duplicate**. Just sort it however you like:
 
@@ -114,8 +114,8 @@ Common slots: `%d` dirs, `%n` names, `%p` prefixes, `%s` suffixes, `%k` numbers.
 
 ### Other options
 `--threads N`, `--exclude F` (skip already-solved hashes), `--limit N` (cap per
-pattern, for testing), `--safe` (reference CPU path — build each name the long way
-and hash it — for diffing the fast path against it).
+pattern, for testing), `--safe` (reference CPU path - build each name the long way
+and hash it - for diffing the fast path against it).
 
 ### Performance
 The hot loop is division-free: each thread is handed one contiguous slice of the
@@ -136,7 +136,7 @@ interleaved runs, against the previous implementation (`--safe` still runs it):
 | `characters/%a/%b_diff` | 190 M/s | **230 M/s** |
 | `%a/%b/%c` | 185 M/s | **245 M/s** |
 
-A second machine (a 16-thread laptop) showed +19–34 % on the same change, so the
+A second machine (a 16-thread laptop) showed +19-34 % on the same change, so the
 gain is not microarchitecture-specific, and `--safe` output is byte-identical to
 the fast path on 2,789 planted names.
 
@@ -150,7 +150,7 @@ hashcracker bench --list a=data/names.txt --list b=data/names.txt \
 `--phase 0` walks only, `1` adds the emit, `2` the hash, `3` the probe (the old
 path), `4` the arena fill, `5` the padded hash, `6` the probe (the current path).
 In every pattern measured, **emission dominates (~70 %)** and the hash is ~25 %,
-which is why the copy — not the hash — is where the work went.
+which is why the copy - not the hash - is where the work went.
 
 `--safe` forces the reference path (build the name into a `Vec`, then hash it; no
 GPU, no arena) so the two can be diffed over the same space.
@@ -168,16 +168,16 @@ CPU. Force it with `--gpu` (fail if unavailable) or `--cpu`.
 ```
 
 Measured on an AMD RX 6600 XT (RADV): **~1.12 G candidates/s** for `%a_%b` and
-~0.89 G/s when the pattern carries literals, versus ~0.23–0.29 G/s on 12 CPU
-threads — i.e. roughly **4–5x**. A discrete NVIDIA card measures ~2x the RX 6600
-XT again (an RTX 4060 Laptop: **2.5–2.6 G/s** / 2.0 G/s on the same two patterns).
+~0.89 G/s when the pattern carries literals, versus ~0.23-0.29 G/s on 12 CPU
+threads - i.e. roughly **4-5x**. A discrete NVIDIA card measures ~2x the RX 6600
+XT again (an RTX 4060 Laptop: **2.5-2.6 G/s** / 2.0 G/s on the same two patterns).
 A 42-billion-candidate sweep takes ~34 s.
 
 Correctness: the kernel only ever reports candidate **indices**; the host
 re-emits each index from the same arena and re-hashes it before recording, so a
 GPU arithmetic bug can never write a wrong name. `crack --gpu` output has been
 diffed against the fast CPU path on a 2,789-target planted space and against
-`--safe` — both byte-identical.
+`--safe` - both byte-identical.
 
 Implementation notes (src/gpu.rs):
 
@@ -186,14 +186,14 @@ Implementation notes (src/gpu.rs):
 * Pass 1 sums the candidate's length from the slot table instead of walking every
   op (only slots can change it); pass 2 pulls a 32-bit blob word and drips bytes
   out of it, so it does one storage load per *four* bytes rather than one per byte
-  (that alone was worth +9–27 % on NVIDIA; RADV barely noticed).
+  (that alone was worth +9-27 % on NVIDIA; RADV barely noticed).
 * Cost is **proportional to the bytes hashed**, not to a fixed per-candidate cost:
-  doubling the word lists (same slots, same number of picks, 32 → 65 byte
-  candidates) halves the rate exactly — ~4.5 G Murmur blocks/s either way on the
+  doubling the word lists (same slots, same number of picks, 32 -> 65 byte
+  candidates) halves the rate exactly - ~4.5 G Murmur blocks/s either way on the
   RX 6600 XT. Nor is it load- or batch-bound: removing inner-loop loads changed
   nothing measurable, and the rate is flat from 16 to 1024 iterations per thread.
   Leverage is therefore bounded: two engine processes on one card raise the
-  *combined* rate by only 14% (1112 → 1267 M/s), so interleaving candidate chains
+  *combined* rate by only 14% (1112 -> 1267 M/s), so interleaving candidate chains
   has little headroom, and the hashcat fork is not the answer either (it cannot
   express N-way token products).
 * MurmurHash64A needs 64-bit multiplies -> the device must expose
@@ -217,7 +217,7 @@ Keep only dictionary words that actually occur in a corpus (aho-corasick):
 ## Context-driven generation (preferred over cartesian sweeps)
 
 Blind sweeps burn GPU time on candidate spaces of 1e12+. The shipped Lua is the
-naming authority for the game, so constrain candidates with it instead —
+naming authority for the game, so constrain candidates with it instead -
 millions of candidates, seconds of runtime, and hits the cartesian scripts miss
 entirely (4-token clips like `axe_move_walk_left_back`, extension-less Lua
 paths, unit/material names referenced as Lua strings).
@@ -240,7 +240,7 @@ paths, unit/material names referenced as Lua strings).
    `new matches: 0`. Targets = *rows whose catalogue `name` column is empty*
    (`tools/build_targets.py` does exactly this).
 2. **Table keys, not just string literals.** Ability names, quilt pieces and
-   status effects are bare Lua identifiers — invisible to string mining. Mine
+   status effects are bare Lua identifiers - invisible to string mining. Mine
    `^\t+key\s*=` inside the relevant tables as well.
 
 `tools/merge_matches.py` folds `../Data/matches.tsv` into the overlay, then re-run
@@ -256,7 +256,7 @@ paths, unit/material names referenced as Lua strings).
 | `animation` | edit-distance-1 from a unit's own clips (`_backward`, `_enter/_exit/_init`) + cross-unit clip transfer + ability-table keys |
 | leftovers | `texture`, `shader_library`, `particles`, `level` are not path-like; they need family-specific generators |
 
-### Levels: the quilt naming schema (`modules/<env>/…`)
+### Levels: the quilt naming schema (`modules/<env>/...`)
 
 `lua/dungeon/quilt_builder.lua` decodes the level names:
 
@@ -294,7 +294,7 @@ python3 tools/make_level_vocab.py          # lvl_env/sub/shape/edge/nn/mod vocab
 Level bodies are compiled modules with **no embedded names** (checked with
 `generators/level_body_strings.py`), and the module `package` blobs list dependency
 **hashes only**, hash-sorted and not name-sorted (`generators/pkg_order_check.py`), so they
-give no alphabetical bracketing either — the grammar is the only lever.
+give no alphabetical bracketing either - the grammar is the only lever.
 
 ## Results
 

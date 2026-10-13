@@ -33,8 +33,8 @@ MODIFIER TYPES:
 BINARY FORMAT (COBJ - Stingray Compiled Binary Object):
 =======================================================
   Header:        {root_type=6(4), root_offset(4)}
-  Object node:   {count(4), {key_ptr(4), vtype(4), vdata(4)} × count}
-  Array  node:   {elem_type(4), count(4), {elem_ptr(4)} × count}
+  Object node:   {count(4), {key_ptr(4), vtype(4), vdata(4)} x count}
+  Array  node:   {elem_type(4), count(4), {elem_ptr(4)} x count}
   Strings:       null-terminated, 4-byte aligned, deduplicated across whole blob
   Empty array:   {elem_type=0(4), count=0(4)}  (8 bytes total)
 
@@ -58,7 +58,7 @@ import zlib
 from typing import Any, Dict, List, Optional, Union
 
 
-# ─── Known render_config bundle hashes ───────────────────────────────────────
+# --- Known render_config bundle hashes ---------------------------------------
 
 RENDER_CONFIG_TYPE_HASH = 0x27862fe24795319c
 """MurmurHash64A("render_config")"""
@@ -70,7 +70,7 @@ KNOWN_RENDER_CONFIGS = {
 }
 
 
-# ─── Decoder ─────────────────────────────────────────────────────────────────
+# --- Decoder -----------------------------------------------------------------
 
 def decode_cobj(blob: bytes) -> Any:
     """Decode a Stingray COBJ binary blob to a Python dict/list tree."""
@@ -107,7 +107,7 @@ def decode_cobj(blob: bytes) -> Any:
     return decode_node(ro, rt)
 
 
-# ─── Encoder ─────────────────────────────────────────────────────────────────
+# --- Encoder -----------------------------------------------------------------
 
 class COBJEncoder:
     """
@@ -218,7 +218,7 @@ class COBJEncoder:
         return bytes(self._buf)
 
 
-# ─── High-level helpers ───────────────────────────────────────────────────────
+# --- High-level helpers -------------------------------------------------------
 
 def make_render_config(generators: Dict[str, List[Dict]],
                        brush_mapping: Optional[Dict[str, str]] = None) -> bytes:
@@ -226,9 +226,9 @@ def make_render_config(generators: Dict[str, List[Dict]],
     Build a render_config COBJ blob.
 
     Args:
-        generators: Dict mapping generator_name → list of modifier dicts.
+        generators: Dict mapping generator_name -> list of modifier dicts.
                     Each modifier must have 'type' key.
-        brush_mapping: Optional dict mapping brush_name → generator_name.
+        brush_mapping: Optional dict mapping brush_name -> generator_name.
 
     Example:
         blob = make_render_config({
@@ -255,7 +255,7 @@ def decode_render_config_blob(blob: bytes) -> Dict:
     return decode_cobj(blob)
 
 
-# ─── Bundle loading helpers ───────────────────────────────────────────────────
+# --- Bundle loading helpers ---------------------------------------------------
 
 def _load_bundle_resource0(bundle_path: str) -> bytes:
     """Extract resource-0 data bytes from a compressed game bundle."""
@@ -283,7 +283,7 @@ def decode_bundle_render_config(bundle_path: str) -> Dict:
     return decode_cobj(_load_bundle_resource0(bundle_path))
 
 
-# ─── CLI / test ───────────────────────────────────────────────────────────────
+# --- CLI / test ---------------------------------------------------------------
 
 def _self_test(contents_dir: str) -> None:
     """Round-trip test against all known render_config bundles."""
@@ -298,7 +298,7 @@ def _self_test(contents_dir: str) -> None:
         decoded = decode_cobj(orig)
         reencoded = enc.encode(decoded)
         ok = (reencoded == orig)
-        print(f"{'PASS' if ok else 'FAIL'} {bname} ({len(orig)}B) — {KNOWN_RENDER_CONFIGS[bname]}")
+        print(f"{'PASS' if ok else 'FAIL'} {bname} ({len(orig)}B) - {KNOWN_RENDER_CONFIGS[bname]}")
         if not ok:
             all_pass = False
             diff = next((i for i in range(min(len(orig), len(reencoded)))

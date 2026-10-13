@@ -1,6 +1,6 @@
 GAUNTLET NAME-RECOVERY PROGRESS
 ==================================================================================================
-generated 2026-10-13 00:44   (regenerate with: python3 make_progress_report.py)
+generated 2026-10-13 00:48   (regenerate with: python3 make_progress_report.py)
 
 1. HEADLINE
 --------------------------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ generated 2026-10-13 00:44   (regenerate with: python3 make_progress_report.py)
     67.3  CLOSED, WITH NUMBERS.  Every one of these is 0 against the residual:
     67.4  WHAT IS LEFT.  `all_effects` 155 rows (61 effect names + 32 shared text
       68  THE SHADER-CHAIN NEIGHBOURHOOD IS WORTH FIFTEEN NAMES
-    68.1  WHY THE CHAINS ARE WORTH CHASING.  The grouped view (§66.6) puts 350 of
+    68.1  WHY THE CHAINS ARE WORTH CHASING.  The grouped view (#66.6) puts 350 of
     68.2  WHAT FOUND THEM.  `tools/make_chain_candidates.py` - the project's own 
     68.3  CLOSED AFTERWARDS, WITH NUMBERS.  With the fifteen in the corpus the sp
     68.4  NOT FOR WANT OF TRYING: THE ACHIEVEMENT ICONS.  The thirteen unresolved

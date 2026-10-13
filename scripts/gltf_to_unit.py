@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-OBJ / glTF → Stingray .unit encoder
+OBJ / glTF -> Stingray .unit encoder
 
 Converts Blender-exported OBJ (or a simple vertex list) back into a Stingray
 binary .unit file that Gauntlet can load.
 
 Supported inputs:
-  .obj   — Wavefront OBJ (with normals + UVs preferred; bone weights not supported)
-  .glb   — glTF Binary (with normals, UVs; bone weights included if present)
+  .obj   - Wavefront OBJ (with normals + UVs preferred; bone weights not supported)
+  .glb   - glTF Binary (with normals, UVs; bone weights included if present)
 
 The encoder writes:
-  • One mesh per OBJ object / glTF mesh node
-  • Vertex layout: POSITION(f32×3) + NORMAL(f32×3) + UV(f32×2)  = 32 bytes/vert
+  - One mesh per OBJ object / glTF mesh node
+  - Vertex layout: POSITION(f32x3) + NORMAL(f32x3) + UV(f32x2)  = 32 bytes/vert
     (or 48 bytes/vert if tangent is also included)
-  • Element descriptors matching the original Stingray format
-  • uint16 indices (or uint32 if vert count > 65535)
-  • Shape covering all indices, material_index = 0
+  - Element descriptors matching the original Stingray format
+  - uint16 indices (or uint32 if vert count > 65535)
+  - Shape covering all indices, material_index = 0
 
 Limitations:
-  • Multiple material groups per OBJ object are merged into one material slot
-  • Bone skinning from glTF is re-encoded only if the original .unit used skinning
-  • The material name hash is encoded as 0 (unknown) unless supplied via --mat-hash
+  - Multiple material groups per OBJ object are merged into one material slot
+  - Bone skinning from glTF is re-encoded only if the original .unit used skinning
+  - The material name hash is encoded as 0 (unknown) unless supplied via --mat-hash
 
 Usage:
   python gltf_to_unit.py  <input.obj>  [output.unit]
@@ -38,7 +38,7 @@ import numpy as np
 HERE   = Path(__file__).parent
 PARENT = HERE
 
-# ── vertex structures ──────────────────────────────────────────────────────────
+# -- vertex structures ----------------------------------------------------------
 
 def _pack_element_descriptor(elem_type: int, size: int, layer: int = 0,
                               fmt: int = 0) -> bytes:
@@ -165,16 +165,16 @@ def _build_mesh_block(positions: np.ndarray,
       uint32              vertex_count
       uint32              vertex_stride
       uint32              element_count
-      element_count × 17b element descriptors  (uint32 type, size, layer, fmt + uint8 end)
+      element_count x 17b element descriptors  (uint32 type, size, layer, fmt + uint8 end)
       12 bytes            post-element padding
       uint32              total_index_count
       uint32              index_buffer_size
       bytes[ibs]          index data (uint16 or uint32)
       uint32              shape_count
-      shape_count × 16b   { uint32 mat_idx, uint32 idx_offset, uint32 idx_count, uint32 shape_idx }
-      7 × float32         bounding box: min_x, min_y, min_z, max_x, max_y, max_z, radius
+      shape_count x 16b   { uint32 mat_idx, uint32 idx_offset, uint32 idx_count, uint32 shape_idx }
+      7 x float32         bounding box: min_x, min_y, min_z, max_x, max_y, max_z, radius
       uint32              material_count
-      mat_count × (uint32 str_len + bytes)  material name strings (NOT null-terminated, length-prefixed)
+      mat_count x (uint32 str_len + bytes)  material name strings (NOT null-terminated, length-prefixed)
     """
     vbuf, elements, stride = _build_vertex_buffer(positions, normals, uvs)
     vc = len(positions)
@@ -190,7 +190,7 @@ def _build_mesh_block(positions: np.ndarray,
     # ---- VERTEX METADATA ----
     out += struct.pack('<III', vc, stride, ec)
 
-    # ---- ELEMENT DESCRIPTORS (17 bytes each: 4×uint32 + 1×uint8) ----
+    # ---- ELEMENT DESCRIPTORS (17 bytes each: 4xuint32 + 1xuint8) ----
     for elem in elements:
         out += elem
 
@@ -249,7 +249,7 @@ def encode_unit(meshes: List[Dict]) -> bytes:
     return header + blocks
 
 
-# ── OBJ reader ─────────────────────────────────────────────────────────────────
+# -- OBJ reader -----------------------------------------------------------------
 
 def read_obj(path: str) -> List[Dict]:
     """Parse Wavefront OBJ; return list of mesh dicts grouped by 'o' object."""
@@ -333,7 +333,7 @@ def read_obj(path: str) -> List[Dict]:
     return meshes
 
 
-# ── glTF reader ────────────────────────────────────────────────────────────────
+# -- glTF reader ----------------------------------------------------------------
 
 def read_glb(path: str) -> List[Dict]:
     """
@@ -414,10 +414,10 @@ def read_glb(path: str) -> List[Dict]:
     return meshes
 
 
-# ── main entry ─────────────────────────────────────────────────────────────────
+# -- main entry -----------------------------------------------------------------
 
 def convert_to_unit(src: str, dst: Optional[str] = None) -> str:
-    """Convert OBJ or GLB → .unit binary."""
+    """Convert OBJ or GLB -> .unit binary."""
     src = str(src)
     if dst is None:
         dst = os.path.splitext(src)[0] + '.unit'
@@ -439,15 +439,15 @@ def convert_to_unit(src: str, dst: Optional[str] = None) -> str:
 
     total_verts = sum(len(m['positions']) for m in meshes)
     total_faces = sum(len(m['indices']) // 3 for m in meshes)
-    print(f"{'OBJ' if ext == '.obj' else 'glTF'} → .unit: {src}")
-    print(f"  {len(meshes)} mesh(es), {total_verts:,} vertices, {total_faces:,} faces → {dst}  ({len(blob):,} bytes)")
+    print(f"{'OBJ' if ext == '.obj' else 'glTF'} -> .unit: {src}")
+    print(f"  {len(meshes)} mesh(es), {total_verts:,} vertices, {total_faces:,} faces -> {dst}  ({len(blob):,} bytes)")
     return dst
 
 
-# ── selftest ──────────────────────────────────────────────────────────────────
+# -- selftest ------------------------------------------------------------------
 
 def selftest():
-    # Test OBJ round-trip via unit_to_obj → gltf_to_unit → decode again
+    # Test OBJ round-trip via unit_to_obj -> gltf_to_unit -> decode again
     unit_sample = str(PARENT / 'Exports' / 'samples' / 'unit_015febcb203ebaaf.unit')
     if not os.path.exists(unit_sample):
         print("gltf_to_unit selftest: SKIP (sample not found)")

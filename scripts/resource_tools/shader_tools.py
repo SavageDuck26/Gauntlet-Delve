@@ -5,11 +5,11 @@ Format (from binary analysis):
   Header (~48 bytes):
     uint32  version       = 8
     uint32  hash          content hash
-    uint32  table_offset  = 0x30 (48) — offset to program table
+    uint32  table_offset  = 0x30 (48) - offset to program table
     uint32  prog_count    number of compiled shader programs
 
   Program table (at table_offset):
-    prog_count × {uint32 offset, uint32 size, ...}  (entry size TBD)
+    prog_count x {uint32 offset, uint32 size, ...}  (entry size TBD)
 
   Shader program blobs (HLSL/GLSL compiled bytecode):
     Raw compiled shader data. Cannot be recompiled to HLSL source.
@@ -26,7 +26,7 @@ HEADER_SIZE = 48
 
 
 def decode_shader(blob: bytes) -> Dict[str, Any]:
-    """Parse .shader blob → dict with header info + program list."""
+    """Parse .shader blob -> dict with header info + program list."""
     if len(blob) < HEADER_SIZE:
         raise ValueError(f"blob too short ({len(blob)})")
 
@@ -67,7 +67,7 @@ def decode_shader(blob: bytes) -> Dict[str, Any]:
 
 
 def encode_shader(data: Dict[str, Any]) -> bytes:
-    """Re-encode shader — returns original bytes from _raw_hex."""
+    """Re-encode shader - returns original bytes from _raw_hex."""
     if "_raw_hex" in data:
         return bytes.fromhex(data["_raw_hex"])
     raise ValueError("Cannot encode shader without _raw_hex (compiled bytecode)")
@@ -80,7 +80,7 @@ def decode_shader_file(src: str, dst: str | None = None) -> str:
         dst = os.path.splitext(src)[0] + '.json'
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
-    print(f"Decoded {src} → {dst}  (v{data['version']}, {data['program_count']} programs)")
+    print(f"Decoded {src} -> {dst}  (v{data['version']}, {data['program_count']} programs)")
     return dst
 
 
@@ -90,7 +90,7 @@ def encode_shader_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.shader'
     open(dst, 'wb').write(encode_shader(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

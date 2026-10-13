@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Name a texture from the resource that draws it (FINDINGS.txt §48).
+Name a texture from the resource that draws it (FINDINGS.txt #48).
 
 A texture's name is not in the bundle, but its *referrers* are: a unit body and a
 material body both carry the 64-bit hashes of the textures they use, matched

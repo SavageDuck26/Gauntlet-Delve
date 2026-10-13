@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mod-tail patterns from the harvest vocabulary (FINDINGS.txt §45/§46).
+Mod-tail patterns from the harvest vocabulary (FINDINGS.txt #45/#46).
 
 The harvest (`work/harvest/quilt_ids.txt`) shows what the quilt mod tail really
 is: a short run of the game's own mod words, sometimes *concatenated* rather

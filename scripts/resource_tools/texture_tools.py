@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
-Stingray .texture resource tools — DDS ↔ PNG ↔ Engine binary.
+Stingray .texture resource tools - DDS <-> PNG <-> Engine binary.
 
 The .texture file IS a DDS file (standard DirectX texture format).
-No custom header or wrapper — just raw DDS data.
+No custom header or wrapper - just raw DDS data.
 
 Supported DDS formats:
-  DXT1  (BC1)  — opaque/1-bit alpha, 4 bpp
-  DXT5  (BC3)  — RGBA 8 bpp
-  ATI2  (BC5)  — 2-channel normal maps (R+G)
+  DXT1  (BC1)  - opaque/1-bit alpha, 4 bpp
+  DXT5  (BC3)  - RGBA 8 bpp
+  ATI2  (BC5)  - 2-channel normal maps (R+G)
   uncompressed BGRA / RGBA
 
 Blender round-trip:
-  .texture → .png   : dds_to_png()   (decode, universal)
-  .texture → .dds   : just copy the file (already DDS)
-  .png → .texture   : png_to_dds()   (encode — requires either texconv or
+  .texture -> .png   : dds_to_png()   (decode, universal)
+  .texture -> .dds   : just copy the file (already DDS)
+  .png -> .texture   : png_to_dds()   (encode - requires either texconv or
                                        wand/imageio-freeimage for DXT compression)
-  .dds → .texture   : just copy the file
+  .dds -> .texture   : just copy the file
 
 ATI2 normal maps: exported as RGBA where R=X, G=Y, B=reconstructed Z (for Blender).
 
@@ -32,7 +32,7 @@ import io, json, os, struct, sys
 from typing import Any, Dict, Optional
 from PIL import Image
 
-# ── DDS constants ──────────────────────────────────────────────────────────────
+# -- DDS constants --------------------------------------------------------------
 
 DDS_MAGIC = b'DDS '
 DDS_HEADER_SIZE = 124
@@ -67,7 +67,7 @@ DXGI_FORMAT = {
 }
 
 
-# ── DDS info ───────────────────────────────────────────────────────────────────
+# -- DDS info -------------------------------------------------------------------
 
 def dds_info(blob: bytes) -> Dict[str, Any]:
     """Parse DDS header and return metadata dict."""
@@ -107,13 +107,13 @@ def dds_info(blob: bytes) -> Dict[str, Any]:
     return info
 
 
-# ── DDS → PNG ──────────────────────────────────────────────────────────────────
+# -- DDS -> PNG ------------------------------------------------------------------
 
 def dds_to_png(src: str, dst: str | None = None) -> str:
     """
     Convert a .texture (DDS) file to PNG.
 
-    ATI2 / BC5 normal maps are reconstructed: R=X, G=Y, B=sqrt(1-X²-Y²), A=255.
+    ATI2 / BC5 normal maps are reconstructed: R=X, G=Y, B=sqrt(1-X^2-Y^2), A=255.
     Returns the output path.
     """
     blob = open(src, 'rb').read()
@@ -135,13 +135,13 @@ def dds_to_png(src: str, dst: str | None = None) -> str:
             raise RuntimeError(f"Pillow could not decode {fmt} DDS: {e}")
 
     img.save(dst, 'PNG')
-    print(f"texture → PNG: {src}  →  {dst}  [{info['width']}×{info['height']} {fmt}]")
+    print(f"texture -> PNG: {src}  ->  {dst}  [{info['width']}x{info['height']} {fmt}]")
     return dst
 
 
 def _decode_ati2_to_rgb(blob: bytes, info: dict) -> Image.Image:
     """
-    Decode ATI2/BC5 normal map → RGB image.
+    Decode ATI2/BC5 normal map -> RGB image.
     Pillow decodes ATI2 as 2-channel; we reconstruct Z and output RGBA.
     """
     try:
@@ -154,7 +154,7 @@ def _decode_ati2_to_rgb(blob: bytes, info: dict) -> Image.Image:
         import math
         pixels = []
         for r, g, b in arr:
-            # Remap [0..255] → [-1..1]
+            # Remap [0..255] -> [-1..1]
             nx = (r / 127.5) - 1.0
             ny = (g / 127.5) - 1.0
             nz2 = 1.0 - nx * nx - ny * ny
@@ -171,7 +171,7 @@ def _decode_ati2_to_rgb(blob: bytes, info: dict) -> Image.Image:
         return raw.convert('RGBA')
 
 
-# ── PNG → DDS (.texture) ──────────────────────────────────────────────────────
+# -- PNG -> DDS (.texture) ------------------------------------------------------
 
 def png_to_dds(src: str, dst: str | None = None, fmt: str = 'dxt5',
                generate_mipmaps: bool = False) -> str:
@@ -192,7 +192,7 @@ def png_to_dds(src: str, dst: str | None = None, fmt: str = 'dxt5',
         return _texconv_encode(texconv, src, dst, fmt, generate_mipmaps)
 
     # Fallback: write uncompressed BGRA DDS
-    print(f"  texconv not found — writing uncompressed BGRA DDS (install texconv for DXT compression)")
+    print(f"  texconv not found - writing uncompressed BGRA DDS (install texconv for DXT compression)")
     return _write_uncompressed_dds(src, dst)
 
 
@@ -217,7 +217,7 @@ def _find_texconv() -> Optional[str]:
 
 def _texconv_encode(texconv: str, src: str, dst: str, fmt: str,
                     mipmaps: bool) -> str:
-    """Use Microsoft texconv to compress PNG → DDS."""
+    """Use Microsoft texconv to compress PNG -> DDS."""
     import subprocess
     fmt_map = {
         'dxt1': 'BC1_UNORM',
@@ -242,7 +242,7 @@ def _texconv_encode(texconv: str, src: str, dst: str, fmt: str,
 
     if tmp_path != dst and os.path.exists(tmp_path):
         os.rename(tmp_path, dst)
-    print(f"PNG → DDS ({dxgi}): {src}  →  {dst}")
+    print(f"PNG -> DDS ({dxgi}): {src}  ->  {dst}")
     return dst
 
 
@@ -251,7 +251,7 @@ def _write_uncompressed_dds(src: str, dst: str) -> str:
     img = Image.open(src).convert('RGBA')
     w, h = img.size
 
-    # Convert RGBA → BGRA (DDS uses BGR byte order for uncompressed)
+    # Convert RGBA -> BGRA (DDS uses BGR byte order for uncompressed)
     r, g, b, a = img.split()
     bgra = Image.merge('RGBA', (b, g, r, a))
     raw_pixels = bgra.tobytes()
@@ -290,11 +290,11 @@ def _write_uncompressed_dds(src: str, dst: str) -> str:
         f.write(header)
         f.write(raw_pixels)
 
-    print(f"PNG → DDS (BGRA uncompressed): {src}  →  {dst}")
+    print(f"PNG -> DDS (BGRA uncompressed): {src}  ->  {dst}")
     return dst
 
 
-# ── Batch helpers ──────────────────────────────────────────────────────────────
+# -- Batch helpers --------------------------------------------------------------
 
 def decode_all_dds_in_dir(src_dir: str, out_dir: str | None = None) -> int:
     """Convert all .dds / .texture files in src_dir to PNG in out_dir."""
@@ -313,7 +313,7 @@ def decode_all_dds_in_dir(src_dir: str, out_dir: str | None = None) -> int:
     return count
 
 
-# ── selftest ──────────────────────────────────────────────────────────────────
+# -- selftest ------------------------------------------------------------------
 
 def selftest():
     sample = os.path.join(os.path.dirname(__file__), '..', 'Exports', 'samples',
@@ -323,7 +323,7 @@ def selftest():
         return
 
     info = dds_info(open(sample, 'rb').read())
-    print(f"texture_tools: {info['width']}×{info['height']} {info['format']}")
+    print(f"texture_tools: {info['width']}x{info['height']} {info['format']}")
 
     tmp_png = '/tmp/_texture_tools_test.png'
     tmp_dds = '/tmp/_texture_tools_test.dds'
@@ -345,7 +345,7 @@ def selftest():
     print("texture_tools selftest: PASS")
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# -- CLI -----------------------------------------------------------------------
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

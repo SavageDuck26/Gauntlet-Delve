@@ -26,7 +26,7 @@ STR = re.compile(rb'[ -~]{3,160}')
 def normalise(s):
     """Every plausible snake_case reading of a display string."""
     s = unicodedata.normalize('NFKD', s)
-    s = s.replace("'", '').replace('’', '')
+    s = s.replace("'", '')
     s = re.sub(r'[^A-Za-z0-9]+', ' ', s).strip().lower()
     if not s:
         return set()

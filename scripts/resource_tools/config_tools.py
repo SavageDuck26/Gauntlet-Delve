@@ -7,12 +7,12 @@ The .config format is identical to .render_config: a COBJ binary tree.
 This module is a thin wrapper around render_config_tools.COBJEncoder / decode_cobj.
 
 Round-trip:
-  decode → JSON (human-editable)
-  encode → binary COBJ blob
+  decode -> JSON (human-editable)
+  encode -> binary COBJ blob
 
 Usage:
-  python3 config_tools.py decode <file.config>          → <file>.json
-  python3 config_tools.py encode <file.json> [out.bin]  → binary blob
+  python3 config_tools.py decode <file.config>          -> <file>.json
+  python3 config_tools.py encode <file.json> [out.bin]  -> binary blob
   python3 config_tools.py selftest
 """
 
@@ -62,7 +62,7 @@ def selftest():
         # Semantic check: both decode to identical JSON?
         data2 = decode_config(blob2)
         if json.dumps(data, sort_keys=True) == json.dumps(data2, sort_keys=True):
-            print(f"config_tools selftest: PASS (semantic, {len(blob)}→{len(blob2)} bytes, encoder compacts duplicate strings)")
+            print(f"config_tools selftest: PASS (semantic, {len(blob)}->{len(blob2)} bytes, encoder compacts duplicate strings)")
         else:
             print(f"config_tools selftest: MISMATCH  orig={len(blob)} re-enc={len(blob2)}")
             for i, (a, b) in enumerate(zip(blob, blob2)):
@@ -86,7 +86,7 @@ def main():
         out = path.rsplit('.', 1)[0] + '.json'
         with open(out, 'w') as f:
             f.write(decode_config_json(blob))
-        print(f"Decoded {path} → {out}")
+        print(f"Decoded {path} -> {out}")
 
     elif cmd == 'encode':
         path = sys.argv[2]
@@ -94,7 +94,7 @@ def main():
         blob = encode_config_from_json(open(path).read())
         with open(out, 'wb') as f:
             f.write(blob)
-        print(f"Encoded {path} → {out}  ({len(blob)} bytes)")
+        print(f"Encoded {path} -> {out}  ({len(blob)} bytes)")
 
     else:
         print(f"Unknown command: {cmd}")

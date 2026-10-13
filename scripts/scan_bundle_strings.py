@@ -4,7 +4,7 @@ Scan every resource body inside every bundle for embedded printable strings.
 
 Some resource types (shaders/DXBC, terrain/level blobs, etc.) may carry their
 own name or path as text. This walks all bundles, extracts ASCII runs from each
-resource body, and reports any that hash to an *unresolved* resource name —
+resource body, and reports any that hash to an *unresolved* resource name -
 plus writes the plausible candidates for the Rust hashcracker to expand.
 
 Usage:

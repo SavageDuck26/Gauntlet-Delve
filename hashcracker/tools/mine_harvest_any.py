@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test the snapshot harvest's raw strings against every unresolved hash (§45).
+Test the snapshot harvest's raw strings against every unresolved hash (#45).
 
 `_names.txt` mixes the raw strings with suffix/case mutations of them, so this
 strips the generated suffixes back off and treats each surviving string as a

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Shader-chain candidates: one flag in, out or swapped (FINDINGS.txt §47).
+Shader-chain candidates: one flag in, out or swapped (FINDINGS.txt #47).
 
 A shader_library name is `<technique>:<flag>:<flag>:...` with the flags
-alphabetically sorted (§41).  So from the chains we hold plus the 1,335 the
+alphabetically sorted (#41).  So from the chains we hold plus the 1,335 the
 harvest prints, the whole neighbourhood is:
 
     insert one vocabulary flag in its sorted position

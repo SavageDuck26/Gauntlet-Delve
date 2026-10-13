@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Reference graph between *resolved* resources (FINDINGS.txt §49).
+Reference graph between *resolved* resources (FINDINGS.txt #49).
 
 `hunt_texture_refs.py` records who references each *unnamed* resource.  This
 records the same edges between resources that all have names - decompress each

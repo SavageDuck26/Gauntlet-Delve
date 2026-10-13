@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Reconstruct full package paths for level ids harvested from the depot (§45).
+Reconstruct full package paths for level ids harvested from the depot (#45).
 
 `mine_harvest_names.py` works on whole harvest lines; this takes the *clean id
 lists* (`work/harvest/{quilt,tile}_ids.txt`, produced with

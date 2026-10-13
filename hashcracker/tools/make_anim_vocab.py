@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Animation clip candidates from the Lua's event names (FINDINGS.txt §47.9).
+Animation clip candidates from the Lua's event names (FINDINGS.txt #47.9).
 
 An animation clip is named after the ability or state that plays it
 (`axe_attack_heavy1_sweep` beside the `axe_attack_heavy1` ability; `beam`,

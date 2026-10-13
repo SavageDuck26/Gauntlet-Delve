@@ -4,32 +4,32 @@ Stingray .level resource decode/encode.
 Format (reverse-engineered from binary analysis, Gauntlet Slayer Edition):
 
   HEADER (128 bytes):
-    16 × { uint32 field_a, uint32 field_b }
-    - Entry [0]: { entities_offset, entity_count }  — entity transform records
+    16 x { uint32 field_a, uint32 field_b }
+    - Entry [0]: { entities_offset, entity_count }  - entity transform records
     - Entry [1]: { version=1, unknown_size }
     - Entry [2], [7], [8..10]: section offset references
     - Entries where field_a == field_b: sentinel/size markers (e.g., file_size)
     - Known offsets:
-        @128: entity records  (count × 80 bytes each)
+        @128: entity records  (count x 80 bytes each)
         @608: resource/layer config section
         @720: sub-section header (small lookup table)
         @824: lighting / render environment matrices
 
   ENTITY RECORDS  (80 bytes each, at header[0].offset, count = header[0].count):
-    uint64  entity_id       — unique instance hash (0 = anonymous)
-    uint64  template_hash   — name hash of the unit/prefab template (0 = no template)
-    uint64  flags           — unknown; usually 0
+    uint64  entity_id       - unique instance hash (0 = anonymous)
+    uint64  template_hash   - name hash of the unit/prefab template (0 = no template)
+    uint64  flags           - unknown; usually 0
     float   position_x
     float   position_y
     float   position_z
-    float[2]  unknown_0     — extra floats, likely part of rotation/scale encoding
-    float   rot_a           — rotation / basis vector component
+    float[2]  unknown_0     - extra floats, likely part of rotation/scale encoding
+    float   rot_a           - rotation / basis vector component
     float   rot_b
-    float   rot_c           — often 1.0 (scale/w component)
-    float   scale           — uniform scale (8.0, 1.0, 64.0 observed)
+    float   rot_c           - often 1.0 (scale/w component)
+    float   scale           - uniform scale (8.0, 1.0, 64.0 observed)
     float   scale_w
     float[2]  unknown_1
-    uint64  tail_hash       — extra hash slot (type unknown; may be component ref)
+    uint64  tail_hash       - extra hash slot (type unknown; may be component ref)
 
   CONFIG/RESOURCE SECTION  (at @608 in sample, variable length):
     Contains resource path references and layer names stored as:
@@ -41,10 +41,10 @@ Format (reverse-engineered from binary analysis, Gauntlet Slayer Edition):
 
   REMAINING SECTIONS:
     The sections at @720 (64 bytes) and @824 (256 bytes) contain
-    4×4 identity matrices and render/lighting environment data.
+    4x4 identity matrices and render/lighting environment data.
     Fully stored as raw hex for now (format not fully decoded).
 
-Round-trip status: BYTE-EXACT — all unknown sections preserved as raw_hex.
+Round-trip status: BYTE-EXACT - all unknown sections preserved as raw_hex.
 """
 
 from __future__ import annotations
@@ -109,7 +109,7 @@ def _parse_entity(data: bytes) -> Dict[str, Any]:
             "_pad_1":     [_f32_hex(data, 64), _f32_hex(data, 68)],
         })
     else:
-        # Not a placed unit — store transform region as raw hex
+        # Not a placed unit - store transform region as raw hex
         base["_transform_raw"] = data[24:72].hex()
     return base
 
@@ -172,7 +172,7 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
 
     header_pairs = _parse_header(blob)
 
-    # Entity section — entry [0]: (offset, count)
+    # Entity section - entry [0]: (offset, count)
     ent_off, ent_count = header_pairs[0]
     entities = []
     if ent_off >= HEADER_SIZE and ent_count > 0:
@@ -183,7 +183,7 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
                 entities.append(_parse_entity(blob[start:end]))
 
     # Identify section boundaries from known header entries
-    # Collect all distinct non-zero offsets ≥ HEADER_SIZE, sorted
+    # Collect all distinct non-zero offsets >= HEADER_SIZE, sorted
     section_offsets = sorted(set(
         a for (a, b) in header_pairs
         if a >= HEADER_SIZE and a < len(blob)
@@ -260,7 +260,7 @@ def decode_level_file(src: str, dst: str | None = None) -> str:
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
     strings_preview = ', '.join(f"'{s}'" for s in data['_resource_strings'][:4])
-    print(f"Decoded {src} → {dst}  "
+    print(f"Decoded {src} -> {dst}  "
           f"({data['entity_count']} entities, strings: [{strings_preview}])")
     return dst
 
@@ -271,7 +271,7 @@ def encode_level_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.level'
     open(dst, 'wb').write(encode_level(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

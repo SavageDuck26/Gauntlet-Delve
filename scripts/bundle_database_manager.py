@@ -295,9 +295,9 @@ def cmd_info(args):
     print("\nBundle file status:")
     for bundle_name in sorted(unique)[:20]:
         path = os.path.join(args.contents, bundle_name)
-        exists = "✓" if os.path.exists(path) else "✗"
+        exists = "[ok]" if os.path.exists(path) else "[X]"
         size = os.path.getsize(path) if os.path.exists(path) else 0
-        print(f"  {exists} {bundle_name} ({size:,} bytes)" if exists == "✓" else f"  {exists} {bundle_name}")
+        print(f"  {exists} {bundle_name} ({size:,} bytes)" if exists == "[ok]" else f"  {exists} {bundle_name}")
 
 
 def cmd_add(args):

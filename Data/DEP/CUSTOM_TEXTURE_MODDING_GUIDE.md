@@ -1,17 +1,17 @@
 # Gauntlet Custom Texture Modding Guide
 
 > [!WARNING]
-> **⚠ PARTIALLY DEPRECATED (January 9, 2026 content).**
+> **[!] PARTIALLY DEPRECATED (January 9, 2026 content).**
 >
-> - **Approach 1 (Custom Texture Packages)** is **not reliable as written** —
+> - **Approach 1 (Custom Texture Packages)** is **not reliable as written** -
 >   custom bundles containing textures/materials hang the engine unless each
->   resource carries its required payload trailer. See `FINDINGS.txt` §15J
->   (disproof) and §16 (working recipe), and `CUSTOM_ASSET_LOADING_FINDINGS.md`.
+>   resource carries its required payload trailer. See `FINDINGS.txt` #15J
+>   (disproof) and #16 (working recipe), and `CUSTOM_ASSET_LOADING_FINDINGS.md`.
 > - **Approach 2 (Texture Slot Injection via `replace_textures_v4.py`)** is the
->   proven, still-valid path — prefer it.
+>   proven, still-valid path - prefer it.
 >
 > **Known broken reference:** `texture_loader.lua` (referenced below) does not
-> exist in this repo — the `require("custom/texture_loader")` example will fail.
+> exist in this repo - the `require("custom/texture_loader")` example will fail.
 
 ## Overview
 

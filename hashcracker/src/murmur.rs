@@ -1,4 +1,4 @@
-//! MurmurHash64A — the exact variant Bitsquid/Stingray (and thus Gauntlet) uses
+//! MurmurHash64A - the exact variant Bitsquid/Stingray (and thus Gauntlet) uses
 //! for resource + bundle names.
 //!
 //! Confirmed parameters:

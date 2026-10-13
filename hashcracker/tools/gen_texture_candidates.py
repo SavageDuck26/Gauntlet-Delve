@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Texture candidates from the resources that draw them (FINDINGS.txt §48).
+Texture candidates from the resources that draw them (FINDINGS.txt #48).
 
 `hunt_texture_refs.py` gives, for each unnamed texture, the resolved resources
 whose bodies reference it.  That is worth more than it looks:

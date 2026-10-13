@@ -1,13 +1,13 @@
 """
-Stingray .unit resource tools — full Blender round-trip.
+Stingray .unit resource tools - full Blender round-trip.
 
 The .unit format contains geometry, materials, bone skinning, and LOD info.
 
 Blender-compatible exports:
-  .unit → .glb  (glTF 2.0, direct Blender import)
-  .unit → .obj  (Wavefront OBJ, no skinning)
-  .glb  → .unit (re-encode from Blender export)
-  .obj  → .unit (re-encode from OBJ)
+  .unit -> .glb  (glTF 2.0, direct Blender import)
+  .unit -> .obj  (Wavefront OBJ, no skinning)
+  .glb  -> .unit (re-encode from Blender export)
+  .obj  -> .unit (re-encode from OBJ)
 
 Usage:
   python unit_tools.py selftest
@@ -33,13 +33,13 @@ def _load_module(name: str, path: str):
 def decode_unit_to_gltf(unit_path: str,
                          bones_path: Optional[str] = None,
                          out_path: Optional[str] = None) -> str:
-    """Export .unit → glTF (.glb) for Blender import."""
+    """Export .unit -> glTF (.glb) for Blender import."""
     mod = _load_module('unit_to_gltf', os.path.join(PARENT, 'unit_to_gltf.py'))
     return mod.convert_unit_to_gltf(unit_path, bones_path, out_path)
 
 
 def decode_unit_to_obj(unit_path: str, out_dir: Optional[str] = None) -> str:
-    """Export .unit → OBJ/MTL (no skinning)."""
+    """Export .unit -> OBJ/MTL (no skinning)."""
     if PARENT not in sys.path:
         sys.path.insert(0, PARENT)
     mod = _load_module('unit_to_obj', os.path.join(PARENT, 'unit_to_obj.py'))
@@ -51,13 +51,13 @@ def decode_unit_to_obj(unit_path: str, out_dir: Optional[str] = None) -> str:
 
 
 def encode_unit_from_gltf(glb_path: str, out_path: Optional[str] = None) -> str:
-    """Import from .glb → .unit binary."""
+    """Import from .glb -> .unit binary."""
     mod = _load_module('gltf_to_unit', os.path.join(PARENT, 'gltf_to_unit.py'))
     return mod.convert_to_unit(glb_path, out_path)
 
 
 def encode_unit_from_obj(obj_path: str, out_path: Optional[str] = None) -> str:
-    """Import from .obj → .unit binary."""
+    """Import from .obj -> .unit binary."""
     mod = _load_module('gltf_to_unit', os.path.join(PARENT, 'gltf_to_unit.py'))
     return mod.convert_to_unit(obj_path, out_path)
 

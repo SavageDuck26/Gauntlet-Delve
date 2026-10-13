@@ -66,7 +66,7 @@ def extract_samples(max_size=20_000_000):
                 fname = f'{OUT}{tname}_{nh:016x}.{tname}'
                 with open(fname,'wb') as f: f.write(blob)
                 found[th] = fname
-                print(f'  ✓ {tname:16s}  {dsz:10,d} bytes  from {bname}  ({bsz//1024}kB bundle)')
+                print(f'  [ok] {tname:16s}  {dsz:10,d} bytes  from {bname}  ({bsz//1024}kB bundle)')
             
             # resources 1..N-1
             off = te + 20 + dsz
@@ -78,7 +78,7 @@ def extract_samples(max_size=20_000_000):
                     fname = f'{OUT}{tname}_{nh:016x}.{tname}'
                     with open(fname,'wb') as f: f.write(blob)
                     found[th] = fname
-                    print(f'  ✓ {tname:16s}  {dsz:10,d} bytes  from {bname}  ({bsz//1024}kB bundle)')
+                    print(f'  [ok] {tname:16s}  {dsz:10,d} bytes  from {bname}  ({bsz//1024}kB bundle)')
                 off += 36 + dsz
         except Exception as e:
             pass

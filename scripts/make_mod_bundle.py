@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Gauntlet Mod Bundle Maker — All-in-One
+Gauntlet Mod Bundle Maker - All-in-One
 =======================================
 Creates complete mod bundles for the Gauntlet Mod Loader from a simple
 folder of assets. Supports textures (.dds), materials (auto-generated
-from textures), and 3D models (.fbx → compiled .unit).
+from textures), and 3D models (.fbx -> compiled .unit).
 
 USAGE:
-  # Single file — output goes next to the file
+  # Single file - output goes next to the file
   python make_mod_bundle.py /path/to/model.fbx
 
-  # Folder of assets — output goes in that folder
+  # Folder of assets - output goes in that folder
   python make_mod_bundle.py my_mod_folder
 
   # Explicit mod name (default: derived from file/folder name)
@@ -58,7 +58,7 @@ OUTPUT (in mods/bundles/ layout for the mod loader):
 ENTITIES vs UNITS:
   In Bitsquid/Stingray, a "unit" is a binary resource containing mesh data,
   material references, and optional script data. An "entity" is a RUNTIME
-  concept — it's a unit that has been enhanced with Lua components and
+  concept - it's a unit that has been enhanced with Lua components and
   registered with the network game object system.
 
   There is NO separate "entity" resource type. A unit becomes an entity if:
@@ -160,7 +160,7 @@ TEXTURE_SUFFIXES = {
 # ============================================================================
 
 def murmur_hash64(key: str, seed: int = 0) -> int:
-    """MurmurHash64A — Bitsquid/Stingray resource hashing."""
+    """MurmurHash64A - Bitsquid/Stingray resource hashing."""
     m = 0xC6A4A7935BD1E995
     r = 47
     key_bytes = key.lower().encode('utf-8')
@@ -326,7 +326,7 @@ def build_material_multi(slots: List[Tuple[int, int, int]]) -> bytes:
 
 
 # ============================================================================
-# FBX → Stingray .unit Converter
+# FBX -> Stingray .unit Converter
 # ============================================================================
 
 def fbx_to_unit(fbx_path: str) -> bytes:
@@ -440,7 +440,7 @@ def fbx_to_unit(fbx_path: str) -> bytes:
             if has_tangents and has_bitangents:
                 vb += struct.pack('<fff', raw_tangents[b], raw_tangents[b+1], raw_tangents[b+2])
                 vb += struct.pack('<fff', raw_bitangents[b], raw_bitangents[b+1], raw_bitangents[b+2])
-            # UV (flip V for Stingray — origin at top-left)
+            # UV (flip V for Stingray - origin at top-left)
             if has_uv:
                 vb += struct.pack('<ff', raw_uvs[b], 1.0 - raw_uvs[b+1])
 
@@ -462,7 +462,7 @@ def fbx_to_unit(fbx_path: str) -> bytes:
         # 12 bytes padding
         out += b'\x00' * 12
 
-        # Index buffer — assimp-py gives flat list [i0,i1,i2, i0,i1,i2,...]
+        # Index buffer - assimp-py gives flat list [i0,i1,i2, i0,i1,i2,...]
         raw_indices = mesh.indices
         index_count = len(raw_indices)
         max_idx = max(raw_indices) if raw_indices else 0
@@ -594,7 +594,7 @@ def dependency_ref_from_name_hash(name_hash: int) -> int:
 def build_package_data(entries: List[PackageEntry]) -> bytes:
     """Build package resource binary from package entries.
 
-    CORRECTED FORMAT (28-byte fixed entries — verified against native bundles):
+    CORRECTED FORMAT (28-byte fixed entries - verified against native bundles):
       uint32  entry_count
       per entry (28 bytes each):
         uint64  type_hash     [0:8]
@@ -631,13 +631,13 @@ def build_bundle(resources: List[Resource]) -> bytes:
     Build an unpacked bundle in the 0xF0000004 format.
 
     CORRECTED FORMAT (verified byte-for-byte against native Gauntlet bundles):
-      [0x000]  uint32  N  — resource count
+      [0x000]  uint32  N  - resource count
       [0x004]  84-byte PREAMBLE (zeros for custom bundles)
       [0x058]  172-byte PADDING (zeros)
-      [0x104]  TOC — (N+1) × 16-byte entries
+      [0x104]  TOC - (N+1) x 16-byte entries
           entry[N] is a SENTINEL = exact copy of entry[0]
-      [toc_end]  RESOURCE-0 — 20-byte header (no type/name), then data
-      [after]    RESOURCES 1..N-1 — 36-byte header + data each
+      [toc_end]  RESOURCE-0 - 20-byte header (no type/name), then data
+      [after]    RESOURCES 1..N-1 - 36-byte header + data each
 
     See FINDINGS.txt Section 4 for full byte-level confirmation.
     """
@@ -655,13 +655,13 @@ def build_bundle(resources: List[Resource]) -> bytes:
     # 3. 172-byte padding to offset 0x104
     parts.append(b'\x00' * 172)
 
-    # 4. TOC — (N+1) × 16-byte entries with sentinel
+    # 4. TOC - (N+1) x 16-byte entries with sentinel
     for r in sorted_res:
         parts.append(struct.pack('<QQ', r.type_hash, r.name_hash))
     # Sentinel: entry[N] = exact copy of entry[0]
     parts.append(struct.pack('<QQ', sorted_res[0].type_hash, sorted_res[0].name_hash))
 
-    # 5. Resource-0 — 20-byte header (NO type/name fields) + data
+    # 5. Resource-0 - 20-byte header (NO type/name fields) + data
     r0 = sorted_res[0]
     sz0 = len(r0.data)
     parts.append(struct.pack('<IQII',
@@ -672,7 +672,7 @@ def build_bundle(resources: List[Resource]) -> bytes:
     ))
     parts.append(r0.data)
 
-    # 6. Resources 1..N-1 — 36-byte header + data each
+    # 6. Resources 1..N-1 - 36-byte header + data each
     for r in sorted_res[1:]:
         main_size = len(r.data)
         parts.append(struct.pack('<QQIQII',
@@ -747,7 +747,7 @@ def collect_textures(folder: Path, prefix: str, replace_mode: bool) -> List[Text
 
         mode_tag = "[REPLACE]" if replace_mode else "[NEW]"
         print(f"  {mode_tag} {dds_path.name} ({width}x{height} {fmt}) [{role}]")
-        print(f"           → {resource_name}  (0x{name_hash:016X})")
+        print(f"           -> {resource_name}  (0x{name_hash:016X})")
 
     return textures
 
@@ -773,7 +773,7 @@ def collect_fbx(folder: Path, prefix: str) -> List[Tuple[Path, str, int]]:
 
         results.append((fbx_path, resource_name, name_hash))
         print(f"  [MODEL] {fbx_path.name}")
-        print(f"           → {resource_name}  (0x{name_hash:016X})")
+        print(f"           -> {resource_name}  (0x{name_hash:016X})")
 
     return results
 
@@ -789,7 +789,7 @@ def collect_raw_materials(folder: Path, prefix: str) -> List[Tuple[Path, str, in
         resource_name = resource_name.replace('\\', '/')
         name_hash = murmur_hash64(resource_name)
         results.append((mat_path, resource_name, name_hash))
-        print(f"  [RAW MAT] {mat_path.name} → {resource_name}")
+        print(f"  [RAW MAT] {mat_path.name} -> {resource_name}")
     return results
 
 
@@ -804,7 +804,7 @@ def collect_lua(folder: Path, prefix: str) -> List[Tuple[Path, str, int]]:
         resource_name = resource_name.replace('\\', '/')
         name_hash = murmur_hash64(resource_name)
         results.append((lua_path, resource_name, name_hash))
-        print(f"  [LUA] {lua_path.name} → {resource_name}")
+        print(f"  [LUA] {lua_path.name} -> {resource_name}")
     return results
 
 
@@ -868,7 +868,7 @@ def generate_materials(textures: List[TextureInfo], auto_group: bool) -> List[Re
                 type_hash=TYPE_MATERIAL, name=mat_name,
                 name_hash=mat_hash, data=mat_data
             ))
-            print(f"  [MAT] {mat_name} → texture 0x{tex.name_hash:016X}")
+            print(f"  [MAT] {mat_name} -> texture 0x{tex.name_hash:016X}")
 
     return materials
 
@@ -959,9 +959,9 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
     else:
         scan_folder = folder
 
-    # ── Collect textures ─────────────────────────────────────────────
+    # -- Collect textures ---------------------------------------------
     if process_textures:
-        print("── Textures ──")
+        print("-- Textures --")
         textures = collect_textures(scan_folder, tex_prefix, replace_mode)
         if single_file and single_file.suffix.lower() == '.dds':
             # Keep only the single file we were asked about
@@ -974,9 +974,9 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
     else:
         textures = []
 
-    # ── Auto-generate materials ──────────────────────────────────────
+    # -- Auto-generate materials --------------------------------------
     if textures and not no_materials:
-        print("── Auto-Generated Materials ──")
+        print("-- Auto-Generated Materials --")
         gen_mats = generate_materials(textures, auto_group)
         for mat in gen_mats:
             all_resources.append(mat)
@@ -984,29 +984,29 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
             print("  (none generated)")
         print()
 
-    # ── Collect pre-built materials ──────────────────────────────────
+    # -- Collect pre-built materials ----------------------------------
     if process_mats:
         raw_mats = collect_raw_materials(scan_folder, model_prefix)
         if raw_mats:
-            print("── Pre-built Materials ──")
+            print("-- Pre-built Materials --")
             for mat_path, rname, rhash in raw_mats:
                 with open(mat_path, 'rb') as f:
                     mat_data = f.read()
                 all_resources.append(Resource(TYPE_MATERIAL, rname, rhash, mat_data))
             print()
 
-    # ── Collect and process model/unit files ─────────────────────────
+    # -- Collect and process model/unit files -------------------------
     if process_models:
         if single_file and single_file.suffix.lower() in ('.fbx', '.obj', '.gltf', '.glb', '.dae', '.unit'):
             model_infos = [(single_file, model_prefix + single_file.stem,
                             murmur_hash64(model_prefix + single_file.stem))]
             print(f"  [MODEL] {single_file.name}")
-            print(f"           → {model_infos[0][1]}  (0x{model_infos[0][2]:016X})")
+            print(f"           -> {model_infos[0][1]}  (0x{model_infos[0][2]:016X})")
         else:
             model_infos = collect_fbx(scan_folder, model_prefix)
         if model_infos:
             print()
-            print("── Building Unit Resources ──")
+            print("-- Building Unit Resources --")
             for fbx_path, rname, rhash in model_infos:
                 suffix = Path(fbx_path).suffix.lower()
                 if suffix == '.unit':
@@ -1017,12 +1017,12 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
                 if unit_data is not None:
                     all_resources.append(Resource(TYPE_UNIT, rname, rhash, unit_data))
                     unit_material_refs[rhash] = extract_unit_material_names(unit_data)
-                    print(f"  OK: {fbx_path.name if isinstance(fbx_path, Path) else Path(fbx_path).name} → {len(unit_data):,} bytes")
+                    print(f"  OK: {fbx_path.name if isinstance(fbx_path, Path) else Path(fbx_path).name} -> {len(unit_data):,} bytes")
                 else:
                     print(f"  FAILED: {fbx_path.name if isinstance(fbx_path, Path) else Path(fbx_path).name}")
             print()
 
-    # ── Collect Lua scripts ──────────────────────────────────────────
+    # -- Collect Lua scripts ------------------------------------------
     if process_lua:
         if single_file and single_file.suffix.lower() == '.lua':
             rname = model_prefix + single_file.stem
@@ -1031,14 +1031,14 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
         else:
             lua_files = collect_lua(scan_folder, model_prefix)
         if lua_files:
-            print("── Lua Scripts ──")
+            print("-- Lua Scripts --")
             for lua_path, rname, rhash in lua_files:
                 with open(lua_path, 'rb') as f:
                     lua_data = f.read()
                 all_resources.append(Resource(TYPE_LUA, rname, rhash, lua_data))
             print()
 
-    # ── Ensure unit material references exist as resources ──────────
+    # -- Ensure unit material references exist as resources ----------
     if unit_material_refs:
         existing_material_hashes = {
             r.name_hash for r in all_resources if r.type_hash == TYPE_MATERIAL
@@ -1048,7 +1048,7 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
             0,
         )
 
-        print("── Unit Material Resolution ──")
+        print("-- Unit Material Resolution --")
         created_materials = 0
 
         for material_names in unit_material_refs.values():
@@ -1063,22 +1063,22 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
                 created_materials += 1
 
                 if fallback_texture_hash:
-                    print(f"  [AUTO MAT] {mat_name} → 0x{fallback_texture_hash:016X}")
+                    print(f"  [AUTO MAT] {mat_name} -> 0x{fallback_texture_hash:016X}")
                 else:
-                    print(f"  [AUTO MAT] {mat_name} → 0x0000000000000000 (placeholder)")
+                    print(f"  [AUTO MAT] {mat_name} -> 0x0000000000000000 (placeholder)")
 
         if created_materials == 0:
             print("  All unit material references already resolved.")
         print()
 
-    # ── Validation ───────────────────────────────────────────────────
+    # -- Validation ---------------------------------------------------
     if not all_resources:
         print("ERROR: No valid assets found in the input folder.")
         print("       Supported: .dds (textures), .fbx/.obj/.unit (models),")
         print("                  .material (materials), .lua (scripts)")
         return False
 
-    # ── Build package entries with dependencies ─────────────────────
+    # -- Build package entries with dependencies ---------------------
     package_entries: List[PackageEntry] = []
     for res in all_resources:
         deps: List[int] = []
@@ -1101,13 +1101,13 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
 
         package_entries.append(PackageEntry(res.type_hash, res.name_hash, deps))
 
-    # ── Build package resource ───────────────────────────────────────
+    # -- Build package resource ---------------------------------------
     pkg_data = build_package_data(package_entries)
     pkg_resource = Resource(TYPE_PACKAGE, full_package_path, package_hash, pkg_data)
     all_resources.insert(0, pkg_resource)
 
-    # ── Build and compress bundle ────────────────────────────────────
-    print("── Building Bundle ──")
+    # -- Build and compress bundle ------------------------------------
+    print("-- Building Bundle --")
     unpacked = build_bundle(all_resources)
     packed = compress_bundle(unpacked)
     ratio = (1 - len(packed) / len(unpacked)) * 100 if len(unpacked) > 0 else 0
@@ -1125,7 +1125,7 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
     print(f"  Packed   : {len(packed):,} bytes ({ratio:.1f}% reduction)")
     print()
 
-    # ── Write output (mod loader layout) ─────────────────────────────
+    # -- Write output (mod loader layout) -----------------------------
     mod_dir = out_root / mod_name
     mod_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1184,15 +1184,15 @@ def make_mod_bundle(input_path: str, mod_name: str = None, output_dir: str = Non
     with open(manifest_path, 'w') as f:
         json.dump(manifest, f, indent=2)
 
-    # ── Done ─────────────────────────────────────────────────────────
-    print("── Output ──")
+    # -- Done ---------------------------------------------------------
+    print("-- Output --")
     print(f"  {mod_dir}/")
     print(f"    bundle.ini         (mod loader manifest)")
     print(f"    {bundle_hex}  (bundle)")
     print(f"    {bundle_hex}.stream")
     print(f"    manifest.json      (human-readable listing)")
     print()
-    print("── Installation ──")
+    print("-- Installation --")
     print(f"  Copy the '{mod_name}/' folder to your game's mods/bundles/ directory:")
     print(f"    Gauntlet/mods/bundles/{mod_name}/")
     print()
@@ -1216,7 +1216,7 @@ def cmd_hash(args):
     """Compute MurmurHash64 of a string."""
     for s in args.strings:
         h = murmur_hash64(s)
-        print(f"  \"{s}\" → 0x{h:016X}  ({h})")
+        print(f"  \"{s}\" -> 0x{h:016X}  ({h})")
 
 
 # ============================================================================
@@ -1225,7 +1225,7 @@ def cmd_hash(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gauntlet Mod Bundle Maker — creates bundles for the mod loader",
+        description="Gauntlet Mod Bundle Maker - creates bundles for the mod loader",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
@@ -1240,7 +1240,7 @@ examples:
 
     sub = parser.add_subparsers(dest='command')
 
-    # ── build (default) ──
+    # -- build (default) --
     build_p = sub.add_parser('build', help='Build a mod bundle from a file or folder')
     build_p.add_argument('path', help='Input file (.fbx, .dds, etc.) or folder of assets')
     build_p.add_argument('name', nargs='?', default=None,
@@ -1261,7 +1261,7 @@ examples:
     build_p.add_argument('--unit-base-dep', default=None,
                          help='Override unit base dependency ref (32-bit, e.g. 0x6B1FEA56)')
 
-    # ── hash ──
+    # -- hash --
     hash_p = sub.add_parser('hash', help='Compute MurmurHash64 of string(s)')
     hash_p.add_argument('strings', nargs='+', help='Strings to hash')
 

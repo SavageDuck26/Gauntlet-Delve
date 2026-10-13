@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-rebuild_bundles.py — Rebuild all mod bundles with CORRECTED binary formats.
+rebuild_bundles.py - Rebuild all mod bundles with CORRECTED binary formats.
 
 This script rebuilds CraneTexTest and CustomTexTest using the FIXED 28-byte
 package format + corrected bundle layout (N+1 TOC, 20-byte res-0 header).
@@ -105,7 +105,7 @@ def build_material_diffuse(texture_hash: int) -> bytes:
            struct.pack("<III", 0, 0, 0)
 
 # ---------------------------------------------------------------------------
-# Package resource builder — CORRECTED 28-byte fixed entries
+# Package resource builder - CORRECTED 28-byte fixed entries
 # ---------------------------------------------------------------------------
 def build_package_data(entries: List[Tuple[int, int]]) -> bytes:
     """
@@ -126,7 +126,7 @@ def build_package_data(entries: List[Tuple[int, int]]) -> bytes:
     return buf
 
 # ---------------------------------------------------------------------------
-# Unpacked bundle builder — CORRECTED layout
+# Unpacked bundle builder - CORRECTED layout
 # ---------------------------------------------------------------------------
 def build_bundle(resources: List[Resource]) -> bytes:
     """
@@ -282,8 +282,8 @@ def build_mod(mod_json_path: Path, out_root: Path):
     compressed = compress_bundle(unpacked)
 
     print(f"    Bundle hash: {bundle_hash_hex}")
-    print(f"    Package blob: {len(pkg_data)} bytes ({len(pkg_entries)} entries × 28 + 5)")
-    print(f"    Unpacked: {len(unpacked):,} B  →  Compressed: {len(compressed):,} B")
+    print(f"    Package blob: {len(pkg_data)} bytes ({len(pkg_entries)} entries x 28 + 5)")
+    print(f"    Unpacked: {len(unpacked):,} B  ->  Compressed: {len(compressed):,} B")
 
     # Write output
     out_dir = out_root / mod_name
@@ -317,7 +317,7 @@ def build_mod(mod_json_path: Path, out_root: Path):
 # ---------------------------------------------------------------------------
 def main():
     print("=" * 60)
-    print("Gauntlet Bundle Rebuilder — Corrected Format")
+    print("Gauntlet Bundle Rebuilder - Corrected Format")
     print("=" * 60)
 
     mods_to_build = []
@@ -373,7 +373,7 @@ def main():
                 dst = CONTENTS / f"{bh}{ext}"
                 if src.exists():
                     shutil.copy2(src, dst)
-                    print(f"  COPY: {src.name} → {dst}")
+                    print(f"  COPY: {src.name} -> {dst}")
     else:
         print(f"\n  WARNING: Game contents not found at {CONTENTS}")
         print("  Copy these bundle files manually to Gauntlet/contents/:")

@@ -1,5 +1,5 @@
 # ==========================================================================
-# Gauntlet-Reverse-Engineering — .gitignore
+# Gauntlet-Reverse-Engineering - .gitignore
 # ==========================================================================
 
 # Old depot snapshots, one folder per build (date suffix = SteamDB "seen" date)

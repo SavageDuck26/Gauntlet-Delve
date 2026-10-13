@@ -18,7 +18,7 @@ UNIT_TH = 0xE0A48D0BE9A7453F
 BONE_TH = 0x18DEAD01056B72E9
 HERE    = Path(__file__).parent
 
-# ── bundle decompressor ───────────────────────────────────────────────────────
+# -- bundle decompressor -------------------------------------------------------
 
 def decomp(path: str) -> bytes:
     with open(path, 'rb') as f:
@@ -42,7 +42,7 @@ def decomp(path: str) -> bytes:
 
 def parse_resources(data: bytes) -> dict[tuple, bytes]:
     """Parse all resources from decompressed bundle data.
-    Returns dict of (type_hash, name_hash) → data bytes.
+    Returns dict of (type_hash, name_hash) -> data bytes.
     """
     results = {}
     try:
@@ -70,7 +70,7 @@ def parse_resources(data: bytes) -> dict[tuple, bytes]:
     return results
 
 
-# ── main batch export ─────────────────────────────────────────────────────────
+# -- main batch export ---------------------------------------------------------
 
 def batch_export(out_dir: str, limit: int = 0, verbose: bool = False):
     import importlib.util as _ilu
@@ -93,8 +93,8 @@ def batch_export(out_dir: str, limit: int = 0, verbose: bool = False):
     )
 
     # Collect all units and bones across all bundles
-    all_units: dict[int, bytes] = {}   # name_hash → unit data
-    all_bones: dict[int, bytes] = {}   # name_hash → bones data
+    all_units: dict[int, bytes] = {}   # name_hash -> unit data
+    all_bones: dict[int, bytes] = {}   # name_hash -> bones data
 
     print(f"Scanning {len(bundles)} bundles...")
     for bname in bundles:
@@ -154,7 +154,7 @@ def batch_export(out_dir: str, limit: int = 0, verbose: bool = False):
                 print(f"[{i}/{len(unit_hashes)}] FAIL {name}: {e}")
                 fail += 1
 
-    print(f"\nDone: {success} exported, {fail} failed → {out}")
+    print(f"\nDone: {success} exported, {fail} failed -> {out}")
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Atlas-subdirectory patterns (FINDINGS.txt §48).
+Atlas-subdirectory patterns (FINDINGS.txt #48).
 
 Resolved icons sit in a subdirectory named after their atlas:
 

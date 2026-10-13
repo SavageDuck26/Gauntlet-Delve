@@ -12,13 +12,13 @@ Format (from binary analysis):
 
   At offset 0x20: embedded COBJ sub-object (root_type=6, root_off=48)
     Emitter descriptor in COBJ format with properties:
-      - transform matrix (identity 4×4)
+      - transform matrix (identity 4x4)
       - float parameters (bounds, lifetime, speed, etc.)
       - color RGBA values (1.0 = 100%)
       - reference to shader hash
 
   The overall format is a mixed binary + embedded COBJ structure.
-  NOT a top-level COBJ blob — header is raw binary.
+  NOT a top-level COBJ blob - header is raw binary.
 
 Round-trip status: decode-only (raw blob preserved). Full decode and re-encode
 requires further reverse-engineering of the emitter parameter layout.
@@ -32,7 +32,7 @@ HEADER_SIZE = 32
 
 
 def decode_particles(blob: bytes) -> Dict[str, Any]:
-    """Parse .particles blob → dict with header + raw data."""
+    """Parse .particles blob -> dict with header + raw data."""
     if len(blob) < HEADER_SIZE:
         raise ValueError(f"blob too short ({len(blob)})")
 
@@ -66,7 +66,7 @@ def decode_particles(blob: bytes) -> Dict[str, Any]:
 
 
 def encode_particles(data: Dict[str, Any]) -> bytes:
-    """Re-encode particles — returns original bytes from _raw_hex."""
+    """Re-encode particles - returns original bytes from _raw_hex."""
     if "_raw_hex" in data:
         return bytes.fromhex(data["_raw_hex"])
     raise ValueError("Cannot encode particles without _raw_hex")
@@ -79,7 +79,7 @@ def decode_particles_file(src: str, dst: str | None = None) -> str:
         dst = os.path.splitext(src)[0] + '.json'
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
-    print(f"Decoded {src} → {dst}  ({len(blob)} bytes, flags={data['flags']})")
+    print(f"Decoded {src} -> {dst}  ({len(blob)} bytes, flags={data['flags']})")
     return dst
 
 
@@ -89,7 +89,7 @@ def encode_particles_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.particles'
     open(dst, 'wb').write(encode_particles(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

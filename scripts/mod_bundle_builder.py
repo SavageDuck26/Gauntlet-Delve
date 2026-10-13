@@ -8,9 +8,9 @@ Supports textures (DDS/PNG), units (GLB/OBJ), materials, Lua scripts, and more.
 The output is a ready-to-use mod folder for the GauntletModLoader:
     mods/bundles/<ModName>/
         bundle.ini
-        <hash>           ← compressed bundle file
-        <hash>.stream    ← empty stream file (required by engine)
-        manifest.json    ← human-readable summary
+        <hash>           <- compressed bundle file
+        <hash>.stream    <- empty stream file (required by engine)
+        manifest.json    <- human-readable summary
 
 =============================================================================
 MOD.JSON FORMAT
@@ -57,12 +57,12 @@ MOD.JSON FORMAT
 RESOURCE TYPES
 =============================================================================
 
-  texture   DDS or PNG → texture resource (DDS stored directly; PNG auto-converted)
-  unit      GLB or OBJ → Stingray .unit binary (via gltf_to_unit.py)
-  material  JSON config or texture reference → 52-byte Stingray material binary
-  lua       .lua source file → Lua resource
-  bones     binary .bones file → bones resource
-  raw       any pre-built binary → stored as-is with the given type
+  texture   DDS or PNG -> texture resource (DDS stored directly; PNG auto-converted)
+  unit      GLB or OBJ -> Stingray .unit binary (via gltf_to_unit.py)
+  material  JSON config or texture reference -> 52-byte Stingray material binary
+  lua       .lua source file -> Lua resource
+  bones     binary .bones file -> bones resource
+  raw       any pre-built binary -> stored as-is with the given type
 
 =============================================================================
 USAGE
@@ -83,9 +83,9 @@ The hash will match the original, so your texture overrides the game's globally.
 You still need to load your package via Game:load_package().
 
 Known texture hashes:
-    characters/avatar_warrior/warrior_diff → 0x67111D9E39E1CABC
-    characters/avatar_warrior/warrior_norm → 0xF8C23D1F8B219C6D
-    characters/avatar_elf/elf_diff         → 0x5A946011CD458AA6
+    characters/avatar_warrior/warrior_diff -> 0x67111D9E39E1CABC
+    characters/avatar_warrior/warrior_norm -> 0xF8C23D1F8B219C6D
+    characters/avatar_elf/elf_diff         -> 0x5A946011CD458AA6
 
 =============================================================================
 """
@@ -103,14 +103,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-# ── optional PIL import for PNG→DDS ────────────────────────────────────────────
+# -- optional PIL import for PNG->DDS --------------------------------------------
 try:
     from PIL import Image
     _HAS_PIL = True
 except ImportError:
     _HAS_PIL = False
 
-# ── constants ──────────────────────────────────────────────────────────────────
+# -- constants ------------------------------------------------------------------
 
 BUNDLE_SIG  = 0xF0000004
 ZLIB_CHUNK  = 0x10000   # 64 KB
@@ -155,10 +155,10 @@ _STATIC_UNIT_FOOTER_KEY_OFFSET = 0xF0
 _STATIC_UNIT_FOOTER_HASH_OFFSET = 0x159
 _STATIC_UNIT_FOOTER_CONTENT_KEY = 0x766DD7ED
 
-# ── MurmurHash64A ──────────────────────────────────────────────────────────────
+# -- MurmurHash64A --------------------------------------------------------------
 
 def murmur64(key: str, seed: int = 0) -> int:
-    """MurmurHash64A — Bitsquid/Stingray engine hash, seed=0, lowercase."""
+    """MurmurHash64A - Bitsquid/Stingray engine hash, seed=0, lowercase."""
     m  = 0xC6A4A7935BD1E995
     r  = 47
     kb = key.lower().encode('utf-8')
@@ -350,7 +350,7 @@ def _parse_dependency_ref(raw: Any) -> Optional[int]:
             return None
     return None
 
-# ── resource data types ────────────────────────────────────────────────────────
+# -- resource data types --------------------------------------------------------
 
 @dataclass
 class Resource:
@@ -366,10 +366,10 @@ class Resource:
                 return k
         return f"0x{self.type_hash:016x}"
 
-# ── resource encoders ─────────────────────────────────────────────────────────
+# -- resource encoders ---------------------------------------------------------
 
 def _encode_texture(src: str, resource_name: str, mod_dir: str) -> bytes:
-    """Load DDS (or convert PNG→DDS) and return raw DDS bytes."""
+    """Load DDS (or convert PNG->DDS) and return raw DDS bytes."""
     src_path = Path(mod_dir) / src if not Path(src).is_absolute() else Path(src)
     if not src_path.exists():
         raise FileNotFoundError(f"Texture source not found: {src_path}")
@@ -400,7 +400,7 @@ def _encode_texture(src: str, resource_name: str, mod_dir: str) -> bytes:
             return _png_to_dds_uncompressed(src_path)
 
         raise RuntimeError(
-            f"Cannot convert {src_path.name} to DDS — install Pillow or texconv"
+            f"Cannot convert {src_path.name} to DDS - install Pillow or texconv"
         )
 
     raise ValueError(f"Unsupported texture source format: {src_path.suffix}")
@@ -424,7 +424,7 @@ def _png_to_dds_uncompressed(src: Path) -> bytes:
     img = Image.open(src).convert('RGBA')
     w, h = img.size
     pixels = bytearray(img.tobytes())
-    # Swap R↔B for BGRA
+    # Swap R<->B for BGRA
     for i in range(0, len(pixels), 4):
         pixels[i], pixels[i+2] = pixels[i+2], pixels[i]
     raw = bytes(pixels)
@@ -444,7 +444,7 @@ def _png_to_dds_uncompressed(src: Path) -> bytes:
 
 
 def _encode_unit(src: str, resource_name: str, mod_dir: str) -> bytes:
-    """Convert GLB/OBJ → Stingray .unit binary via gltf_to_unit.py."""
+    """Convert GLB/OBJ -> Stingray .unit binary via gltf_to_unit.py."""
     import tempfile
     src_path = Path(mod_dir) / src if not Path(src).is_absolute() else Path(src)
     if not src_path.exists():
@@ -476,7 +476,7 @@ def _encode_unit(src: str, resource_name: str, mod_dir: str) -> bytes:
 
         data = out_path.read_bytes()
         data = _append_static_unit_footer(data, resource_name)
-        print(f"  Encoded unit: {src_path.name} → {len(data):,} bytes")
+        print(f"  Encoded unit: {src_path.name} -> {len(data):,} bytes")
         return data
     finally:
         out_path.unlink(missing_ok=True)
@@ -487,12 +487,12 @@ def _encode_material(spec: Dict[str, Any], resources: Dict[str, Resource]) -> by
     Build or pass through a Stingray material binary.
 
     spec may contain:
-      "source":  pre-built .material binary file path → stored as-is
-      "texture": resource path string  → builds 52-byte diffuse material (GUI/icon use)
+      "source":  pre-built .material binary file path -> stored as-is
+      "texture": resource path string  -> builds 52-byte diffuse material (GUI/icon use)
       "shader":  hex uint64 shader hash (optional override for "texture" mode)
       "data":    pre-built binary data as hex string (raw mode)
 
-      "clone_from": path to native .material binary → clone it with texture remapping
+      "clone_from": path to native .material binary -> clone it with texture remapping
       "remap_textures": { "old_texture_path": "new_texture_path", ... }
                         Only used with "clone_from". Uses byte-level search-and-replace
                         of MurmurHash64 values, preserving all shader parameters and
@@ -509,7 +509,7 @@ def _encode_material(spec: Dict[str, Any], resources: Dict[str, Resource]) -> by
         # Clone a native material with texture remapping
         native_path = spec["clone_from"]
         if not os.path.isabs(native_path):
-            # Resolve relative to: mod directory → script directory
+            # Resolve relative to: mod directory -> script directory
             found = False
             mod_dir = spec.get("_mod_dir", "")
             if mod_dir:
@@ -584,7 +584,7 @@ def _encode_raw(src: str, mod_dir: str) -> bytes:
         raise FileNotFoundError(f"Resource source not found: {src_path}")
     return src_path.read_bytes()
 
-# ── package resource builder ──────────────────────────────────────────────────
+# -- package resource builder --------------------------------------------------
 
 def _build_package_resource(non_pkg_resources: List[Resource],
                             dependency_base_ref: Optional[int] = None,
@@ -592,7 +592,7 @@ def _build_package_resource(non_pkg_resources: List[Resource],
     """
     Build the .package resource blob listing all non-package resources.
 
-    CORRECTED FORMAT (28-byte fixed entries — verified against native bundles):
+    CORRECTED FORMAT (28-byte fixed entries - verified against native bundles):
       uint32  entry_count
       per entry (28 bytes each):
         uint64  type_hash     [0:8]
@@ -606,9 +606,9 @@ def _build_package_resource(non_pkg_resources: List[Resource],
     when the engine read entries past the end of the undersized payload.
     (See FINDINGS.txt Section 9B.1 for the byte-level confirmation.)
 
-    Dependencies are NOT emitted inline — they are expressed implicitly through
+    Dependencies are NOT emitted inline - they are expressed implicitly through
     the resource ordering and the engine's built-in dependency resolution.
-    Material→texture and unit→material relationships are resolved at runtime
+    Material->texture and unit->material relationships are resolved at runtime
     by the engine's resource manager scanning name hashes.
     """
     count = len(non_pkg_resources)
@@ -620,7 +620,7 @@ def _build_package_resource(non_pkg_resources: List[Resource],
             '<QQIII',
             r.type_hash,   # uint64: resource type hash
             r.name_hash,   # uint64: resource name hash
-            2,             # uint32: c1 = 2 (REQUIRED — native bundles ALWAYS use 2)
+            2,             # uint32: c1 = 2 (REQUIRED - native bundles ALWAYS use 2)
             0,             # uint32: c2 = 0 (safe for custom bundles)
             name_hi32,     # uint32: upper 32 bits of name_hash
         )
@@ -628,25 +628,25 @@ def _build_package_resource(non_pkg_resources: List[Resource],
     body += b'\x01'  # trailer byte (always 0x01 in native bundles)
     return body
 
-# ── bundle assembler ──────────────────────────────────────────────────────────
+# -- bundle assembler ----------------------------------------------------------
 
 def _build_bundle(all_resources: List[Resource]) -> bytes:
     """
     Assemble an unpacked bundle body.
 
     CORRECTED FORMAT (verified byte-for-byte against native Gauntlet bundles):
-      [0x000:0x004]  uint32  N  — resource count
+      [0x000:0x004]  uint32  N  - resource count
       [0x004:0x058]  84-byte PREAMBLE (all zeros for custom bundles)
       [0x058:0x104]  172-byte PADDING (zeros)
-      [0x104:]       TOC — (N+1) × 16-byte entries
+      [0x104:]       TOC - (N+1) x 16-byte entries
           Each entry: {uint64 type_hash, uint64 name_hash}
           CRITICAL: entry[N] is a SENTINEL = exact copy of entry[0]
-      [toc_end:]     RESOURCE-0 METADATA — 20 bytes
+      [toc_end:]     RESOURCE-0 METADATA - 20 bytes
           uint32  flags       (normally 1)
           uint64  zeros       (always 0)
           uint32  data_sz     (byte count of resource-0 data)
           uint32  stream_sz   (0 = no stream data)
-      [toc_end+20:]  RESOURCE-0 DATA — data_sz bytes
+      [toc_end+20:]  RESOURCE-0 DATA - data_sz bytes
       [after res-0:] RESOURCES 1..N-1 (each starts with a 36-byte header)
           uint64  type_hash
           uint64  name_hash
@@ -657,7 +657,7 @@ def _build_bundle(all_resources: List[Resource]) -> bytes:
           bytes[data_sz]  resource data
 
     The resource-0 is always the package resource (sorted first).
-    Its header is 20 bytes (no type/name fields) — NOT the 36-byte format
+    Its header is 20 bytes (no type/name fields) - NOT the 36-byte format
     used by resources 1..N-1.  See FINDINGS.txt Section 4 for full details.
     """
     if not all_resources:
@@ -683,13 +683,13 @@ def _build_bundle(all_resources: List[Resource]) -> bytes:
     #    (84 bytes preamble + 172 bytes = 256 bytes from offset 4)
     parts.append(b'\x00' * 172)
 
-    # 4. TOC — (N+1) × 16-byte entries with sentinel
+    # 4. TOC - (N+1) x 16-byte entries with sentinel
     for r in sorted_res:
         parts.append(struct.pack('<QQ', r.type_hash, r.name_hash))
     # Sentinel: entry[N] = exact copy of entry[0]
     parts.append(struct.pack('<QQ', sorted_res[0].type_hash, sorted_res[0].name_hash))
 
-    # 5. Resource-0 (package) — 20-byte header (NO type/name fields)
+    # 5. Resource-0 (package) - 20-byte header (NO type/name fields)
     r0 = sorted_res[0]
     sz0 = len(r0.data)
     parts.append(struct.pack('<IQII',
@@ -700,7 +700,7 @@ def _build_bundle(all_resources: List[Resource]) -> bytes:
     ))
     parts.append(r0.data)
 
-    # 6. Resources 1..N-1 — each with 36-byte header + data
+    # 6. Resources 1..N-1 - each with 36-byte header + data
     # CRITICAL: each resource must start on a 4-byte boundary.
     # Pad to 4-byte alignment after resource-0 data before writing
     # the first 36-byte resource header, and again after each
@@ -742,7 +742,7 @@ def _compress_bundle(unpacked: bytes) -> bytes:
       uint32  padding = 0
       [N chunks]: uint32 compressed_chunk_size + zlib_deflate_bytes
 
-    IMPORTANT: last chunk is NOT padded to 64KB — stored at its actual size.
+    IMPORTANT: last chunk is NOT padded to 64KB - stored at its actual size.
     """
     sig_hdr = struct.pack('<III', BUNDLE_SIG, len(unpacked), 0)
     chunks  = [sig_hdr]
@@ -755,7 +755,7 @@ def _compress_bundle(unpacked: bytes) -> bytes:
         offset += ZLIB_CHUNK
     return b''.join(chunks)
 
-# ── bundle.ini writer ─────────────────────────────────────────────────────────
+# -- bundle.ini writer ---------------------------------------------------------
 
 def _write_bundle_ini(out_dir: Path, package_path: str, resource_count: int,
                       has_stream: bool, boot_overlay: Optional[Dict]) -> None:
@@ -778,7 +778,7 @@ def _write_bundle_ini(out_dir: Path, package_path: str, resource_count: int,
         ]
     (out_dir / "bundle.ini").write_text('\n'.join(lines) + '\n')
 
-# ── manifest writer ───────────────────────────────────────────────────────────
+# -- manifest writer -----------------------------------------------------------
 
 def _write_manifest(out_dir: Path, mod_name: str, package_path: str,
                     bundle_hash: str, all_resources: List[Resource],
@@ -804,7 +804,7 @@ def _write_manifest(out_dir: Path, mod_name: str, package_path: str,
         json.dumps(manifest, indent=2) + '\n'
     )
 
-# ── main builder ──────────────────────────────────────────────────────────────
+# -- main builder --------------------------------------------------------------
 
 def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
                      verbose: bool = False, flat: bool = False) -> str:
@@ -829,17 +829,17 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
     resource_specs = spec.get("resources", [])
 
     print("=" * 70)
-    print(f"Mod Bundle Builder — {mod_name}")
+    print(f"Mod Bundle Builder - {mod_name}")
     print("=" * 70)
     print(f"Package path : {package_path}")
 
-    # Compute package hash → bundle filename
+    # Compute package hash -> bundle filename
     bundle_hash_int = murmur64(package_path)
     bundle_hash     = f"{bundle_hash_int:016x}"
     print(f"Bundle hash  : {bundle_hash}")
     print()
 
-    # ── Process each resource spec ──────────────────────────────────────────
+    # -- Process each resource spec ------------------------------------------
     non_pkg_resources: List[Resource] = []
     source_specs: List[Dict] = []
 
@@ -861,29 +861,29 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
         try:
             if res_type == "texture":
                 data = _encode_texture(rs["source"], res_path, str(mod_dir))
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "unit":
                 data = _encode_unit(rs["source"], res_path, str(mod_dir))
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "material":
                 material_spec = dict(rs)
                 material_spec["_mod_dir"] = mod_dir
                 data = _encode_material(material_spec, {r.name: r for r in non_pkg_resources})
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "lua":
                 data = _encode_lua(rs["source"], str(mod_dir))
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "bones":
                 data = _encode_raw(rs["source"], str(mod_dir))
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             else:  # raw / any other
                 data = _encode_raw(rs["source"], str(mod_dir))
-                print(f"              → {len(data):,} bytes  (hash 0x{name_hash:016X})")
+                print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
         except Exception as e:
             print(f"  [ERROR] Failed to encode '{res_path}': {e}")
@@ -898,7 +898,7 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
         non_pkg_resources.append(res)
         source_specs.append(rs)
 
-    # ── Build package resource ────────────────────────────────────────────
+    # -- Build package resource --------------------------------------------
     resource_specs_by_name = {
         rs.get("path", ""): rs
         for rs in resource_specs
@@ -917,14 +917,14 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
         name      = package_path,
     )
     print(f"\n  [{'package':10s}] {package_path}")
-    print(f"              → {len(pkg_data):,} bytes  ({len(non_pkg_resources)} entries)")
+    print(f"              -> {len(pkg_data):,} bytes  ({len(non_pkg_resources)} entries)")
 
     all_resources = [pkg_res] + non_pkg_resources
     total = len(all_resources)
     print(f"\nTotal resources: {total}")
 
-    # ── Assemble + compress bundle ─────────────────────────────────────────
-    print("\nAssembling bundle…")
+    # -- Assemble + compress bundle -----------------------------------------
+    print("\nAssembling bundle...")
     unpacked = _build_bundle(all_resources)
     print(f"  Unpacked : {len(unpacked):,} bytes")
 
@@ -932,7 +932,7 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
     ratio = (1 - len(compressed) / len(unpacked)) * 100 if len(unpacked) else 0
     print(f"  Packed   : {len(compressed):,} bytes  ({ratio:.1f}% compression)")
 
-    # ── Write output ────────────────────────────────────────────────────────
+    # -- Write output --------------------------------------------------------
     if output_dir is None:
         # Default: sibling 'output/<ModName>' folder relative to mod.json
         out_dir = mod_json.parent / "output" / mod_name
@@ -959,14 +959,14 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
     _write_manifest(out_dir, mod_name, package_path, bundle_hash,
                     all_resources, source_specs)
 
-    print(f"\n✓ Bundle written to: {out_dir}")
+    print(f"\n[ok] Bundle written to: {out_dir}")
     print()
-    print("─" * 70)
+    print("-" * 70)
     print("MOD LOADER INSTALLATION")
-    print("─" * 70)
+    print("-" * 70)
     print(f"Copy the folder to your game's mod loader:")
     print(f"    {out_dir}")
-    print(f"  → <Gauntlet>/mods/bundles/{mod_name}/")
+    print(f"  -> <Gauntlet>/mods/bundles/{mod_name}/")
     print()
     print("LUA LOAD (if not using BootOverlay):")
     print(f'    Game:load_package("{package_path}", true)')
@@ -978,7 +978,7 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
 
     return str(out_dir)
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# -- CLI ------------------------------------------------------------------------
 
 def _make_example_mod_json(out_path: str) -> None:
     """Write an example mod.json to out_path."""

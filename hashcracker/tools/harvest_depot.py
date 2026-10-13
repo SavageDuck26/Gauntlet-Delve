@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Harvest resource names out of the snapshot depots (FINDINGS.txt §45).
+Harvest resource names out of the snapshot depots (FINDINGS.txt #45).
 
 The bundles look string-free to `grep`, which is why the depots were long
 considered name-less: every body is a chain of zlib blocks.  Decompress them and

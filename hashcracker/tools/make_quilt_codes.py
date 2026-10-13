@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The *legal* quilt cell codes, enumerated from the game's own grammar (§44).
+The *legal* quilt cell codes, enumerated from the game's own grammar (#44).
 
 Every resolved quilt cell group follows one rule (verified: 29/29 distinct
 groups, 0 exceptions):

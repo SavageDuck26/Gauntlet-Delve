@@ -8,19 +8,19 @@ Binary layout (version=10):
   uint32  tex_count       number of texture slots
   uint64  shader_hash     MurmurHash64 of the shader name
   uint64  zeros           padding zeros
-  tex_count × TextureEntry:
+  tex_count x TextureEntry:
     uint32  slot_index    binding slot / layer index
     uint32  name_hash32   MurmurHash32 of the texture slot name
     uint64  texture_hash  MurmurHash64 of the texture asset name
   uint32  zero_sep        = 0  (separator)
   uint32  scalar_count    number of scalar/vector parameter slots
-  scalar_count × ScalarEntry (16 bytes each):
+  scalar_count x ScalarEntry (16 bytes each):
     uint32  slot_index
     uint32[3]  data       raw float/uint data (inline parameter values)
   uint32  trailing_count  count of trailing float4 values
-  trailing_count × float[4]  inline float4 parameters (tiling, color, etc.)
+  trailing_count x float[4]  inline float4 parameters (tiling, color, etc.)
 
-Round-trip: binary ↔ JSON
+Round-trip: binary <-> JSON
 """
 
 import struct, json, sys, os
@@ -146,7 +146,7 @@ def main():
         out = path.rsplit('.', 1)[0] + '.json'
         with open(out, 'w') as f:
             json.dump(data, f, indent=2)
-        print(f"Decoded {path} → {out}")
+        print(f"Decoded {path} -> {out}")
         print(f"  shader_hash={data['shader_hash']}")
         print(f"  {len(data['textures'])} texture(s), {len(data.get('scalars',[]))} scalar(s)")
 
@@ -158,7 +158,7 @@ def main():
         blob = encode_material(data)
         with open(out, 'wb') as f:
             f.write(blob)
-        print(f"Encoded {path} → {out}  ({len(blob)} bytes)")
+        print(f"Encoded {path} -> {out}  ({len(blob)} bytes)")
 
     else:
         print(f"Unknown command: {cmd}")

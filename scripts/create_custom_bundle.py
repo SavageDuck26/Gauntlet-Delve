@@ -211,7 +211,7 @@ def build_bundle(textures: List[TextureResource]) -> bytes:
     - uint32: resource count
     - uint64[count]: name hash table (at offset 4)
     - padding to 0x104
-    - Entry table at 0x104: (type_hash, name_hash) × count
+    - Entry table at 0x104: (type_hash, name_hash) x count
     - Resource data section: headers + data for each resource
     """
     if not textures:
@@ -229,7 +229,7 @@ def build_bundle(textures: List[TextureResource]) -> bytes:
     # 1. Resource count (4 bytes)
     sections.append(struct.pack('<I', count))
     
-    # 2. Name hash table (count × 8 bytes, starting at offset 4)
+    # 2. Name hash table (count x 8 bytes, starting at offset 4)
     for tex in sorted_textures:
         sections.append(struct.pack('<Q', tex.name_hash))
     
@@ -239,7 +239,7 @@ def build_bundle(textures: List[TextureResource]) -> bytes:
     if padding_needed > 0:
         sections.append(b'\x00' * padding_needed)
     
-    # 4. Entry table at 0x104 (count × 16 bytes)
+    # 4. Entry table at 0x104 (count x 16 bytes)
     for tex in sorted_textures:
         sections.append(struct.pack('<QQ', TEXTURE_TYPE_HASH, tex.name_hash))
     

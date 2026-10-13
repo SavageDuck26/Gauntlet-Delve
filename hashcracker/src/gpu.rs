@@ -40,7 +40,7 @@ struct Params {
     iters: u32,
     nslots: u32,
     tmask: u32,
-    /// Bytes the pattern's literals contribute — the seed for the length pass.
+    /// Bytes the pattern's literals contribute - the seed for the length pass.
     lit_len: u32,
 }
 
@@ -112,7 +112,7 @@ fn eval(@builtin(global_invocation_id) gid: vec3<u32>) {
         if (idx >= P.total) { break; }
 
         // pass 1: total byte length (Murmur seeds with len * M). Only the slot
-        // words can change it, so this walks the slot table instead of every op —
+        // words can change it, so this walks the slot table instead of every op -
         // and it sits at the head of the serial dependency chain, so it stays
         // short: nslots lookups rather than nops branches.
         var total_len: u32 = P.lit;
@@ -328,7 +328,7 @@ impl Gpu {
             meta.push(arena.slot_first[p]);
         }
 
-        // (offset, len) per entry — literals first, then words slot-major
+        // (offset, len) per entry - literals first, then words slot-major
         let mut entries: Vec<u32> = Vec::with_capacity(arena.ent_off.len() * 2);
         for e in 0..arena.ent_off.len() {
             entries.push(arena.ent_off[e]);

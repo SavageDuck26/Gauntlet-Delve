@@ -2,7 +2,7 @@
 Stingray .strings resource decode/encode.
 
 Format (confirmed from binary analysis):
-  Outer language index (11 entries × 12 bytes = 132 bytes):
+  Outer language index (11 entries x 12 bytes = 132 bytes):
     uint32  language_bitmask   (1, 2, 4, 8, 16, 32, 96, 128, 256, 512, 1024)
     uint32  bundle_abs_offset  absolute byte offset into the DECOMPRESSED bundle body
     uint32  zero               always 0
@@ -52,24 +52,24 @@ def _read_cstring(blob: bytes, offset: int) -> Tuple[str, int]:
 
 
 def decode_strings(blob: bytes) -> Dict[str, Any]:
-    """Parse raw .strings blob → dict.
+    """Parse raw .strings blob -> dict.
 
     The .strings blob contains:
-      1. Outer language index (132 bytes, 11 × 12-byte entries)
-      2. Inner string index  (N × 8 bytes, {hash32(4), pool_offset(4)})
+      1. Outer language index (132 bytes, 11 x 12-byte entries)
+      2. Inner string index  (N x 8 bytes, {hash32(4), pool_offset(4)})
       3. String pool         (null-terminated UTF-8 strings, referenced by inner index)
 
     Inner index count N is determined by finding where the data transitions from
     binary pairs to printable text (the start of the string pool).
     Inner index offsets are relative to the string pool start.
     The outer index bundle_abs_offset values reference absolute positions in the
-    DECOMPRESSED BUNDLE — they point to per-language override tables in the bundle,
+    DECOMPRESSED BUNDLE - they point to per-language override tables in the bundle,
     not within this blob.
     """
     if len(blob) < 132:
         raise ValueError(f"blob too short ({len(blob)}) for strings outer index")
 
-    # Outer language index: 11 × 12 = 132 bytes
+    # Outer language index: 11 x 12 = 132 bytes
     outer: List[Dict[str, Any]] = []
     for i in range(11):
         off = i * OUTER_ENTRY_SZ
@@ -143,7 +143,7 @@ def decode_strings_file(src: str, dst: str | None = None) -> str:
     with open(dst, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     n = data["inner_string_count"]
-    print(f"Decoded {src} → {dst}  ({n} strings)")
+    print(f"Decoded {src} -> {dst}  ({n} strings)")
     return dst
 
 
@@ -172,7 +172,7 @@ def encode_strings(data: Dict[str, Any]) -> bytes:
         pool_offsets[hex_key] = len(pool)
         pool += val.encode('utf-8') + b'\x00'
 
-    # 3. Write inner index (N × 8 bytes): {hash32, pool_offset}
+    # 3. Write inner index (N x 8 bytes): {hash32, pool_offset}
     for hex_key in strings_map:
         h = int(hex_key, 16)
         off = pool_offsets[hex_key]
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                 # Semantic check: decode re-encoded and compare
                 data2 = decode_strings(blob2)
                 if data2['strings'] == data['strings']:
-                    print(f"strings_tools selftest: PASS (semantic, {n} strings, {len(blob)}→{len(blob2)} bytes)")
+                    print(f"strings_tools selftest: PASS (semantic, {n} strings, {len(blob)}->{len(blob2)} bytes)")
                 else:
                     print(f"strings_tools selftest: MISMATCH  orig={len(blob)} re-enc={len(blob2)}")
             if data["strings"]:

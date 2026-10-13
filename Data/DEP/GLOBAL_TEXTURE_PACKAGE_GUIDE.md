@@ -2,47 +2,47 @@
 ## Complete Technical Guide with Explanations
 
 > [!WARNING]
-> **⚠ DEPRECATED / SUPERSEDED (January 9, 2026 content) — HISTORICAL ONLY.**
+> **[!] DEPRECATED / SUPERSEDED (January 9, 2026 content) - HISTORICAL ONLY.**
 >
 > The "custom texture packages just work" claim on this page was **disproven**
-> (July 2, 2026 — FINDINGS §15J) and then **re-solved with specific payload
-> requirements** (July 5, 2026 — FINDINGS §16 / `CUSTOM_ASSET_LOADING_FINDINGS.md`).
+> (July 2, 2026 - FINDINGS #15J) and then **re-solved with specific payload
+> requirements** (July 5, 2026 - FINDINGS #16 / `CUSTOM_ASSET_LOADING_FINDINGS.md`).
 > A custom bundle containing textures/materials only loads if each resource
 > carries its required payload trailer (4-byte texture trailer; unit trailing
 > sections + footer material hash).
 >
-> **Authoritative references:** `FINDINGS.txt` §15J and §16,
+> **Authoritative references:** `FINDINGS.txt` #15J and #16,
 > `CUSTOM_ASSET_LOADING_FINDINGS.md`.
 >
 > **Known broken items in this document (kept for archaeology):**
-> - `create_global_package.py` — does NOT exist in this repo.
-> - `texture_loader.lua` — does NOT exist in this repo.
-> - `add_bundle_to_db.py --verify <hash>` — no such flag (see below).
-> - The `Dep Count (4 bytes) = 0` package-entry format — obsolete; the confirmed
->   layout is 28-byte entries + 1-byte `0x01` trailer (FINDINGS §9B).
-> - `verify_bundle.py` — parses the OLD 20-byte package format and is stale.
-> - `import mmh3` — not installed here; use `bundle_tools.murmur_hash64()`.
+> - `create_global_package.py` - does NOT exist in this repo.
+> - `texture_loader.lua` - does NOT exist in this repo.
+> - `add_bundle_to_db.py --verify <hash>` - no such flag (see below).
+> - The `Dep Count (4 bytes) = 0` package-entry format - obsolete; the confirmed
+>   layout is 28-byte entries + 1-byte `0x01` trailer (FINDINGS #9B).
+> - `verify_bundle.py` - parses the OLD 20-byte package format and is stale.
+> - `import mmh3` - not installed here; use `bundle_tools.murmur_hash64()`.
 
-**STATUS (original, now outdated): ✅ VERIFIED WORKING (January 9, 2026)**
+**STATUS (original, now outdated): [ok] VERIFIED WORKING (January 9, 2026)**
 
 Custom texture packages successfully load via Lua! Tested with 20 textures.
 
 ---
 
-## 🎯 TL;DR - Can You Use Textures Globally?
+##  TL;DR - Can You Use Textures Globally?
 
 **YES, but with important caveats:**
 
 | What Works | What Doesn't Work | Why |
 |------------|-------------------|-----|
-| ✅ Loading textures into memory globally | ❌ Existing materials auto-using your textures | Materials are pre-compiled with specific texture hashes |
-| ✅ Referencing textures by hash anywhere | ❌ "Dropping in" a replacement texture file | The engine uses hashes, not file paths |
-| ✅ Creating new materials that use your textures | ❌ Changing a material's textures without modifying it | Material binary contains hardcoded texture references |
-| ✅ Runtime texture swapping via Lua hooks | ❌ Simple file replacement like Skyrim mods | Bitsquid doesn't load loose files |
+| [ok] Loading textures into memory globally | [X] Existing materials auto-using your textures | Materials are pre-compiled with specific texture hashes |
+| [ok] Referencing textures by hash anywhere | [X] "Dropping in" a replacement texture file | The engine uses hashes, not file paths |
+| [ok] Creating new materials that use your textures | [X] Changing a material's textures without modifying it | Material binary contains hardcoded texture references |
+| [ok] Runtime texture swapping via Lua hooks | [X] Simple file replacement like Skyrim mods | Bitsquid doesn't load loose files |
 
 ---
 
-## 📚 How the Bitsquid/Stingray Resource System Works
+##  How the Bitsquid/Stingray Resource System Works
 
 ### The Hash-Based System
 
@@ -50,11 +50,11 @@ Unlike games that use file paths (e.g., `textures/sword.dds`), Bitsquid uses **M
 
 ```
 Resource Path: "characters/avatar_warrior/warrior_diff"
-                           ↓
+                           v
                    MurmurHash64()
-                           ↓
+                           v
               Hash: 0x67111D9E39E1CABC
-                           ↓
+                           v
           Stored in bundle as: 67111d9e39e1cabc
 ```
 
@@ -70,10 +70,10 @@ Resources are packed into **bundles** (the hex-named files in `contents/`):
 
 ```
 Bundle: 0164ad48615ba9ed
-├── Resource 0x67111D9E39E1CABC (texture: warrior_diff)
-├── Resource 0xF8C23D1F8B219C6D (texture: warrior_norm)
-├── Resource 0x03054DB6A1586C9B (material: warrior_material)
-└── Resource 0xAD9C6D9ED1E5E77A (package: level_package)
++-- Resource 0x67111D9E39E1CABC (texture: warrior_diff)
++-- Resource 0xF8C23D1F8B219C6D (texture: warrior_norm)
++-- Resource 0x03054DB6A1586C9B (material: warrior_material)
++-- Resource 0xAD9C6D9ED1E5E77A (package: level_package)
 ```
 
 **Key Insight:** A bundle can contain ANY resources. The bundle name is just a hash - it doesn't determine what's inside.
@@ -99,7 +99,7 @@ When you call `Game:load_package("resource_packages/characters/warrior")`:
 
 ---
 
-## 🌍 What "Global" Really Means
+##  What "Global" Really Means
 
 ### Textures ARE Global (Once Loaded)
 
@@ -118,13 +118,13 @@ Here's the problem. A material file looks like this internally:
 
 ```
 Material Binary (simplified):
-┌─────────────────────────────────────────┐
-│ Shader Hash: 0x26FBE7181F811036         │
-│ Texture Slot 0: 0x67111D9E39E1CABC      │  ← Hardcoded!
-│ Texture Slot 1: 0xF8C23D1F8B219C6D      │  ← Hardcoded!
-│ Texture Slot 2: 0x6A77D7C1FF442EE7      │  ← Hardcoded!
-│ Parameters: [color, roughness, etc.]    │
-└─────────────────────────────────────────┘
++-----------------------------------------+
+| Shader Hash: 0x26FBE7181F811036         |
+| Texture Slot 0: 0x67111D9E39E1CABC      |  <- Hardcoded!
+| Texture Slot 1: 0xF8C23D1F8B219C6D      |  <- Hardcoded!
+| Texture Slot 2: 0x6A77D7C1FF442EE7      |  <- Hardcoded!
+| Parameters: [color, roughness, etc.]    |
++-----------------------------------------+
 ```
 
 The material doesn't say "use warrior_diff" - it says "use texture hash `0x67111D9E...`"
@@ -136,7 +136,7 @@ The material doesn't say "use warrior_diff" - it says "use texture hash `0x67111
 
 ---
 
-## 🔄 Methods to Use Textures Globally
+##  Methods to Use Textures Globally
 
 ### Method 1: Create Custom Materials (Recommended)
 
@@ -210,7 +210,7 @@ end
 
 -- Define replacements
 TEXTURE_REPLACEMENTS = {
-    [0x67111D9E39E1CABC] = 0x1234567890ABCDEF,  -- warrior_diff → my_texture
+    [0x67111D9E39E1CABC] = 0x1234567890ABCDEF,  -- warrior_diff -> my_texture
 }
 ```
 
@@ -251,7 +251,7 @@ end
 
 ---
 
-## 🏗️ Creating a True Global Texture Package
+##  Creating a True Global Texture Package
 
 Here's the complete process:
 
@@ -269,23 +269,23 @@ Here's the complete process:
 For **replacements** (Method 2), use the ORIGINAL game paths:
 ```
 my_mod/
-├── characters/
-│   └── avatar_warrior/
-│       ├── warrior_diff.dds      # Will hash to 0x67111D9E39E1CABC
-│       ├── warrior_norm.dds      # Will hash to 0xF8C23D1F8B219C6D
-│       └── warrior_spec.dds      # Will hash to 0x6A77D7C1FF442EE7
-└── equipment/
-    └── warrior/
-        └── weapon01_diff.dds     # Will hash to 0x52A65FAB447503E1
++-- characters/
+|   +-- avatar_warrior/
+|       +-- warrior_diff.dds      # Will hash to 0x67111D9E39E1CABC
+|       +-- warrior_norm.dds      # Will hash to 0xF8C23D1F8B219C6D
+|       +-- warrior_spec.dds      # Will hash to 0x6A77D7C1FF442EE7
++-- equipment/
+    +-- warrior/
+        +-- weapon01_diff.dds     # Will hash to 0x52A65FAB447503E1
 ```
 
 For **new content** (Method 1), use your own paths:
 ```
 my_mod/
-└── custom/
-    └── my_textures/
-        ├── cool_sword_diff.dds   # Your unique hash
-        └── cool_sword_norm.dds   # Your unique hash
++-- custom/
+    +-- my_textures/
+        +-- cool_sword_diff.dds   # Your unique hash
+        +-- cool_sword_norm.dds   # Your unique hash
 ```
 
 ### Step 3: Create the Package
@@ -389,7 +389,7 @@ return GlobalTextures
 
 ---
 
-## ❌ Why Certain Things DON'T Work
+## [X] Why Certain Things DON'T Work
 
 ### "Why can't I just put a DDS file in the game folder?"
 
@@ -397,10 +397,10 @@ Bitsquid doesn't load loose files. It ONLY loads from bundles.
 
 ```
 What you expect:
-  Game checks: "Is there a warrior_diff.dds file?" → Uses it
+  Game checks: "Is there a warrior_diff.dds file?" -> Uses it
 
 What actually happens:
-  Game checks: "Is hash 0x67111D9E in any loaded bundle?" → Uses that
+  Game checks: "Is hash 0x67111D9E in any loaded bundle?" -> Uses that
   (Never looks at filesystem for game resources)
 ```
 
@@ -418,7 +418,7 @@ Your texture hash: 0xABCDEF123456789
 
 Material expects:  0x67111D9E39E1CABC (the original)
 Material gets:     0x67111D9E39E1CABC (finds original in game bundle)
-                   ↑ Your hash never matched!
+                   ^ Your hash never matched!
 ```
 
 **Solution:** Use the exact original path (Method 2) or modify materials.
@@ -452,10 +452,10 @@ The bundle system is monolithic. You can't "patch" a single resource.
 
 ```
 Bundle contains:
-├── texture A
-├── texture B
-├── material C
-└── package D
++-- texture A
++-- texture B
++-- material C
++-- package D
 
 You can't say "just replace texture A" - you need a whole bundle
 that contains your texture A, and it needs to load after the original.
@@ -490,7 +490,7 @@ You cannot:
 
 ---
 
-## 🧪 Testing Your Global Package
+##  Testing Your Global Package
 
 ### Test Script
 ```lua
@@ -545,17 +545,17 @@ return test_package
 
 ---
 
-## 📋 Complete Example: Replacing Warrior Textures
+##  Complete Example: Replacing Warrior Textures
 
 ### 1. Prepare Your Textures
 
 ```
 warrior_reskin/
-└── characters/
-    └── avatar_warrior/
-        ├── warrior_diff.dds    # 512x512 DXT1 - Your new diffuse
-        ├── warrior_norm.dds    # 512x512 ATI2 - Your new normal
-        └── warrior_spec.dds    # 256x256 DXT1 - Your new specular
++-- characters/
+    +-- avatar_warrior/
+        +-- warrior_diff.dds    # 512x512 DXT1 - Your new diffuse
+        +-- warrior_norm.dds    # 512x512 ATI2 - Your new normal
+        +-- warrior_spec.dds    # 256x256 DXT1 - Your new specular
 ```
 
 **Important:** Folder structure MUST match original exactly!
@@ -593,7 +593,7 @@ EXPECTED_HASHES = {
 
 for name, expected in EXPECTED_HASHES.items():
     actual = murmur_hash64(name)
-    match = "✓" if actual == expected else "✗"
+    match = "[ok]" if actual == expected else "[X]"
     print(f"{match} {name}: 0x{actual:016X}")
 ```
 
@@ -613,7 +613,7 @@ Game:load_package("resource_packages/warrior_reskin", true)
 
 ---
 
-## 🎮 Integration with Custom Mod Framework
+##  Integration with Custom Mod Framework
 
 If you're building a larger mod framework:
 
@@ -660,48 +660,48 @@ return ResourceManager
 
 ---
 
-## 📊 Summary: Global Texture Availability
+##  Summary: Global Texture Availability
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    GLOBAL TEXTURE SYSTEM                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐                                               │
-│  │ Your Bundle  │ ─── contains ──→ [Textures] + [Package]       │
-│  └──────────────┘                                               │
-│         │                                                       │
-│         │ copied to                                             │
-│         ▼                                                       │
-│  ┌──────────────────┐                                           │
-│  │ Gauntlet/contents│                                           │
-│  └──────────────────┘                                           │
-│         │                                                       │
-│         │ Game:load_package()                                   │
-│         ▼                                                       │
-│  ┌──────────────────┐                                           │
-│  │ Resource Memory  │ ◄── Textures now GLOBALLY available       │
-│  │ (Hash → Data)    │     by their hash values                  │
-│  └──────────────────┘                                           │
-│         │                                                       │
-│         │ Materials request texture by hash                     │
-│         ▼                                                       │
-│  ┌──────────────────┐                                           │
-│  │ Rendering System │                                           │
-│  │                  │                                           │
-│  │ • If hash matches│ ─── Your texture is used! ───────────────→│
-│  │   yours, uses it │                                           │
-│  │                  │                                           │
-│  │ • If hash differs│ ─── Original game texture used ──────────→│
-│  │   finds original │                                           │
-│  └──────────────────┘                                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                    GLOBAL TEXTURE SYSTEM                        |
++-----------------------------------------------------------------+
+|                                                                 |
+|  +--------------+                                               |
+|  | Your Bundle  | --- contains ---> [Textures] + [Package]       |
+|  +--------------+                                               |
+|         |                                                       |
+|         | copied to                                             |
+|         v                                                       |
+|  +------------------+                                           |
+|  | Gauntlet/contents|                                           |
+|  +------------------+                                           |
+|         |                                                       |
+|         | Game:load_package()                                   |
+|         v                                                       |
+|  +------------------+                                           |
+|  | Resource Memory  | <-- Textures now GLOBALLY available       |
+|  | (Hash -> Data)    |     by their hash values                  |
+|  +------------------+                                           |
+|         |                                                       |
+|         | Materials request texture by hash                     |
+|         v                                                       |
+|  +------------------+                                           |
+|  | Rendering System |                                           |
+|  |                  |                                           |
+|  | - If hash matches| --- Your texture is used! ---------------->|
+|  |   yours, uses it |                                           |
+|  |                  |                                           |
+|  | - If hash differs| --- Original game texture used ----------->|
+|  |   finds original |                                           |
+|  +------------------+                                           |
+|                                                                 |
++-----------------------------------------------------------------+
 ```
 
 ---
 
-## 🔑 Key Takeaways
+##  Key Takeaways
 
 1. **Textures ARE global** once their package is loaded
 2. **Hash matching is everything** - same path = same hash = replacement works
@@ -712,7 +712,7 @@ return ResourceManager
 
 ---
 
-## 🔧 Troubleshooting Guide (Lessons Learned)
+##  Troubleshooting Guide (Lessons Learned)
 
 ### Problem: Game Freezes When Loading Package
 
@@ -723,14 +723,14 @@ return ResourceManager
 **Root Cause:** Package entries had `deps=2` format (two dependency hashes) but the engine couldn't find the referenced resources.
 
 **Solution (corrected):** There is no `Dep Count` field. Package entries are
-**28 bytes** with a 1-byte `0x01` trailer after the last entry (FINDINGS §9B):
+**28 bytes** with a 1-byte `0x01` trailer after the last entry (FINDINGS #9B):
 ```
 Package Entry Format (CONFIRMED):
-├── Type Hash  (8 bytes) - MurmurHash64 of the type name
-├── Name Hash  (8 bytes) - MurmurHash64 of the resource path
-├── c1         (4 bytes) - ALWAYS 2
-├── c2         (4 bytes) - per-package constant; 0 is safe for custom bundles
-└── name_hi32  (4 bytes) - upper 32 bits of name_hash
++-- Type Hash  (8 bytes) - MurmurHash64 of the type name
++-- Name Hash  (8 bytes) - MurmurHash64 of the resource path
++-- c1         (4 bytes) - ALWAYS 2
++-- c2         (4 bytes) - per-package constant; 0 is safe for custom bundles
++-- name_hi32  (4 bytes) - upper 32 bits of name_hash
 then a single 0x01 trailer byte after the final entry
 ```
 
@@ -750,10 +750,10 @@ then a single 0x01 trailer byte after the final entry
 **Solution:** Add bundle to database with correct format:
 ```
 Entry Format:
-├── Bundle Name (variable length string, null terminated)
-├── Stream Name (variable length string, null terminated)  
-├── Entry Count (4 bytes, little-endian)
-└── NULL BYTE (0x00) - CRITICAL! Must end each entry
++-- Bundle Name (variable length string, null terminated)
++-- Stream Name (variable length string, null terminated)  
++-- Entry Count (4 bytes, little-endian)
++-- NULL BYTE (0x00) - CRITICAL! Must end each entry
 ```
 
 **Critical Bug We Fixed:** When parsing existing entries, must skip the null byte after stream_name:
@@ -781,7 +781,7 @@ offset = end_of_stream_name + 1  # Skip 0x00 after stream_name
 
 **Verify with:**
 ```python
-# Requires `bundle_tools.py` (same folder) — mmh3 is NOT installed here.
+# Requires `bundle_tools.py` (same folder) - mmh3 is NOT installed here.
 from bundle_tools import murmur_hash64
 path = "resource_packages/custom/global_textures"
 hash_value = murmur_hash64(path)
@@ -798,15 +798,15 @@ print(f"0x{hash_value:016X}")  # Should match bundle filename
 
 **Bundle Format Checklist:**
 ```
-✅ Signature at offset 0: 0xF0000004 (little-endian)
-✅ Resource count follows signature
-✅ Name hash table follows count (8 bytes per resource)
-✅ Entry table follows name hashes
-✅ For ≤31 resources: pad to offset 0x104 before entries
-✅ For >31 resources: entries immediately follow name hashes
-✅ Each entry: type_hash(8) + name_hash(8) + size(4) + stream_size(4) + padding(16) + data(size)
-✅ Entries use zlib compression in 64KB chunks
-✅ Empty .stream file must exist alongside bundle
+[ok] Signature at offset 0: 0xF0000004 (little-endian)
+[ok] Resource count follows signature
+[ok] Name hash table follows count (8 bytes per resource)
+[ok] Entry table follows name hashes
+[ok] For <=31 resources: pad to offset 0x104 before entries
+[ok] For >31 resources: entries immediately follow name hashes
+[ok] Each entry: type_hash(8) + name_hash(8) + size(4) + stream_size(4) + padding(16) + data(size)
+[ok] Entries use zlib compression in 64KB chunks
+[ok] Empty .stream file must exist alongside bundle
 ```
 
 ---
@@ -834,36 +834,36 @@ print("Can load: " .. tostring(Application.can_get_resource("package", "resource
 
 ---
 
-## 📋 Complete Workflow Summary
+##  Complete Workflow Summary
 
 ```
 1. CREATE BUNDLE
-   └── python create_texture_package.py
-       ├── Reads DDS textures from input folder
-       ├── Computes MurmurHash64 for each
-       ├── Creates package resource (28-byte entries + 0x01 trailer)
-       ├── Compresses data in 64KB chunks
-       └── Outputs: bundle file + manifest.json
+   +-- python create_texture_package.py
+       +-- Reads DDS textures from input folder
+       +-- Computes MurmurHash64 for each
+       +-- Creates package resource (28-byte entries + 0x01 trailer)
+       +-- Compresses data in 64KB chunks
+       +-- Outputs: bundle file + manifest.json
 
 2. REGISTER IN DATABASE  
-   └── python add_bundle_to_db.py
-       ├── Parses existing bundle_database.data
-       ├── Adds new entry with null terminators
-       └── Rewrites database file
+   +-- python add_bundle_to_db.py
+       +-- Parses existing bundle_database.data
+       +-- Adds new entry with null terminators
+       +-- Rewrites database file
 
 3. INSTALL FILES
-   └── Copy to Gauntlet/contents/
-       ├── d5ec4eb9fc5f3c88 (bundle file)
-       └── d5ec4eb9fc5f3c88.stream (empty file)
+   +-- Copy to Gauntlet/contents/
+       +-- d5ec4eb9fc5f3c88 (bundle file)
+       +-- d5ec4eb9fc5f3c88.stream (empty file)
 
 4. LOAD VIA LUA
-   └── In-game script calls:
+   +-- In-game script calls:
        local pkg = Application.resource_package("resource_packages/custom/global_textures")
        ResourcePackage.load(pkg)
        ResourcePackage.flush(pkg)
        
 5. TEXTURES NOW GLOBAL!
-   └── Any material referencing same path/hash will use your textures
+   +-- Any material referencing same path/hash will use your textures
 ```
 
 ---

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mine the snapshot string harvest for level names (FINDINGS.txt §45).
+Mine the snapshot string harvest for level names (FINDINGS.txt #45).
 
 Each snapshot directory carries `_names.txt`, a previous session's harvest of
 every string found in the *decompressed* bundle bodies plus the binaries.  Plain

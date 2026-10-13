@@ -40,7 +40,7 @@ DEFAULT_CORPORA = [
 ]
 # Engine vocabulary mined from the Stingray/Bitsquid video tutorials and from
 # gamefromscratch's Stingray review (captions, frame OCR, screenshot OCR).  These
-# live in gitignored scratch folders; skipped when absent.  FINDINGS.txt §35.
+# live in gitignored scratch folders; skipped when absent.  FINDINGS.txt #35.
 OPTIONAL_CORPORA = [
     REPO / "Stingray-Video-Mine" / "video_ocr_candidates.txt",
     REPO / "Stingray-Video-Mine" / "caption_candidates.txt",

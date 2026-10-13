@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Apply cross-build rename evidence to unresolved names (FINDINGS.txt §50).
+Apply cross-build rename evidence to unresolved names (FINDINGS.txt #50).
 
 Inputs:
   * `work/renames_<snap>.json` - clean content moves between builds, as

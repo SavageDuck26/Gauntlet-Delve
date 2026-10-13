@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Name an unresolved resource from its nearest resolved twin (§49).
+Name an unresolved resource from its nearest resolved twin (#49).
 
 Two fingerprints locate a twin - the resolved resource of the same type that an
 unnamed one is most likely a *derived* variant of:
 
-  * size + bundle: a body size is nearly a function of the name (§43), so the
+  * size + bundle: a body size is nearly a function of the name (#43), so the
     resolved resources adjacent to it in the same bundle are its family.  Cheap:
     needs only the catalogue.
   * reference graph: a resource's set of referrers is nearly unique, so the twin

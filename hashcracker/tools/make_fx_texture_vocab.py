@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Effect-texture candidates from the resolved effect-texture vocabulary (§48.2).
+Effect-texture candidates from the resolved effect-texture vocabulary (#48.2).
 
 The reference pairs show what `effects/textures/*` names look like - generic
 effect textures, not referrer-derived:

@@ -1,9 +1,9 @@
 ================================================================================
 GAUNTLET SLAYER EDITION - BUNDLE AND RESOURCE FORMAT FINDINGS
 ================================================================================
-Last Updated: July 5, 2026 — ★ CUSTOM ASSETS SOLVED ★ (full custom chain confirmed
+Last Updated: July 5, 2026 - * CUSTOM ASSETS SOLVED * (full custom chain confirmed
 in-game: custom unit + custom material + custom novel-hash texture rendering,
-zero native overrides — SEE SECTION 16 FOR THE COMPLETE RECIPE)
+zero native overrides - SEE SECTION 16 FOR THE COMPLETE RECIPE)
 Research by: SavageDuck26
 Based on: Bitsquid/Stingray engine documentation, Helldivers 2 Extractor analysis,
           FileDiver codebase, Vermintide 2 mod analysis, and reverse engineering
@@ -25,16 +25,16 @@ STATUS: FULL ASSET EXTRACTION PIPELINE COMPLETE + CUSTOM PACKAGE INJECTION VERIF
   - Package resource format FULLY CORRECTED (28-byte entries, c1=2, c2=0, name_hi32)
   - create_texture_package.py creates loadable custom texture bundles
   - add_bundle_to_db.py registers bundles in bundle_database.data
-  - **⚠ RE-EVALUATED July 2026**: The claim "Custom texture packages load successfully" was disproven by 7 controlled experiments. Texture/material resources in custom bundles cause engine hangs. Only unit-only bundles are confirmed working. See Section 15J.
-  - **★ SUPERSEDED July 5, 2026: ALL RESOURCE TYPES NOW WORK IN-GAME. The hangs were a missing 4-byte texture trailer; the crashes were missing unit trailing sections; material binding = unit footer hash. Full recipe + experiment chain in SECTION 16.**
+  - **[!] RE-EVALUATED July 2026**: The claim "Custom texture packages load successfully" was disproven by 7 controlled experiments. Texture/material resources in custom bundles cause engine hangs. Only unit-only bundles are confirmed working. See Section 15J.
+  - *** SUPERSEDED July 5, 2026: ALL RESOURCE TYPES NOW WORK IN-GAME. The hangs were a missing 4-byte texture trailer; the crashes were missing unit trailing sections; material binding = unit footer hash. Full recipe + experiment chain in SECTION 16.**
   - **NEW**: render_config COBJ binary format fully decoded + byte-perfect encoder
   - **NEW**: C++ dinput8.dll mod loader architecture fully documented
   - **CORRECTED**: Unpacked bundle format (TOC has N+1 entries, 20-byte res-0 header)
-  - **CORRECTED July 2026**: Per-resource 4-byte alignment required in bundle body. Package resource is 33 bytes → 1-byte misalignment of subsequent res-1 headers → corrupted type/name/size fields. Fixed in mod_bundle_builder.py.
-    **[RE-CORRECTED July 5, 2026: WRONG — native bundles pack resources back-to-back with NO alignment padding; inserting padding was itself a bug. See §16.4. The working bundles use consecutive packing via replace_textures_v4.rebuild_simple_bundle.]**
+  - **CORRECTED July 2026**: Per-resource 4-byte alignment required in bundle body. Package resource is 33 bytes -> 1-byte misalignment of subsequent res-1 headers -> corrupted type/name/size fields. Fixed in mod_bundle_builder.py.
+    **[RE-CORRECTED July 5, 2026: WRONG - native bundles pack resources back-to-back with NO alignment padding; inserting padding was itself a bug. See #16.4. The working bundles use consecutive packing via replace_textures_v4.rebuild_simple_bundle.]**
   - **NEW July 2026**: bundle_database.data fully decoded: 189-entry fixed allocation per bundle, alphabetically sorted. 77 native stems. Database extractor validates structure.
   - **NEW**: font, animation, strings formats confirmed + tools written
-  - **NEW**: mod_bundle_builder.py — complete end-to-end mod bundle creation tool
+  - **NEW**: mod_bundle_builder.py - complete end-to-end mod bundle creation tool
              Handles texture(DDS/PNG), unit(GLB/OBJ), material, lua, bones resources
              Outputs ready-to-use mods/bundles/<ModName>/ folder for GauntletModLoader
   - **CORRECTED**: Lua type hash is 0xA14E8DFA2CD117E2 (NOT 0x997CBC2F3AECB2CF)
@@ -173,34 +173,34 @@ Example:
   Uncompressed size: shown in header
 
 ================================================================================
-4. UNPACKED BUNDLE FORMAT  *** CORRECTED May 2026 — Prior version was WRONG ***
+4. UNPACKED BUNDLE FORMAT  *** CORRECTED May 2026 - Prior version was WRONG ***
 ================================================================================
 
 After decompression, the bundle body has this exact layout.
 All offsets are confirmed by byte-level comparison against native game bundles.
 
-────────────────────────────────────────────────────────────
-[0x000:0x004]  uint32  N  — resource count
-────────────────────────────────────────────────────────────
+------------------------------------------------------------
+[0x000:0x004]  uint32  N  - resource count
+------------------------------------------------------------
 [0x004:0x058]  84-byte PREAMBLE
     Native bundles:  opaque data (some kind of hash or fingerprint)
     Custom bundles:  all zeros (engine does not validate this region)
 
 [0x058:0x104]  172-byte PADDING (zeros)
-────────────────────────────────────────────────────────────
-[0x104:]       TOC — (N+1) × 16-byte entries
+------------------------------------------------------------
+[0x104:]       TOC - (N+1) x 16-byte entries
     Each entry: {uint64 type_hash, uint64 name_hash}
     IMPORTANT: entry[N] is a SENTINEL = exact copy of entry[0]
                (the engine relies on this sentinel; omitting it corrupts the file)
-────────────────────────────────────────────────────────────
-[toc_end:]     RESOURCE-0 METADATA — 20 bytes  ← DIFFERENT from resources 1..N-1!
+------------------------------------------------------------
+[toc_end:]     RESOURCE-0 METADATA - 20 bytes  <- DIFFERENT from resources 1..N-1!
     uint32  flags       (normally 1)
     uint64  zeros       (always 0)
     uint32  data_sz     (byte count of resource-0 data that follows)
     uint32  stream_sz   (0 = no stream, or size of associated .stream data)
 
-[toc_end+20:]  RESOURCE-0 DATA — data_sz bytes
-────────────────────────────────────────────────────────────
+[toc_end+20:]  RESOURCE-0 DATA - data_sz bytes
+------------------------------------------------------------
 [after res-0:] RESOURCES 1..N-1  (each starts with a 36-byte header)
     Each resource:
       uint64  type_hash   (same as its TOC entry)
@@ -210,7 +210,7 @@ All offsets are confirmed by byte-level comparison against native game bundles.
       uint32  data_sz
       uint32  stream_sz
       bytes[data_sz]  resource data
-────────────────────────────────────────────────────────────
+------------------------------------------------------------
 
 KEY DIFFERENCES FROM PRIOR DESCRIPTION (CORRECTIONS):
 
@@ -218,7 +218,7 @@ KEY DIFFERENCES FROM PRIOR DESCRIPTION (CORRECTIONS):
   RIGHT:       bytes 4..104 are an opaque preamble; no hash table exists
 
   WRONG (old): "Entry table has N entries"
-  RIGHT:       Entry table has N+1 entries — entry[N] is a sentinel copy of entry[0]
+  RIGHT:       Entry table has N+1 entries - entry[N] is a sentinel copy of entry[0]
 
   WRONG (old): "All resources have 36-byte headers"
   RIGHT:       Resource-0 has a 20-byte header (no type/name, just flags/zeros/sizes)
@@ -235,7 +235,7 @@ FORMULA:
 EXAMPLE (bundle 96438abc757b9f23, N=1):
   [0x000] N=1
   [0x104] TOC[0]: type=0x27862fe24795319c  name=0x96438abc757b9f23
-  [0x114] TOC[1]: type=0x27862fe24795319c  name=0x96438abc757b9f23  ← sentinel
+  [0x114] TOC[1]: type=0x27862fe24795319c  name=0x96438abc757b9f23  <- sentinel
   [0x124] Resource-0 hdr: flags=1 zeros=0 data_sz=220 stream_sz=0
   [0x138] Resource-0 data: 220 bytes of render_config COBJ blob
 
@@ -289,7 +289,7 @@ Entries (52 bytes each):
 
 Structure:
   - Entries are grouped by bundle (189 entries per bundle)
-  - 77 bundles × 189 entries ≈ 14553 total
+  - 77 bundles x 189 entries ~ 14553 total
   - Each group of 189 entries maps resources to one bundle
 
 Bundle Priority:
@@ -354,8 +354,8 @@ MODDING IMPLICATIONS:
      - Is the bundle properly compressed with correct header?
 
 TESTING RESULTS (Updated):
-  - Menu bundles (no stream): Modification works ✓
-  - Lobby bundles (no stream): Modification works ✓  
+  - Menu bundles (no stream): Modification works [ok]
+  - Lobby bundles (no stream): Modification works [ok]  
   - Level bundles (with stream): Need more testing with stream_size preserved
 
 ================================================================================
@@ -383,7 +383,7 @@ Common formats in Gauntlet:
 
 Normal Map Handling:
   Normal maps use ATI2/BC5 format (two-channel RG compression).
-  The blue channel must be reconstructed: B = sqrt(1 - R² - G²)
+  The blue channel must be reconstructed: B = sqrt(1 - R^2 - G^2)
   Normals are stored in [0,1] range and must be remapped to [-1,1].
 
 Textures found in test bundle:
@@ -428,77 +428,77 @@ HEADER (8 bytes):
 
 PER-MESH STRUCTURE (repeated for each mesh):
 
-  ┌─────────────────────────────────────────────────────────────────────────────
-  │ VERTEX BUFFER SECTION
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           vertex_buffer_size    Total bytes of raw vertex data
-  │ bytes[size]      vertex_data           Interleaved vertex attributes
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ PADDING
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ 8 bytes          zeros                 Alignment padding
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ MESH METADATA
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           vertex_count          Number of vertices
-  │ uint32           vertex_stride         Bytes per vertex (56, 64, 72, 88, 96)
-  │ uint32           element_count         Number of vertex attributes
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ ELEMENT DESCRIPTORS (repeated element_count times)
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           element_type          See Element Type table below
-  │ uint32           element_size          Component count - 1 (2 = 3 components)
-  │ uint32           layer                 UV layer or bone influence index
-  │ uint32           format                Data format (usually 0 for float32)
-  │ uint8            end_marker            Terminator byte
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ PADDING
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ 12 bytes         zeros                 Alignment padding
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ INDEX BUFFER SECTION
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           total_index_count     Total number of indices
-  │ uint32           index_buffer_size     Size in bytes (count × 2 for uint16)
-  │ uint16[count]    indices               Triangle vertex indices
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ SHAPES/SUBMESHES SECTION
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           shape_count           Number of submeshes
-  │ For each shape (16 bytes):
-  │   uint32         material_index        Index into materials array
-  │   uint32         index_offset          Starting index in buffer
-  │   uint32         index_count           Number of indices (triangles × 3)
-  │   uint32         shape_index           Submesh identifier
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ BOUNDING BOX (28 bytes)
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ float32[3]       min_bounds            Minimum X, Y, Z coordinates
-  │ float32[3]       max_bounds            Maximum X, Y, Z coordinates
-  │ float32          radius                Bounding sphere radius (or padding)
-  │
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ MATERIALS SECTION
-  ├─────────────────────────────────────────────────────────────────────────────
-  │ uint32           material_count        Number of materials
-  │ For each material:
-  │   uint32         string_length         Length of material name
-  │   char[length]   material_name         Material resource name
-  └─────────────────────────────────────────────────────────────────────────────
+  +-----------------------------------------------------------------------------
+  | VERTEX BUFFER SECTION
+  +-----------------------------------------------------------------------------
+  | uint32           vertex_buffer_size    Total bytes of raw vertex data
+  | bytes[size]      vertex_data           Interleaved vertex attributes
+  |
+  +-----------------------------------------------------------------------------
+  | PADDING
+  +-----------------------------------------------------------------------------
+  | 8 bytes          zeros                 Alignment padding
+  |
+  +-----------------------------------------------------------------------------
+  | MESH METADATA
+  +-----------------------------------------------------------------------------
+  | uint32           vertex_count          Number of vertices
+  | uint32           vertex_stride         Bytes per vertex (56, 64, 72, 88, 96)
+  | uint32           element_count         Number of vertex attributes
+  |
+  +-----------------------------------------------------------------------------
+  | ELEMENT DESCRIPTORS (repeated element_count times)
+  +-----------------------------------------------------------------------------
+  | uint32           element_type          See Element Type table below
+  | uint32           element_size          Component count - 1 (2 = 3 components)
+  | uint32           layer                 UV layer or bone influence index
+  | uint32           format                Data format (usually 0 for float32)
+  | uint8            end_marker            Terminator byte
+  |
+  +-----------------------------------------------------------------------------
+  | PADDING
+  +-----------------------------------------------------------------------------
+  | 12 bytes         zeros                 Alignment padding
+  |
+  +-----------------------------------------------------------------------------
+  | INDEX BUFFER SECTION
+  +-----------------------------------------------------------------------------
+  | uint32           total_index_count     Total number of indices
+  | uint32           index_buffer_size     Size in bytes (count x 2 for uint16)
+  | uint16[count]    indices               Triangle vertex indices
+  |
+  +-----------------------------------------------------------------------------
+  | SHAPES/SUBMESHES SECTION
+  +-----------------------------------------------------------------------------
+  | uint32           shape_count           Number of submeshes
+  | For each shape (16 bytes):
+  |   uint32         material_index        Index into materials array
+  |   uint32         index_offset          Starting index in buffer
+  |   uint32         index_count           Number of indices (triangles x 3)
+  |   uint32         shape_index           Submesh identifier
+  |
+  +-----------------------------------------------------------------------------
+  | BOUNDING BOX (28 bytes)
+  +-----------------------------------------------------------------------------
+  | float32[3]       min_bounds            Minimum X, Y, Z coordinates
+  | float32[3]       max_bounds            Maximum X, Y, Z coordinates
+  | float32          radius                Bounding sphere radius (or padding)
+  |
+  +-----------------------------------------------------------------------------
+  | MATERIALS SECTION
+  +-----------------------------------------------------------------------------
+  | uint32           material_count        Number of materials
+  | For each material:
+  |   uint32         string_length         Length of material name
+  |   char[length]   material_name         Material resource name
+  +-----------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 9.3 ELEMENT TYPES (VERTEX ATTRIBUTES)
 --------------------------------------------------------------------------------
 
 Value  Name          Typical Size   Format              Description
-─────────────────────────────────────────────────────────────────────────────────
+---------------------------------------------------------------------------------
 0      POSITION      12 bytes       float32[3]          Vertex XYZ coordinates
 1      NORMAL        12 bytes       float32[3]          Surface normal vector
 2      TANGENT       12 bytes       float32[3]          Tangent vector for TBN
@@ -520,11 +520,11 @@ Element Size Field Interpretation:
 --------------------------------------------------------------------------------
 
 Stride   Elements                                          Typical Usage
-─────────────────────────────────────────────────────────────────────────────────
+---------------------------------------------------------------------------------
 56 bytes Position + Normal + Tangent + Binormal + UV       Simple static mesh
-64 bytes Position + Normal + Tangent + Binormal + UV×2     Two UV channels
-72 bytes Pos + Norm + Tang + Binorm + UV×2 + Bone(small)   Simple skinned
-88 bytes Pos + Norm + Tang + Binorm + UV×2 + Bone(full)    Full skinned mesh
+64 bytes Position + Normal + Tangent + Binormal + UVx2     Two UV channels
+72 bytes Pos + Norm + Tang + Binorm + UVx2 + Bone(small)   Simple skinned
+88 bytes Pos + Norm + Tang + Binorm + UVx2 + Bone(full)    Full skinned mesh
 96 bytes All attributes including color                    Maximum data
 
 Calculation: Sum of all element byte sizes must equal stride
@@ -532,8 +532,8 @@ Calculation: Sum of all element byte sizes must equal stride
   Normal:      12 bytes
   Tangent:     12 bytes
   Binormal:    12 bytes
-  UV (×1):     8 bytes
-  UV (×2):     16 bytes (8 per layer)
+  UV (x1):     8 bytes
+  UV (x2):     16 bytes (8 per layer)
   Color:       16 bytes
   Bone Idx:    4-16 bytes
   Bone Wgt:    4-16 bytes
@@ -544,22 +544,22 @@ Calculation: Sum of all element byte sizes must equal stride
 
 Vertices are stored interleaved - all attributes for vertex 0, then vertex 1, etc.
 
-Example for stride=88 (Position + Normal + Binormal + Tangent + UV×2 + Bones):
+Example for stride=88 (Position + Normal + Binormal + Tangent + UVx2 + Bones):
 
   Vertex 0 [88 bytes]:
-    ├── bytes 0-11:   Position (float32 × 3)
-    ├── bytes 12-23:  Normal (float32 × 3)
-    ├── bytes 24-35:  Binormal (float32 × 3)
-    ├── bytes 36-47:  Tangent (float32 × 3)
-    ├── bytes 48-55:  UV Layer 0 (float32 × 2)
-    ├── bytes 56-63:  UV Layer 1 (float32 × 2)
-    ├── bytes 64-75:  Bone Weights (float32 × 3)
-    └── bytes 76-87:  Bone Indices (uint32 × 3)
+    +-- bytes 0-11:   Position (float32 x 3)
+    +-- bytes 12-23:  Normal (float32 x 3)
+    +-- bytes 24-35:  Binormal (float32 x 3)
+    +-- bytes 36-47:  Tangent (float32 x 3)
+    +-- bytes 48-55:  UV Layer 0 (float32 x 2)
+    +-- bytes 56-63:  UV Layer 1 (float32 x 2)
+    +-- bytes 64-75:  Bone Weights (float32 x 3)
+    +-- bytes 76-87:  Bone Indices (uint32 x 3)
   
   Vertex 1 [88 bytes]:
-    └── [Same layout repeated]
+    +-- [Same layout repeated]
 
-Total vertex buffer size = vertex_count × stride
+Total vertex buffer size = vertex_count x stride
 
 --------------------------------------------------------------------------------
 9.6 INDEX BUFFER FORMAT
@@ -619,7 +619,7 @@ For OBJ export:
   - Position/normal coordinates unchanged
   
 For glTF export (if implementing):
-  - Apply rotation: -90° around X axis
+  - Apply rotation: -90deg around X axis
   - Then rotate around Z if needed
   - glTF is Y-up but uses different handedness
 
@@ -689,8 +689,8 @@ Total Geometry Extracted:
   - Total materials: ~1,200+ unique references
 
 Output Files Generated:
-  - 582 × 2 = 1,164 OBJ files (shapes + all variants)
-  - 582 × 2 = 1,164 MTL files (material libraries)
+  - 582 x 2 = 1,164 OBJ files (shapes + all variants)
+  - 582 x 2 = 1,164 MTL files (material libraries)
   - Output folder: exported_models/
 
 ================================================================================
@@ -799,7 +799,7 @@ extract_materials.py:
   - Creates material_database.json with texture references
 
 ================================================================================
-9B. PACKAGE RESOURCE FORMAT  *** CORRECTED May 2026 — Prior 20-byte format was WRONG ***
+9B. PACKAGE RESOURCE FORMAT  *** CORRECTED May 2026 - Prior 20-byte format was WRONG ***
 ================================================================================
 
 Package resources (.package) define which resources should be loaded together.
@@ -812,27 +812,27 @@ The engine loads packages via Lua: `Game:load_package("resource_packages/name")`
 --------------------------------------------------------------------------------
 
 CONFIRMED correct format, verified byte-for-byte against native bundle
-b22560b172a4cff8 (which contains 5 entries × 28 bytes + 4 + 1 = 145 bytes total).
+b22560b172a4cff8 (which contains 5 entries x 28 bytes + 4 + 1 = 145 bytes total).
 
 HEADER (4 bytes):
-  uint32  entry_count  — number of resources in package
+  uint32  entry_count  - number of resources in package
 
 ENTRIES (28 bytes each):
-  uint64  type_hash    — MurmurHash64 of type name (e.g. 0xCD4238C6A0C69E32)
-  uint64  name_hash    — MurmurHash64 of resource path
-  uint32  c1           — ALWAYS 2 in every native package examined
-  uint32  c2           — per-package constant (probably MurmurHash32 of internal
-                         package path). Safe to use 0 for custom bundles —
+  uint64  type_hash    - MurmurHash64 of type name (e.g. 0xCD4238C6A0C69E32)
+  uint64  name_hash    - MurmurHash64 of resource path
+  uint32  c1           - ALWAYS 2 in every native package examined
+  uint32  c2           - per-package constant (probably MurmurHash32 of internal
+                         package path). Safe to use 0 for custom bundles -
                          engine does NOT validate this at runtime.
-  uint32  name_hi32    — upper 32 bits of name_hash (i.e. name_hash >> 32)
+  uint32  name_hi32    - upper 32 bits of name_hash (i.e. name_hash >> 32)
 
 TRAILER (1 byte):
-  0x01   — always 0x01 in native bundles (not 0x00 as previously documented)
+  0x01   - always 0x01 in native bundles (not 0x00 as previously documented)
 
-TOTAL SIZE:  4 + (N × 28) + 1  bytes
+TOTAL SIZE:  4 + (N x 28) + 1  bytes
 
 Example (native bundle b22560b172a4cff8, 5 entries):
-  4 + (5 × 28) + 1 = 145 bytes ✓ (matches file size)
+  4 + (5 x 28) + 1 = 145 bytes [ok] (matches file size)
 
 WRONG (old 20-byte format, now discarded):
   Old description had:  {type(8), name(8), dep_count(4)} + uint32[] deps
@@ -847,7 +847,7 @@ c2 is constant across all entries in a single package, but differs between
 packages in the same bundle. Best hypothesis: MurmurHash32 of the internal
 package path string (e.g. "resource_packages/scripts_base").
 
-For custom bundles, c2=0 is safe — engine does not validate it at runtime.
+For custom bundles, c2=0 is safe - engine does not validate it at runtime.
 The c1 field is ALWAYS 2; meaning is unknown but required.
 
 --------------------------------------------------------------------------------
@@ -926,7 +926,7 @@ CORRECT FORMAT (confirmed May 2026):
   See Section 4 for the full layout. Summary:
   - [0x000] uint32 N
   - [0x004..0x104] 252-byte preamble + padding (zeros for custom bundles)
-  - [0x104] (N+1) × 16-byte TOC entries; entry[N] = sentinel = copy of entry[0]
+  - [0x104] (N+1) x 16-byte TOC entries; entry[N] = sentinel = copy of entry[0]
   - [toc_end] 20-byte res-0 header: {flags(4), zeros(8), data_sz(4), stream_sz(4)}
   - [toc_end+20] res-0 data bytes
   - [after res-0] resources 1..N-1: each 36-byte header + data
@@ -978,22 +978,22 @@ texture generation (mip generation), screen-space effects, etc.
 Type hash: 0x27862FE24795319C  (MurmurHash64 of "render_config")
 
 Known render_config bundles in Gauntlet (all single-resource, N=1):
-  96438abc757b9f23  — 220 bytes uncompressed
-  b7b8dee6bbae3a95  — 196 bytes uncompressed
-  f6a2db02bb8fc71e  — 184 bytes uncompressed
+  96438abc757b9f23  - 220 bytes uncompressed
+  b7b8dee6bbae3a95  - 196 bytes uncompressed
+  f6a2db02bb8fc71e  - 184 bytes uncompressed
 
 --------------------------------------------------------------------------------
 9C.1 COBJ BINARY FORMAT (Stingray Compiled Binary Object)
 --------------------------------------------------------------------------------
 
-All render_config blobs are encoded as COBJ — Stingray's compiled key-value
+All render_config blobs are encoded as COBJ - Stingray's compiled key-value
 binary format. It is a compact binary representation of a nested
 object/array/string tree.
 
 FILE LAYOUT:
   HEADER (8 bytes):
-    uint32  root_type    — always 6 (object)
-    uint32  root_offset  — byte offset of root object node from start of file
+    uint32  root_type    - always 6 (object)
+    uint32  root_offset  - byte offset of root object node from start of file
 
   NODE TYPES:
     Type 1 = uint32  (value stored inline as uint32 in vdata)
@@ -1004,20 +1004,20 @@ FILE LAYOUT:
 
   OBJECT NODE:
     uint32  count
-    count × 12-byte entries:
-      uint32  key_ptr   — byte offset of null-terminated key string
-      uint32  vtype     — type code (1/2/4/5/6)
-      uint32  vdata     — inline value or offset
+    count x 12-byte entries:
+      uint32  key_ptr   - byte offset of null-terminated key string
+      uint32  vtype     - type code (1/2/4/5/6)
+      uint32  vdata     - inline value or offset
 
   ARRAY NODE:
-    uint32  elem_type   — type code of all elements (or 0 if empty)
-    uint32  count       — number of elements
-    count × uint32:     — offsets (for type 5/6) or inline values (1/2)
+    uint32  elem_type   - type code of all elements (or 0 if empty)
+    uint32  count       - number of elements
+    count x uint32:     - offsets (for type 5/6) or inline values (1/2)
     Special: {0, 0} = empty array
 
   STRINGS:
     Stored after all nodes, null-terminated, 4-byte aligned.
-    Globally deduplicated — identical strings share a single copy.
+    Globally deduplicated - identical strings share a single copy.
 
 ENCODER IMPLEMENTATION NOTE:
   When building COBJ, array pointer offsets MUST be captured interleaved
@@ -1029,15 +1029,15 @@ ENCODER IMPLEMENTATION NOTE:
 9C.2 RENDER_CONFIG SCHEMA (top-level object keys)
 --------------------------------------------------------------------------------
 
-Top-level object has one key: "resource_generators" → array of objects
+Top-level object has one key: "resource_generators" -> array of objects
 Each generator object has:
-  "type"          string  — type of modifier (see below)
-  "name"          string  — unique name for this generator
-  "output"        string  — output target slot name (some types require this)
-  "input"         string  — input texture slot name (optional)
-  "shader"        string  — shader to use (optional, see format below)
-  "draw_as_quad"  uint32  — 0 or 1 boolean flag (optional)
-  "target"        string  — for generate_mips: texture slot to generate mips for
+  "type"          string  - type of modifier (see below)
+  "name"          string  - unique name for this generator
+  "output"        string  - output target slot name (some types require this)
+  "input"         string  - input texture slot name (optional)
+  "shader"        string  - shader to use (optional, see format below)
+  "draw_as_quad"  uint32  - 0 or 1 boolean flag (optional)
+  "target"        string  - for generate_mips: texture slot to generate mips for
 
   (Additional keys possible for other modifier types not yet seen)
 
@@ -1058,8 +1058,8 @@ Each generator object has:
              input="hdr_target", shader="shaders/tonemap:HDR:ACES" }
 
 Shader field format:
-  "shader_name"                  — shader with no defines
-  "shader_name:DEFINE1:DEFINE2"  — shader with preprocessor defines
+  "shader_name"                  - shader with no defines
+  "shader_name:DEFINE1:DEFINE2"  - shader with preprocessor defines
 
 --------------------------------------------------------------------------------
 9C.4 DECODED NATIVE RENDER_CONFIG EXAMPLES
@@ -1082,7 +1082,7 @@ Bundle f6a2db02bb8fc71e (184 bytes):
     [0] type="fullscreen_pass" name="fxaa" output="display"
         input="scene_color" shader="shaders/fxaa" draw_as_quad=1
 
-(Exact field values are approximate — use render_config_tools.py to decode
+(Exact field values are approximate - use render_config_tools.py to decode
 any bundle's render_config blob precisely.)
 
 --------------------------------------------------------------------------------
@@ -1090,8 +1090,8 @@ any bundle's render_config blob precisely.)
 --------------------------------------------------------------------------------
 
 render_config_tools.py:
-  - COBJEncoder class: encodes Python dicts/lists/strings/ints/floats → COBJ bytes
-  - decode_cobj(): decodes raw COBJ bytes → Python dict
+  - COBJEncoder class: encodes Python dicts/lists/strings/ints/floats -> COBJ bytes
+  - decode_cobj(): decodes raw COBJ bytes -> Python dict
   - make_render_config(): builds a render_config blob from a list of modifier dicts
   - decode_bundle_render_config(): decodes a render_config bundle file end-to-end
   
@@ -1099,17 +1099,17 @@ render_config_tools.py:
     python render_config_tools.py            # self-test: decodes all 3 native blobs
     from render_config_tools import make_render_config, decode_cobj
   
-  Self-test: all 3 native render_config blobs pass byte-perfect round-trip ✓
+  Self-test: all 3 native render_config blobs pass byte-perfect round-trip [ok]
 
 ================================================================================
-9D. FONT RESOURCE FORMAT  *** NEW — Confirmed May 2026 ***
+9D. FONT RESOURCE FORMAT  *** NEW - Confirmed May 2026 ***
 ================================================================================
 
 Font resources (.font) contain bitmap-font glyph metrics for in-game text rendering.
 Type hash: 0x9EFE0A916D35FA19  (MurmurHash64 of "font")
 
 File size: 8260 bytes for the default Gauntlet monospaced font (256 glyphs).
-Formula:  HEADER_SIZE + glyph_count × GLYPH_SIZE = 68 + 256 × 32
+Formula:  HEADER_SIZE + glyph_count x GLYPH_SIZE = 68 + 256 x 32
 
 --------------------------------------------------------------------------------
 9D.1 HEADER (68 bytes)
@@ -1133,7 +1133,7 @@ HEADER_FMT = '<I5fII7fII'   (68 bytes)
   0x2C    4     unk_f3             60.0
   0x30    4     unk_f4             10.0
   0x34    4     unk_f5             17.0
-  0x38    4     default_advance    45.0   (all glyphs advance 45px → monospaced)
+  0x38    4     default_advance    45.0   (all glyphs advance 45px -> monospaced)
   0x3C    4     glyph_count2       256    (redundant copy)
   0x40    4     pad1               0
   
@@ -1147,22 +1147,22 @@ GLYPH_FMT = '<7fI'   (32 bytes)
 
   Offset  Size  Field        Description
   ------  ----  -----        -----------
-  0x00    4     x            Atlas UV — left edge (pixel units, not normalized)
-  0x04    4     y            Atlas UV — top edge
-  0x08    4     w            Atlas UV — width
-  0x0C    4     h            Atlas UV — height
+  0x00    4     x            Atlas UV - left edge (pixel units, not normalized)
+  0x04    4     y            Atlas UV - top edge
+  0x08    4     w            Atlas UV - width
+  0x0C    4     h            Atlas UV - height
   0x10    4     x_offset     Glyph bearing X (pixels from pen position)
   0x14    4     y_offset     Glyph bearing Y (pixels from baseline)
   0x18    4     x_advance    Advance width (45.0 for all glyphs = monospaced)
   0x1C    4     char_code    Unicode codepoint (uint32)
 
 Glyphs are stored in atlas-packing order (NOT sorted by char_code).
-char_codes span ASCII 0x20–0x7E plus Latin Extended (accented characters).
+char_codes span ASCII 0x20-0x7E plus Latin Extended (accented characters).
 
-Tool: resource_tools/font_tools.py  — byte-exact decode/encode selftest PASS
+Tool: resource_tools/font_tools.py  - byte-exact decode/encode selftest PASS
 
 ================================================================================
-9E. ANIMATION RESOURCE FORMAT  *** NEW — Confirmed May 2026 ***
+9E. ANIMATION RESOURCE FORMAT  *** NEW - Confirmed May 2026 ***
 ================================================================================
 
 Animation resources (.animation) contain compressed skeletal animation tracks.
@@ -1176,7 +1176,7 @@ Type hash: 0x931E336D7646CC26  (MurmurHash64 of "animation")
   ------  ----  -----           -----------
   0x00    4     flags           0 (observed)
   0x04    4     bone_count      Number of animated bones
-  0x08    4     duration        Float — animation length in seconds
+  0x08    4     duration        Float - animation length in seconds
   0x0C    4     data_size_raw   TOTAL blob size including this 16-byte header
 
   *** CRITICAL: data_size_raw = total file size, NOT keyframe payload size.
@@ -1193,10 +1193,10 @@ Stingray proprietary compressed bone tracks. Format is NOT a standard codec.
 Re-encoding compressed tracks requires full Stingray compression knowledge.
 
 Current approach: preserve keyframe data as raw bytes (round-trip via raw_hex).
-Tool: resource_tools/animation_tools.py — byte-exact round-trip selftest PASS
+Tool: resource_tools/animation_tools.py - byte-exact round-trip selftest PASS
 
 ================================================================================
-9F. STRINGS RESOURCE FORMAT  *** NEW — Confirmed May 2026 ***
+9F. STRINGS RESOURCE FORMAT  *** NEW - Confirmed May 2026 ***
 ================================================================================
 
 Strings resources (.strings) contain localised game text.
@@ -1208,7 +1208,7 @@ Typical blob size: 171,115 bytes (contains 3422 string entries).
 9F.1 OUTER LANGUAGE INDEX (132 bytes)
 --------------------------------------------------------------------------------
 
-11 × 12-byte entries, one per supported language:
+11 x 12-byte entries, one per supported language:
 
   Offset  Size  Field               Description
   ------  ----  -----               -----------
@@ -1220,14 +1220,14 @@ Typical blob size: 171,115 bytes (contains 3422 string entries).
                                     table elsewhere in the bundle (NOT in this blob).
   0x08    4     zero                Always 0.
 
-The bundle_abs_offset values are bundle-global positions — to decode per-language
+The bundle_abs_offset values are bundle-global positions - to decode per-language
 overrides you need the entire decompressed bundle context.
 
 --------------------------------------------------------------------------------
 9F.2 INNER STRING INDEX (variable length)
 --------------------------------------------------------------------------------
 
-Starts at byte 132. N × 8-byte entries:
+Starts at byte 132. N x 8-byte entries:
 
   uint32  hash32        MurmurHash32 of the string lookup KEY
   uint32  pool_offset   Byte offset of the string value within the String Pool
@@ -1249,15 +1249,15 @@ The pool contains strings from the DEFAULT language (English).
 Per-language overrides exist at the bundle_abs_offset positions in the outer index.
 
 Example (first 5 entries from Gauntlet sample):
-  0x3e85f3ae → "orko or whatever your name was. Never deny an elf his gold."
-  0x00044fef → "turning out to be quite the picnic."
-  0x00198681 → "ire Boots duration increased by 20%"
+  0x3e85f3ae -> "orko or whatever your name was. Never deny an elf his gold."
+  0x00044fef -> "turning out to be quite the picnic."
+  0x00198681 -> "ire Boots duration increased by 20%"
 
-Tool: resource_tools/strings_tools.py — decodes outer + inner index + string pool.
+Tool: resource_tools/strings_tools.py - decodes outer + inner index + string pool.
 Note: encode not yet implemented (bundle_abs_offset values require bundle context).
 
 ================================================================================
-9G. COMPLETE RESOURCE TOOLS SUITE  *** NEW — May 2026 ***
+9G. COMPLETE RESOURCE TOOLS SUITE  *** NEW - May 2026 ***
 ================================================================================
 
 All 16 Stingray resource types have tools. Location: resource_tools/
@@ -1340,8 +1340,8 @@ Texture Replacement Steps:
 
 Important Size Constraints:
   - DDS texture data must be EXACT same size as original
-  - DXT1: 8 bytes per 4x4 block = (width × height) / 2
-  - DXT5/ATI2: 16 bytes per 4x4 block = (width × height)
+  - DXT1: 8 bytes per 4x4 block = (width x height) / 2
+  - DXT5/ATI2: 16 bytes per 4x4 block = (width x height)
   - Mipmaps also included - maintain full mipchain size
 
 ================================================================================
@@ -1372,8 +1372,8 @@ Important Size Constraints:
    - WORKAROUND: Only modify bundles WITHOUT .stream files
    
 6. Bundles Safe to Modify (no .stream file):
-   - 07c9b8511b5aff2e (122 textures) - Menu/UI ✓
-   - 07cdebae91f29fae (324 textures) - Lobby/Characters ✓
+   - 07c9b8511b5aff2e (122 textures) - Menu/UI [ok]
+   - 07cdebae91f29fae (324 textures) - Lobby/Characters [ok]
    - feec2c9522011d13 (128 textures)
    - 1bbcb9610a009446 (131 textures)
    - Many smaller bundles
@@ -1389,8 +1389,8 @@ Important Size Constraints:
 ================================================================================
 
 render_config_tools.py - COBJ encoder/decoder for render_config  *** NEW May 2026 ***:
-  - COBJEncoder class: encodes Python dicts/lists/strings/ints/floats → raw COBJ bytes
-  - decode_cobj(): decodes raw COBJ bytes → Python dict (full tree)
+  - COBJEncoder class: encodes Python dicts/lists/strings/ints/floats -> raw COBJ bytes
+  - decode_cobj(): decodes raw COBJ bytes -> Python dict (full tree)
   - make_render_config(): builds a complete render_config blob from a list of modifier dicts
   - decode_bundle_render_config(): decodes a render_config bundle file end-to-end
   - _self_test(): verifies all 3 known native render_config blobs byte-perfectly
@@ -1743,13 +1743,13 @@ NEXT STEPS FOR FUTURE RESEARCH
 ================================================================================
 
 COMPLETED:
-  ✓ Map texture name hashes to actual game assets (characters, items, etc.)
-  ✓ Fully document .unit file format with element descriptors
-  ✓ Extract all 3D models to OBJ format (582/582 success)
-  ✓ Create comprehensive unit_to_obj.py tool
-  ✓ Create texture name hash database (142,060 entries from Lua source)
-  ✓ Extract textures with proper names (12.6% coverage, all characters)
-  ✓ Organize textures by category (characters, props, gameobjects, etc.)
+  [ok] Map texture name hashes to actual game assets (characters, items, etc.)
+  [ok] Fully document .unit file format with element descriptors
+  [ok] Extract all 3D models to OBJ format (582/582 success)
+  [ok] Create comprehensive unit_to_obj.py tool
+  [ok] Create texture name hash database (142,060 entries from Lua source)
+  [ok] Extract textures with proper names (12.6% coverage, all characters)
+  [ok] Organize textures by category (characters, props, gameobjects, etc.)
 
 REMAINING TASKS:
 1. Expand hash database - Add environment/block texture paths
@@ -1773,14 +1773,14 @@ MODDING WORKFLOW (UPDATED)
 ================================================================================
 
 SAFE BUNDLES (No .stream file - Tested and Working):
-  - 07c9b8511b5aff2e - Menu/UI textures (122 textures) ✓
-  - 07cdebae91f29fae - Lobby/character textures ✓
+  - 07c9b8511b5aff2e - Menu/UI textures (122 textures) [ok]
+  - 07cdebae91f29fae - Lobby/character textures [ok]
   - Any bundle without a corresponding .stream file
 
 TOOLS CREATED:
   - list_textures.py       - List all textures in a bundle with hash/size/format
   - replace_textures_v4.py - MAIN TOOL: Replace textures with auto-resize
-  - create_black_texture.py - (REMOVED — no longer present in repo)
+  - create_black_texture.py - (REMOVED - no longer present in repo)
   - extract_all_textures.py - Extract all textures to PNG
   - unit_to_obj.py         - Extract 3D models to OBJ format
 
@@ -1815,10 +1815,10 @@ REPLACE_TEXTURES_V4.PY - Complete Texture Replacement Tool:
   Test 2: Lobby Bundle (07cdebae91f29fae) - Simple Bundle, Multiple Formats
     - Bundle type: simple (ordered)
     - Replacements tested:
-      0x25fa3af605b85fc0: 128x128 DXT5 -> 4x4 DXT1 (156 bytes) ✓ EXACT MATCH
-      0xd777d41d6391045f: 128x128 DXT5 -> 32x32 DXT5 (1524 bytes) ✓ EXACT MATCH
-      0x9e6feddc04f06885: 128x128 DXT5 -> 64x64 DXT1 (2876 bytes) ✓ EXACT MATCH
-      0x01503a559a0f237c: 128x128 DXT5 -> 64x64 DXT5 (5620 bytes) ✓ EXACT MATCH
+      0x25fa3af605b85fc0: 128x128 DXT5 -> 4x4 DXT1 (156 bytes) [ok] EXACT MATCH
+      0xd777d41d6391045f: 128x128 DXT5 -> 32x32 DXT5 (1524 bytes) [ok] EXACT MATCH
+      0x9e6feddc04f06885: 128x128 DXT5 -> 64x64 DXT1 (2876 bytes) [ok] EXACT MATCH
+      0x01503a559a0f237c: 128x128 DXT5 -> 64x64 DXT5 (5620 bytes) [ok] EXACT MATCH
     - All colors preserved correctly (green test color)
     - All byte sizes match original exactly
   
@@ -1840,7 +1840,7 @@ REPLACE_TEXTURES_V4.PY - Complete Texture Replacement Tool:
       - Bundle type: complex (scattered with .stream file)
       - Original size: 133,170,206 bytes
       - New size: 73,966,347 bytes (44% reduction)
-      - Result: ✓ SUCCESS - All 464 textures replaced with purple versions
+      - Result: [ok] SUCCESS - All 464 textures replaced with purple versions
       - Method: In-place replacement preserving gaps and streaming data
       
     Bundle 2: 0f07a1cb5132485b (Second largest - 114MB complex bundle)  
@@ -1848,7 +1848,7 @@ REPLACE_TEXTURES_V4.PY - Complete Texture Replacement Tool:
       - Bundle type: complex (scattered with .stream file)
       - Original size: 114,498,493 bytes
       - New size: 61,636,423 bytes (46% reduction)
-      - Result: ✓ SUCCESS - All 408 textures replaced with purple versions
+      - Result: [ok] SUCCESS - All 408 textures replaced with purple versions
       - Method: In-place replacement preserving gaps and streaming data
       
     Bundle 3: 3ee1f740a8e57e21 (Third largest - 111MB complex bundle)
@@ -1856,7 +1856,7 @@ REPLACE_TEXTURES_V4.PY - Complete Texture Replacement Tool:
       - Bundle type: complex (scattered with .stream file)  
       - Original size: 111,661,794 bytes
       - New size: 41,688,259 bytes (63% reduction)
-      - Result: ✓ SUCCESS - All 445 textures replaced with purple versions
+      - Result: [ok] SUCCESS - All 445 textures replaced with purple versions
       - Method: In-place replacement preserving gaps and streaming data
       
     Bundle 4: 099d12829b617a9b (Fourth largest - 99MB complex bundle)
@@ -1864,17 +1864,17 @@ REPLACE_TEXTURES_V4.PY - Complete Texture Replacement Tool:
       - Bundle type: complex (scattered with .stream file)
       - Original size: 99,262,116 bytes
       - New size: 88,866,864 bytes (10% reduction)
-      - Result: ✓ SUCCESS - All 78 textures replaced with purple versions
+      - Result: [ok] SUCCESS - All 78 textures replaced with purple versions
       - Method: In-place replacement preserving gaps and streaming data
       
     OVERALL RESULTS:
       - Total textures replaced: 464 + 408 + 445 + 78 = 1,395 textures
-      - All bundles: ✓ COMPLETELY SUCCESSFUL
-      - Bundle integrity: ✓ MAINTAINED (all bundles readable after modification)
-      - Compression: ✓ IMPROVED (average 41% size reduction due to purple texture efficiency)
-      - Auto-resize: ✓ PERFECT (all textures resized to exact byte match)
-      - Bundle types: ✓ ALL COMPLEX bundles with .stream files handled correctly
-      - In-place replacement: ✓ PRESERVED all gaps and streaming data structures
+      - All bundles: [ok] COMPLETELY SUCCESSFUL
+      - Bundle integrity: [ok] MAINTAINED (all bundles readable after modification)
+      - Compression: [ok] IMPROVED (average 41% size reduction due to purple texture efficiency)
+      - Auto-resize: [ok] PERFECT (all textures resized to exact byte match)
+      - Bundle types: [ok] ALL COMPLEX bundles with .stream files handled correctly
+      - In-place replacement: [ok] PRESERVED all gaps and streaming data structures
       
     VALIDATION:
       - All modified bundles remain readable by list_textures.py
@@ -2137,7 +2137,7 @@ CREATING A NEW UNIT:
   Current tools only EXTRACT units to OBJ, not create them.
 
 --------------------------------------------------------------------------------
-LUA FORMAT (type hash: 0xA14E8DFA2CD117E2)   [CORRECTED — was 0x997CBC2F3AECB2CF]
+LUA FORMAT (type hash: 0xA14E8DFA2CD117E2)   [CORRECTED - was 0x997CBC2F3AECB2CF]
 --------------------------------------------------------------------------------
 
 Lua scripts are stored as either:
@@ -2294,19 +2294,19 @@ dinput8.dll proxy:
   - Actual original dinput8.dll forwarded via get_real_directinput8()
 
 Files:
-  dllmain.cpp          — DLL entry point, MinHook initialization
-  dinput8_proxy.cpp    — DirectInput8 export forwarding
+  dllmain.cpp          - DLL entry point, MinHook initialization
+  dinput8_proxy.cpp    - DirectInput8 export forwarding
 
 --------------------------------------------------------------------------------
 14B. RESOURCE HOOK ARCHITECTURE
 --------------------------------------------------------------------------------
 
 Key C++ source files:
-  GauntletModLoader/src/resource_hooks.cpp   ~1900 lines — core injection logic
-  GauntletModLoader/src/bundle_manager.cpp   — bundle database patching
+  GauntletModLoader/src/resource_hooks.cpp   ~1900 lines - core injection logic
+  GauntletModLoader/src/bundle_manager.cpp   - bundle database patching
 
 INITIALIZATION PATH:
-  1. DllMain → CreateThread → InitThread()
+  1. DllMain -> CreateThread -> InitThread()
   2. InitThread() waits for game module to be fully loaded
   3. Calls ResourceHooks::Initialize()
   4. Hooks: CanGetResource, BundleDatabase_Open, and related functions
@@ -2314,7 +2314,7 @@ INITIALIZATION PATH:
 BUNDLE INJECTION (confirmed working):
   - PatchBundleDatabase() at line 1092 in resource_hooks.cpp
   - Calls BundleManager::InjectBundles() at line 1096
-  - NOT dead code — fully active injection path
+  - NOT dead code - fully active injection path
 
 PREFLIGHT SYSTEM:
   - RunSmokeTest() at line 1141: calls g_originalCanGetResource() to verify
@@ -2360,7 +2360,7 @@ c2 field validation:
 
 Native bundle loading:
   - Native bundles load normally via the standard BundleDatabase_Open path
-  - Custom bundles injected after native database is parsed — no interference
+  - Custom bundles injected after native database is parsed - no interference
   - The 20-byte res-0 header anomaly is handled correctly in the C++ parser
 
 ================================================================================
@@ -2770,7 +2770,7 @@ Cube-geometry verification probe:
     material/shader interpretation), not vertex coordinate generation.
 
 --------------------------------------------------------------------------------
-15H. .UNIT FILES — WHAT WE NOW KNOW (WORKING FIELD GUIDE)
+15H. .UNIT FILES - WHAT WE NOW KNOW (WORKING FIELD GUIDE)
 --------------------------------------------------------------------------------
 
 This section consolidates the current best understanding of Gauntlet `.unit`
@@ -3020,13 +3020,13 @@ to isolate all variables.
 
 | Test | Bundle Contents                                      | Result     |
 |------|------------------------------------------------------|------------|
-| 1    | Unit only (crane_from_template, native m_ham)        | ✅ Spawns  |
-| 2    | Unit + homemade 64x64 DXT5 (no mipmaps, no NVTT)     | ❌ Hang    |
-| 3    | Unit + native-cloned 128x128 DXT5 (8 mips, NVTT)     | ❌ Hang    |
-| 4    | Unit + cloned material + cloned texture              | ❌ Hang    |
-| 5    | Unit + cloned material only (no textures)            | ❌ Hang    |
-| 6    | Texture-only bundle (native DDS, clean DB, 189 slots)| ❌ Hang    |
-| 7    | Unit-only crane bundle (baseline retest)             | ✅ Spawns  |
+| 1    | Unit only (crane_from_template, native m_ham)        | [ok] Spawns  |
+| 2    | Unit + homemade 64x64 DXT5 (no mipmaps, no NVTT)     | [X] Hang    |
+| 3    | Unit + native-cloned 128x128 DXT5 (8 mips, NVTT)     | [X] Hang    |
+| 4    | Unit + cloned material + cloned texture              | [X] Hang    |
+| 5    | Unit + cloned material only (no textures)            | [X] Hang    |
+| 6    | Texture-only bundle (native DDS, clean DB, 189 slots)| [X] Hang    |
+| 7    | Unit-only crane bundle (baseline retest)             | [ok] Spawns  |
 
 Test 1/7 baseline:
   - crane_from_template.unit (1,137,588 bytes) spawns in-game
@@ -3037,7 +3037,7 @@ Test 1/7 baseline:
 
 Tests 2,3,6 (texture hang):
   - resource_package() C++ hook shows handle returned successfully
-  - Engine stalls during splash loading phase — no crash, no Lua error
+  - Engine stalls during splash loading phase - no crash, no Lua error
   - Texture need not be referenced by any unit/material to cause hang
 
 Tests 4,5 (material hang):
@@ -3058,13 +3058,13 @@ Tests 4,5 (material hang):
   [x] Material cloning: clone_material.py verified byte-correct.
   [x] Materials alone: 460-byte identity clone still hangs.
   [x] Native DDS: Byte-for-byte unmodified native DDS still hangs.
-  [x] DB structure: 189-entry fixed allocation + alpha sort — no effect.
-  [x] Bundle preamble: Native preamble bytes — no effect.
+  [x] DB structure: 189-entry fixed allocation + alpha sort - no effect.
+  [x] Bundle preamble: Native preamble bytes - no effect.
   [x] Per-resource alignment: Fixed 4-byte padding (necessary but not
       sufficient to resolve hang).
 
 ================================================================================
-15J.3 UNIT TRAILER — CONFIRMED WORKING
+15J.3 UNIT TRAILER - CONFIRMED WORKING
 ================================================================================
 
 Identical across cube_from_template.unit and crane_from_template.unit:
@@ -3078,10 +3078,10 @@ Identical across cube_from_template.unit and crane_from_template.unit:
   trailer-28  8  Zeros
 
 Total trailer: 68 bytes after material name string. Scratch-built units
-from gltf_to_unit.py have broken trailer coupling → segfault on spawn.
+from gltf_to_unit.py have broken trailer coupling -> segfault on spawn.
 
 ================================================================================
-15J.4 MATERIAL CLONING — VERIFIED CORRECT
+15J.4 MATERIAL CLONING - VERIFIED CORRECT
 ================================================================================
 
 Native m_ham (8aeed77b10003a6c, 460 bytes):
@@ -3090,7 +3090,7 @@ Native m_ham (8aeed77b10003a6c, 460 bytes):
   clone_material.py --remap replaces exactly 1 hash, all other bytes preserved
 
 ================================================================================
-15J.5 BUNDLE DATABASE — STRUCTURE DECODED
+15J.5 BUNDLE DATABASE - STRUCTURE DECODED
 ================================================================================
 
 bundle_database.data (version 2):
@@ -3109,7 +3109,7 @@ bundle_database.data (version 2):
    confirmed working custom bundle type.
 
 2. mod_bundle_builder.py ALIGNMENT BUG FIXED: Package resource (33 bytes)
-   caused 1-byte misalignment → corrupted res-1+ headers. Added per-resource
+   caused 1-byte misalignment -> corrupted res-1+ headers. Added per-resource
    4-byte padding in _build_bundle().
 
 3. Native units use material strings (e.g. "m_ham") not resource path
@@ -3129,20 +3129,20 @@ bundle_database.data (version 2):
 5. In-place texture injection via replace_textures_v4.py.
 
 ================================================================================
-16. ★ CUSTOM ASSETS SOLVED (July 5, 2026) — THE COMPLETE RECIPE ★
+16. * CUSTOM ASSETS SOLVED (July 5, 2026) - THE COMPLETE RECIPE *
 ================================================================================
 
 END STATE, CONFIRMED IN-GAME: a fully custom unit (crane, 18,841 verts) spawned
 via `spawn_unit("units/custom/crane_test/crane")` and RENDERED with a custom
 material bound to a custom novel-hash texture (magenta/cyan checker visible).
-No native asset overridden. Every resource type — unit, texture, material —
+No native asset overridden. Every resource type - unit, texture, material -
 passes real engine bring-in from runtime-loaded custom bundles.
 
 THREE ROOT CAUSES, none of which was the novel hash:
 
-  #1 TEXTURE — missing 4-BYTE TRAILER after the mip chain          (hang)
-  #2 UNIT    — missing TRAILING SECTIONS + 32-byte footer          (native crash)
-  #3 BINDING — unit binds material via FOOTER HASH, not the string (wrong look)
+  #1 TEXTURE - missing 4-BYTE TRAILER after the mip chain          (hang)
+  #2 UNIT    - missing TRAILING SECTIONS + 32-byte footer          (native crash)
+  #3 BINDING - unit binds material via FOOTER HASH, not the string (wrong look)
 
 ================================================================================
 16.1 TEXTURE RESOURCE FORMAT (root cause #1)
@@ -3154,7 +3154,7 @@ A compiled texture resource (bundle data field, stream_size=0) is:
 
 THE 4-BYTE TRAILER IS MANDATORY. Survey of all 23 food_units textures:
 every single one has exactly +4 bytes after the computed mip chain
-(values seen: 00000000, 4a07531f, be0fc23f — 00000000 works).
+(values seen: 00000000, 4a07531f, be0fc23f - 00000000 works).
 Without it, the loader worker never posts the opcode-1 completion message
 -> resource never completes -> has_loaded stays false -> package never
 onlines -> anything waiting on it hangs. THIS WAS "THE WALL" ALL ALONG.
@@ -3167,7 +3167,7 @@ DDS header must match native conventions:
   caps1        0x00401008  (COMPLEX|MIPMAP|TEXTURE)
   reserved1[60:76] NVTT signature: 'UVER' 00000000 'NVTT' 00010200 (v2.1.0)
                (native textures are NVTT-compiled; sig alone did NOT fix the
-                hang — the trailer did — but include it to stay native-identical)
+                hang - the trailer did - but include it to stay native-identical)
 
 Hand-rolled DXT1/DXT5 encoders are ACCEPTED (our checker pixels render fine).
 
@@ -3181,7 +3181,7 @@ A native .unit = [mesh section][trailing sections ~2KB][32-byte footer]:
     sig 0x00010090, mesh_count, vbuf, elements, ibuf, shapes, bbox,
     material_count x {u32 len, name string}
     -> the material STRINGS are SLOT LABELS ONLY (natives use e.g. "m_ham";
-       murmur("m_ham") maps to NO resource — it is not the binding!)
+       murmur("m_ham") maps to NO resource - it is not the binding!)
 
   TRAILING SECTIONS (missing from scratch-built units = the crash):
     collision/physics actors ("a_collision"), FlowCallbacks data,
@@ -3191,7 +3191,7 @@ A native .unit = [mesh section][trailing sections ~2KB][32-byte footer]:
     (This is why unit-only bundles "worked" in earlier tests: the crash
     path only runs when the package fully onlines/flushes.)
 
-  FOOTER (last 32 bytes — root cause #3, the material binding):
+  FOOTER (last 32 bytes - root cause #3, the material binding):
     04 00 00 00 | 12 zero bytes | u64 MATERIAL RESOURCE NAME HASH | 8 zero bytes
     Patch unit[len-16:len-8] to bind any material. Every native unit ends in
     zeros; a unit ending mid-string is malformed.
@@ -3207,14 +3207,14 @@ WORKING BUILD PATH (proven):
 
 NATIVE NAMING CONVENTION: a unit and its material share the same resource
 name (gameobjects/food/ham_plate names BOTH the unit and material resource).
-Custom paths (units/custom/..., materials/...) work fine — nothing parses
+Custom paths (units/custom/..., materials/...) work fine - nothing parses
 the path; the footer hash is the only coupling.
 
 ================================================================================
 16.3 MATERIAL RESOURCE (needed NO format fix)
 ================================================================================
 
-Our 460-byte clone of ham_plate's material onlined UNMODIFIED — materials
+Our 460-byte clone of ham_plate's material onlined UNMODIFIED - materials
 have no trailer quirk. Format recap: 0a000000, u32 count, u64 shader id
 (offset 8, e.g. 0xCF752A73093FC934 resolved via always-resident render_config),
 texture slot hashes (this material: diffuse @276, normal @288, spec @300),
@@ -3232,7 +3232,7 @@ never re-tested after the other fixes; single-slot is proven).
 PACKAGE RESOURCE BLOB:
   u32 count + count x {u64 type_hash, u64 name_hash, u32 depcount=0} + 0x01
   All natives declare depcount=0 for materials/textures/units. A package
-  onlines only when EVERY listed entry completes — keep test packages minimal.
+  onlines only when EVERY listed entry completes - keep test packages minimal.
 
 BUNDLE BODY (replace_textures_v4.py parse_bundle/rebuild_simple_bundle/
 compress_bundle = authoritative tooling):
@@ -3248,7 +3248,7 @@ INSTALL (C++ dinput8 loader):
   resource_count/package_path MUST agree or the loader SKIPS the bundle.
   Loader copies to contents/<hash> at boot; restart required for bundle bytes.
 
-TYPE HASHES (murmur64A of type string, seed 0 — verified):
+TYPE HASHES (murmur64A of type string, seed 0 - verified):
   texture  0xCD4238C6A0C69E32   material 0xEAC0B497876ADEDF
   unit     0xE0A48D0BE9A7453F   package  0xAD9C6D9ED1E5E77A
 
@@ -3261,14 +3261,14 @@ TYPE HASHES (murmur64A of type string, seed 0 — verified):
   freeze with no log and no dump.
 - LOAD SCREEN (StateLoadGame) pumps the streamer: hook on_enter to issue the
   load, poll in pre_update. Install state hooks from a require hook, and use
-  rawget(_G,"StateLoadGame") — strict.lua ERRORS on undeclared global reads
+  rawget(_G,"StateLoadGame") - strict.lua ERRORS on undeclared global reads
   (crashed boot once).
 - IN-GAMEPLAY async ALSO completes (Game.update pumps package_manager:update()
-  every frame — the material bundle onlined mid-gameplay). The idle MAIN MENU
+  every frame - the material bundle onlined mid-gameplay). The idle MAIN MENU
   does NOT pump. Never load big packages at the menu.
 - Game:is_package_online(path): nil = never requested, false = loading,
   true = online. Spawn only when online.
-- A failing GPU resource does not error — it HANGS the load pipeline. A
+- A failing GPU resource does not error - it HANGS the load pipeline. A
   malformed unit CRASHES natively with no dump. Treat hang-vs-crash as signal:
   hang = texture-class problem, silent crash = unit-class problem.
 
@@ -3293,7 +3293,7 @@ Each test = one game launch; every hypothesis isolated ONE variable:
  10. Footer hash patched to our material ...... CHECKER RENDERS. DONE.
 
 THE GREAT CONFOUND (why this took months): overriding a NATIVE hash "works"
-because the engine reuses the already-resident boot copy — custom bytes never
+because the engine reuses the already-resident boot copy - custom bytes never
 actually go through bring-in. So every byte-format bug stayed invisible until
 a truly novel resource forced a real load. (Also explains why the magenta
 ham_diff override "onlined but didn't change appearance".)
@@ -3309,18 +3309,18 @@ second.
 ================================================================================
 
 1. Package resource format: our minimal blob (count + 20-byte entries +
-   0x01) IS accepted — packages online. Native 1228-byte packages just list
+   0x01) IS accepted - packages online. Native 1228-byte packages just list
    more entries. NOT the blocker.
 2. Texture type hash 0xCD4238C6A0C69E32 CONFIRMED (murmur64A("texture"),
    validated against native TOCs and in-game loads).
 3. Per-resource metadata: no extra streaming flags/ThinHash needed in the
    resource headers; the missing metadata was IN THE PAYLOADS (texture
    trailer, unit trailer/footer).
-4. VMF .mod path: unnecessary — direct bundles work.
+4. VMF .mod path: unnecessary - direct bundles work.
 5. In-place replacement (replace_textures_v4.py): still valid for overrides,
    but no longer needed for custom content.
 
-Also corrects 15J.6 #3: "matching hashes did not resolve hang" — correct
+Also corrects 15J.6 #3: "matching hashes did not resolve hang" - correct
 observation, wrong conclusion; naming was never the issue, payload bytes were.
 And 15J.3/earlier trailer analysis: the "68-byte trailer" observed after the
 material string is the tail of the trailing sections + the 32-byte footer;
@@ -3344,12 +3344,12 @@ scratch-built units lacking it crash exactly as predicted there.
   Duckmode "test any"  (self-issues B in gameplay, spawns crane when both online)
   Bundle-state backups in the bundle dirs: .pre_mipfix .mipfix .texonly
     .allslots .scratchunit .hammat
-  Full narrative + recipe: CUSTOM_ASSET_LOADING_FINDINGS.md §10.
+  Full narrative + recipe: CUSTOM_ASSET_LOADING_FINDINGS.md #10.
 
 NEXT STEPS (untested):
   - Consolidate into one 4-resource bundle (all types proven individually).
   - Reusable build script: OBJ/GLB + PNG -> installed bundle in one command.
-  - All-3-slot material remap (norm/spec custom textures) — single-slot proven.
+  - All-3-slot material remap (norm/spec custom textures) - single-slot proven.
   - Proper DXT encoder for production textures (hand-rolled one is blocky).
 
 ================================================================================
@@ -3513,7 +3513,7 @@ NEXT STEPS (untested):
   Net: 1,877 -> 1,986 names (+109).
 
 ================================================================================
-17.9 ANIMATION — SOLVED THE STRUCTURE, NOT THE NAMES
+17.9 ANIMATION - SOLVED THE STRUCTURE, NOT THE NAMES
 ================================================================================
   The single biggest remaining pool (1,243 unresolved) now has a real handle.
 
@@ -3526,7 +3526,7 @@ NEXT STEPS (untested):
   `characters/necromancer/spawn_special_execute`.
 
   EXTRACTION (extract_anim_refs.py): 111 state machines, 51 unit dirs,
-  1,246 animation hashes referenced — i.e. ALL 1,243 unresolved animations are
+  1,246 animation hashes referenced - i.e. ALL 1,243 unresolved animations are
   accounted for, each attributed to the unit that owns it (e.g. skeleton_warrior
   44, mummy_risen 34, boss_mummy 31). Writes anim_dirs.txt / anim_targets.txt /
   anim_map.json, turning a hopeless global search into 51 tiny per-unit ones.
@@ -3542,7 +3542,7 @@ NEXT STEPS (untested):
       <unit_dir>/<482 animation_events> .................... 0
   Only 3 animation names are known at all (all `<unit_dir>/<clip>`), so the
   namespace is barely sampled. e.g. necromancer.lua declares the logical clip
-  `death_default`, but no `<dir>/death_default` resource exists — the lua name
+  `death_default`, but no `<dir>/death_default` resource exists - the lua name
   is a LOGICAL alias resolved through the (binary) animation set, and the real
   resource leaf comes from a source animation file name that is not shipped.
 
@@ -3551,7 +3551,7 @@ NEXT STEPS (untested):
   tested with one `%d/%clip` sweep and would land ~1,200 names at once.
 
 ================================================================================
-17.10 foundation/scripts/ — THE AUTHORITATIVE SOURCE-TYPE MAP
+17.10 foundation/scripts/ - THE AUTHORITATIVE SOURCE-TYPE MAP
 ================================================================================
   Every resource family is produced by a build script that scans a SOURCE file
   extension and writes the resource name as `clean_filepath(file, root)` (path
@@ -3579,7 +3579,7 @@ NEXT STEPS (untested):
   generate_animation_events_lookup.lua reads `sjson.events` out of
   `*.state_machine` files. Those sources are NOT shipped (only `.lua` is in
   Gauntlet-Source-DO_NOT_EDIT), which is the definitive reason the animation
-  leaf names cannot be recovered from any shipped text — it confirms §17.9
+  leaf names cannot be recovered from any shipped text - it confirms #17.9
   empirically rather than by elimination.
 
   Bonus vocabulary extracted here:
@@ -3593,7 +3593,7 @@ NEXT STEPS (untested):
         `effect.particle` strings already present in lua/settings).
 
 ================================================================================
-17.11 THE LOCALIZATION BUNDLE — 6 LANGUAGES OF GAME TEXT AS A DICTIONARY
+17.11 THE LOCALIZATION BUNDLE - 6 LANGUAGES OF GAME TEXT AS A DICTIONARY
 ================================================================================
   `resource_packages/localization` (bundle dd5d5b00fde9b0fb) is a single banked
   resource, 2.35 MB, holding the whole game's text:
@@ -3635,7 +3635,7 @@ NEXT STEPS (untested):
   hits, so the value here is phrase->leaf for UI art, not new stem words.
 
 ================================================================================
-17.12 FLOW FAMILY — 145/159 SOLVED, 2 LEAVES LEFT
+17.12 FLOW FAMILY - 145/159 SOLVED, 2 LEAVES LEFT
 ================================================================================
   flow went 35 -> 115 (big run) -> 145 with the status list.
   Resolved: flow/gib, flow/dropped_weapon, flow/weapon_{axe,spear,book} and
@@ -3656,14 +3656,14 @@ NEXT STEPS (untested):
       <unresolved B> = FlowCallbacks { material_set_scalar_over_time,
           variable = self_illumination_multiplier, start_value, stop_value }
   So the names contain a word that appears in NO shipped text (lua, bundle
-  bodies, localization, exe/dll) — same class of blocker as animations.
+  bodies, localization, exe/dll) - same class of blocker as animations.
 
 ================================================================================
 17.13 AUDIO COMPLETELY SOLVED (ugg 144/144, xml themes 13/13)
 ================================================================================
   THE MISS THAT HID IT: scan_bundle_strings.py filtered candidates with
   `^[a-z0-9][a-z0-9_./-]{3,110}$`, so every string starting with a quote was
-  dropped.  SJSON/XML files store paths QUOTED, so all of them were discarded —
+  dropped.  SJSON/XML files store paths QUOTED, so all of them were discarded -
   bundle_strings.txt contains literally zero strings containing a `"`.
   Re-scanning for `"([a-zA-Z0-9_][a-zA-Z0-9_/.-]{3,120})"` immediately exposed
   the music data.
@@ -3695,13 +3695,13 @@ NEXT STEPS (untested):
 
   RESULT: ugg 144/144 and the 13 elias themes 13/13.  Candidate generation was
   pure enumeration (numeric tuplets 1-4 parts + word tracks + the melody name),
-  tested with `crack --candidates` — no guessing left once the shape was known.
+  tested with `crack --candidates` - no guessing left once the shape was known.
 
   Still open in audio: 37 timpani_bank (`audio/<enemy|heroes|x>_<something>`;
   audio/enemy_gator was the one easy find).
 
 ================================================================================
-17.14 ANIMATION SOLVED — <unit_dir>/animations/<clip>
+17.14 ANIMATION SOLVED - <unit_dir>/animations/<clip>
 ================================================================================
   After audio fell, the same trick broke animations: enumerate the CLIP slot per
   owning unit directory instead of guessing whole global paths.
@@ -5654,13 +5654,13 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     room_lava_floor_adventure_2
     room_lava_floor3                  floor%f
     room_crypt_floor3_02_north_wing   floor%f_%k_%w_wing
-    room_crypt_floor3_03_west_wing    (both found in §43)
+    room_crypt_floor3_03_west_wing    (both found in #43)
     room_dummy / prefab_* / arena / colosseum
 
   `sweeps/room_sweep.sh` (`make_room_vocab.py`) crosses floor x sub-number x wing
   x mod with padded *and* unpadded numbers (floor_01 / floor01 / floor3), both
   orders (floor_01_adventure vs floor_adventure_1) and the wing grid.  It is
-  cheap (a few 1e6) and returned 0: with the two wings already found in §43 the
+  cheap (a few 1e6) and returned 0: with the two wings already found in #43 the
   wing grid is complete, so the remaining levels are not rooms of this shape.
 
 44.2 THE QUILT CELL CODE IS FULLY ENUMERABLE
@@ -5775,7 +5775,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   legal codes x mods -> 0), not tile-shaped over every rock/dims/group/tail the
   harvest shows, not rooms, and not module-level (`d01_common`, `debug`, `menu`,
   `hub_room` -> 0).  The harvest does not contain them, so they are unreferenced
-  authored content - the same wall as the two unnamed super-nova siblings in §40.
+  authored content - the same wall as the two unnamed super-nova siblings in #40.
 
 45.4 NEXT
 
@@ -5902,7 +5902,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 47.4 SHADER CHAINS: ONE FLAG IN, OUT OR SWAPPED (make_chain_candidates.py)
 
   A shader_library name is `<technique>:<flag>:<flag>:...` with the flags
-  alphabetically sorted (§41), so the legal neighbourhood of a chain is small:
+  alphabetically sorted (#41), so the legal neighbourhood of a chain is small:
 
     insert one vocabulary flag in its sorted position
     drop one flag
@@ -5962,7 +5962,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   material 139, unit 61, shader 45, timpani_bank 37, level 14, flow 1 - are now
   almost entirely resources whose *directory* and *leaf* both appear nowhere in
   the bundles, the Lua, or the names we hold: the same unreferenced-authored-
-  content wall as §40 and §45.3, with `timpani_bank` still needing Arrowhead's
+  content wall as #40 and #45.3, with `timpani_bank` still needing Arrowhead's
   Wwise metadata.
 
 47.9 ALSO TRIED, ALSO 0
@@ -6011,7 +6011,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       hud/keyboardmouse_icons/lmb
 
   so a texture drawn by an atlas `D/L` is `D/L/<icon>` - and that directory
-  appears in **no resolved name**, so every directory sweep in §46-47 was blind
+  appears in **no resolved name**, so every directory sweep in #46-47 was blind
   to it.  `make_atlas_patterns.py` turns each referring atlas into one pattern
   (`<atlas>/%m`, `<atlas>_%m`, `<atlas>/%m_%n` - 1,581 of them) and crossing them
   with the vocabularies found **32 names in one run**:
@@ -6144,7 +6144,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 48.7 RE-RUN THE HEAVY ENGINES TOO - THEY SELF-FEED
 
-  The substitute engine (§42) is driven by the names we hold, so every batch of
+  The substitute engine (#42) is driven by the names we hold, so every batch of
   new names is new fuel.  Re-running it (`sweeps/subst_run.sh`) after this
   chapter's additions gave **+16** where the same engine had reported fixpoint
   before - and the finds show why: it completes *naming grids*.
@@ -6168,7 +6168,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   Almost everything left looks like a *derived* variant of a name we hold, and
   two fingerprints locate the name it derives from (`tools/twin_by_refs.py`):
 
-  * **size + bundle** - a body size is nearly a function of the name (§43), so
+  * **size + bundle** - a body size is nearly a function of the name (#43), so
     the resolved resources adjacent to an unnamed one *in the same bundle* are
     its family.  Needs only the catalogue; found a twin for 886 of 1,229 targets.
   * **reference graph** (`hunt_ref_graph.py`) - decompress each bundle once and
@@ -6194,7 +6194,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     props/d01_common/torch_floor_blue_01_diff                    (a map of a
                                                                   name just found)
 
-  The second is the engine feeding itself again (§48.7), so this is re-run after
+  The second is the engine feeding itself again (#48.7), so this is re-run after
   every batch like the others.
 
 ==========================================================================
@@ -7146,13 +7146,13 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   and `demon_imp` come from), so older manifests remain reachable.
 
   That makes *restoring* the old content possible.  The toolchain already knows how to
-  build and inject custom packages - §16 documents the custom unit/material/texture
+  build and inject custom packages - #16 documents the custom unit/material/texture
   chain that loads in-game - so an old resource could be repacked under its own name
   and loaded, or referenced from a custom unit, and the PreSlayer look would come back:
   the original demon models, the lizard units, `gator_brute` as it looked before it
   became Orox, the treant, and the `spawner_swamp_*` family.  That is a
   content-restoration project rather than a name-recovery one, and it is **out of scope
-  here**; it is written down so the lead is not lost.  Same licensing caution as §58.4 -
+  here**; it is written down so the lead is not lost.  Same licensing caution as #58.4 -
   reading and modding locally is one thing, redistributing shipped assets is not.
 
   Starting points if it is ever picked up: the three snapshot directories; this tool
@@ -7289,7 +7289,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   Conclusion: these 57 are **authored, level-local unit names whose text exists
   nowhere in the shipped build and which no naming convention reaches** - the same
-  kind of wall as the shader leaves (§17.9), but for 57 resources instead of 407.
+  kind of wall as the shader leaves (#17.9), but for 57 resources instead of 407.
   They are identified in substance (terrain tiles, tile meshes, and the props that
   use the terrain materials) without being nameable, and no sweep - GPU tiers,
   mutate passes, prefab patterns, or the generator in
@@ -7374,7 +7374,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
     enumerate their members' flags, so the 165 unresolved shader chains cannot be
     completed from them.
 
-  Combined with §57.1 (the shipped database holds no names), §58.1 (every readable
+  Combined with #57.1 (the shipped database holds no names), #58.1 (every readable
   artifact class is mined) and the build-wide `DIRECT HITS: 0` from
   `scan_bundle_strings.py`, this settles it: **there is no unmined header, table or
   manifest left in the shipped build that carries resource names.**  The remaining
@@ -7625,7 +7625,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   merged and re-run with the flags it had just found:
 
       51.6 M   the three shapes above                          -> 9
-      63.1 M   pass 2, relaxed filter (`hdr`, `hq`, `4x4`, …)   -> 1
+      63.1 M   pass 2, relaxed filter (`hdr`, `hq`, `4x4`, ...)   -> 1
      129.4 M   <the 7 yielding techniques>:<known flag>:<word>  -> 2
      138.4 M   pass 4, pass 1-3 flags fed back                  -> 1
      139.7 M   pass 5                                           -> 0  (fixpoint)
@@ -7913,7 +7913,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 61.1 WHAT THE SIBLING TABLE IS FOR
 
-  The same method that named the four colosseum grades (§ the `+` suffix): find
+  The same method that named the four colosseum grades (# the `+` suffix): find
   the material that draws the resource, read its sibling list, and let the named
   neighbours show the grammar.  Here the grammar is `<hero>_<action|ultimate>_
   <ability>` and the ability word is the talisman's own flow event, not a
@@ -7960,9 +7960,9 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   The ability words are hand-authored game text, and for these two they are
   simply not in any source we hold - not the shipped Lua, not the localisation,
-  not the bundles or the depot harvest.  This is the same wall §57.4 hit
+  not the bundles or the depot harvest.  This is the same wall #57.4 hit
   (class-specific ability words that were never written into a resource), and the
-  same conclusion §60.13 reached: the residual must come from grammar+vocabulary
+  same conclusion #60.13 reached: the residual must come from grammar+vocabulary
   or not at all.  The two hashes and their identity are recorded here so the art
   at least pins what they *are* while the words stay open.
 
@@ -8452,11 +8452,11 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 61.20 THE `equippables_icons/equipment` BOARD IS THE SHOP-ITEM LOOKUP (*)
 
-  §61.1-61.2 left 19 icon textures unnamed and treated all of them as "the art".  The
+  #61.1-61.2 left 19 icon textures unnamed and treated all of them as "the art".  The
   largest single group of them is not art at all - it is a *table*.  `equippables_icons/
   equipment` (material, 5,208 bytes, `resource_packages/menu`) has an 8-byte header
   (`u32 version = 10`, `u32 count = 100`) and then 100 fixed 52-byte entries, the same
-  shape §61 found for `hud/action_icons`:
+  shape #61 found for `hud/action_icons`:
 
       [ 0: 4]  key low      - the *top* 32 bits of murmur64("shop_" + <item id>)
       [ 4:12]  key high     - constant 0x3d7a037c
@@ -8508,7 +8508,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   souleater` (3ace9cd8) nor `..._soul_eater` (101d6688) hashes to its key, so that one
   item id is spelled differently - it is the last unknown of the group.
 
-  The mapping also settles §61.2's display-name question for the valkyries, read off
+  The mapping also settles #61.2's display-name question for the valkyries, read off
   the store's own panel: talisman01 is *Thyra's Vow* (`ultimate_vengeance`, "Righteous
   Retribution"), talisman02 *Guardian Symbol* (`ultimate_aegis`, "Divine Aegis"),
   talisman03 *Mark of the Commander* (`ultimate_valkyries`, "Summon Valkyries") - and
@@ -8548,7 +8548,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   recovers is the **ownership** of all 16 (which hero, which talisman, which panel),
   which is what the art needed - `tools/dump_board.py <board> --item-ids ids.txt` prints
   exactly the table above and is the tool to re-run the moment a name is found.  The
-  other §61.2 icons (`402c8d6e26caf96f`, `965dc9490a86221e`) are *not* in this table -
+  other #61.2 icons (`402c8d6e26caf96f`, `965dc9490a86221e`) are *not* in this table -
   they come from `equippables_icons/shop_action_icons` and are action plates, not items.
 
 
@@ -8779,7 +8779,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       catalogue draws them (they are UI-only, so no unit body carries a hint).
     * the store flavour does **not** transfer to the two ability plates:
       `hud/action_icons/<hero>_ultimate_<flavour>` over all flavours and 945 variants,
-      0.  §61.3's wall - hand-authored ability words that no shipped file spells out -
+      0.  #61.3's wall - hand-authored ability words that no shipped file spells out -
       still stands for 402c8d6e26caf96f and 965dc9490a86221e.
 
   63.5 STATE
@@ -8849,7 +8849,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       key == murmur64(<icon id>) >> 32          (validated 15/15)
 
   - i.e. that board is keyed on the *icon id*, **not** on `shop_<item id>` (which is the
-  equipment board's rule, §61.20) and not on the texture name.  So the board is a
+  equipment board's rule, #61.20) and not on the texture name.  So the board is a
   complete oracle from the ability Lua to the plate texture, and all fifteen ids resolve:
 
       warrior_ultimate_01 -> 402c8d6e26caf96f  MISSING   <- potion_throw
@@ -8891,7 +8891,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
   63.8 THE SECOND PATH - AND BOTH PLATES ARE NOW CONFIRMED AS THE STORE'S POTION ICONS
 
-  §63.7's oracle came from the ability Lua's `icon` field.  There is a *second* path to
+  #63.7's oracle came from the ability Lua's `icon` field.  There is a *second* path to
   the same two textures, and it is the one the store tooltip actually uses:
 
       lua/menu/avatar_loadout.lua:779   if ability_icon then icon = item.ability_icon or "item_empty"
@@ -9045,7 +9045,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   What would break the saturation, in order of promise: (a) a tooltip or asset-browser
   view of any *one* remaining clip, which turns the vocabulary problem into a shape
   problem; (b) the unit/state-machine body itself, since clips are named after the state
-  that plays them (§47.9) and `enumerate_anims.py`'s 55 M stream over the Lua event names
+  that plays them (#47.9) and `enumerate_anims.py`'s 55 M stream over the Lua event names
   is a true zero (its space *does* contain the names we hold, so the negative is real;
   `--candidates` was verified with a known pair for exactly this reason); (c) the same
   cross-build hunt the icons used - a 2014/2015 snapshot's animation names for hashes that
@@ -9096,7 +9096,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
       any of the 939 named ones.  An animation is rigged to its entity, so a shared clip
       does not share bytes and the name is not recoverable from them.
     * **size twins**: 116 unresolved rows (48 hashes) have a named animation of exactly the
-      same `body_size`, and size is nearly a function of the clip (§43).  The twin is not
+      same `body_size`, and size is nearly a function of the clip (#43).  The twin is not
       the answer either - 9,086 candidates built from those twins (in the entity's own
       directory, respelled) are 0 - and the biggest clusters show why: size 444 is
       `stage1_idle`/`stage2_idle`/`stage3_idle`/`dormant` for `gameobjects/spawners`, and
@@ -9350,11 +9350,11 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
 
 68. THE SHADER-CHAIN NEIGHBOURHOOD IS WORTH FIFTEEN NAMES
 
-  68.1 WHY THE CHAINS ARE WORTH CHASING.  The grouped view (§66.6) puts 350 of the missing
+  68.1 WHY THE CHAINS ARE WORTH CHASING.  The grouped view (#66.6) puts 350 of the missing
   rows in three bundles - `core/rendering/renderer` 137, `mobile_renderer` 108,
   `emulate_renderer` 105 - and they are the *same* chains in all three, so one name pays three
   times.  A chain name is `<technique>:<flag>:<flag>...` with the flags alphabetically sorted
-  (§41), so the space is enumerable: 43 techniques, 110 flags, chain lengths 2-10 (the corpus
+  (#41), so the space is enumerable: 43 techniques, 110 flags, chain lengths 2-10 (the corpus
   holds 88 chains of length 2, 66 of 3, 61 of 6, 56 of 5, 49 of 4, 41 of 7, 25 of 8).
 
   68.2 WHAT FOUND THEM.  `tools/make_chain_candidates.py` - the project's own one-flag
@@ -9375,7 +9375,7 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   candidates - how a renderer variant would be found); the whole sorted-subset space of every
   technique's own flag vocabulary at lengths 2-4 (38,455); and the decal family with two free
   flags (`base:instanced:deferred_decals_group_*:<f1>:<f2>`, 141,581).  What is left of the
-  shader bucket is 5+ flag chains, where a technique's size band (§60.14) is the only
+  shader bucket is 5+ flag chains, where a technique's size band (#60.14) is the only
   constraint - `hunt_shader_subsets.py`'s territory, already swept.
 
   68.4 NOT FOR WANT OF TRYING: THE ACHIEVEMENT ICONS.  The thirteen unresolved 43,836-byte

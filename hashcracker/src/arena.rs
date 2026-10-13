@@ -3,7 +3,7 @@
 //! A candidate is a concatenation of literals and word-list entries. Keeping
 //! those as `Vec<Vec<Vec<u8>>>` (list -> word -> its own heap allocation) costs
 //! *two dependent pointer loads per slot* before a single byte is read, and
-//! scatters the words across the heap — so the hot loop stalls on L2 and cannot
+//! scatters the words across the heap - so the hot loop stalls on L2 and cannot
 //! prefetch. The arena packs every byte a pattern can emit into one contiguous
 //! blob addressed by `(offset, len)`, which is exactly the layout the GPU kernel
 //! already used, so both paths now build it once with one builder.
@@ -11,7 +11,7 @@
 //! Entries are padded (see [`SLACK`]) so the tail of a candidate can be read as
 //! one masked 8-byte load instead of a byte-at-a-time loop.
 //!
-//! Nothing here hashes anything by itself — `Compiled::emit` + `murmur::hash_bytes`
+//! Nothing here hashes anything by itself - `Compiled::emit` + `murmur::hash_bytes`
 //! stay the reference implementation, and [`Arena::hash`] is required to agree
 //! with them bit-for-bit (see the `arena_matches_reference` test).
 
@@ -140,7 +140,7 @@ impl Arena {
     /// The copy moves eight bytes at a time and therefore *over-writes* up to
     /// seven bytes past each part. That is deliberate: the next part overwrites
     /// them, and for the last part the padded hasher masks them off. It is why
-    /// every arena entry is padded to an 8-byte boundary — an 8-byte load never
+    /// every arena entry is padded to an 8-byte boundary - an 8-byte load never
     /// leaves `blob`, and an 8-byte store never leaves `out`.
     #[inline]
     pub fn fill(&self, picks: &[usize], out: &mut [u8]) -> usize {
@@ -197,7 +197,7 @@ impl Arena {
         }
     }
 
-    /// Copy the candidate built from `picks` into `out` — the cold path (a match,
+    /// Copy the candidate built from `picks` into `out` - the cold path (a match,
     /// or the CPU re-hash of a GPU-reported index), kept independent of
     /// [`Arena::fill`] on purpose so the two can be cross-checked.
     pub fn emit_into(&self, picks: &[usize], out: &mut Vec<u8>) {
@@ -236,7 +236,7 @@ mod tests {
         sbuf
     }
 
-    /// Parts must concatenate exactly, at every split point — `ab` + `cdefghij`
+    /// Parts must concatenate exactly, at every split point - `ab` + `cdefghij`
     /// has to hash like the single literal `abcdefghij`, including across the
     /// 8-byte block boundary.
     #[test]

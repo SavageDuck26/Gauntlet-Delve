@@ -43,7 +43,7 @@ GLYPH_FMT    = '<7fI'             # 8 fields (32 bytes)
 
 
 def decode_font(blob: bytes) -> Dict[str, Any]:
-    """Parse a raw .font blob → dict with header + glyph list."""
+    """Parse a raw .font blob -> dict with header + glyph list."""
     if len(blob) < HEADER_SIZE:
         raise ValueError(f"blob too short ({len(blob)}) for font header")
 
@@ -131,7 +131,7 @@ def decode_font_file(src: str, dst: str | None = None) -> str:
         dst = os.path.splitext(src)[0] + '.json'
     with open(dst, 'w') as f:
         json.dump(data, f, indent=2)
-    print(f"Decoded {src} → {dst}  ({data['glyph_count']} glyphs)")
+    print(f"Decoded {src} -> {dst}  ({data['glyph_count']} glyphs)")
     return dst
 
 
@@ -141,7 +141,7 @@ def encode_font_file(src: str, dst: str | None = None) -> str:
     if dst is None:
         dst = os.path.splitext(src)[0] + '.font'
     open(dst, 'wb').write(encode_font(data))
-    print(f"Encoded {src} → {dst}")
+    print(f"Encoded {src} -> {dst}")
     return dst
 
 

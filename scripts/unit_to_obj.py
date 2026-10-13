@@ -358,7 +358,7 @@ def decode_packed_normal(packed: int) -> Tuple[Vector3, Vector3, Vector3]:
         else:
             tangent_base = Vector3(1.0, 0.0, 0.0)
     
-    # Cross product: tangent_base × normal
+    # Cross product: tangent_base x normal
     cross = Vector3(
         tangent_base.y * normal.z - tangent_base.z * normal.y,
         tangent_base.z * normal.x - tangent_base.x * normal.z,
@@ -372,7 +372,7 @@ def decode_packed_normal(packed: int) -> Tuple[Vector3, Vector3, Vector3]:
         tangent_base.z * cos_r + cross.z * neg_sin_r
     )
     
-    # Bitangent = normal × tangent
+    # Bitangent = normal x tangent
     bitangent = Vector3(
         normal.y * tangent.z - normal.z * tangent.y,
         normal.z * tangent.x - normal.x * tangent.z,

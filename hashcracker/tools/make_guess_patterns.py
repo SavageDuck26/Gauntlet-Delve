@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Per-target guess patterns driven by the reference twin (FINDINGS.txt §44).
+Per-target guess patterns driven by the reference twin (FINDINGS.txt #44).
 
 `hunt_level_refs.py --twin` finds the resolved level whose *reference set* is
 most similar to an unresolved one, which names its family.  This turns each

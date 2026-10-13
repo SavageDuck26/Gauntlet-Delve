@@ -171,7 +171,7 @@ def main():
     with open(BUNDLE_DB, 'wb') as f:
         f.write(new_data)
     
-    print("\n✓ Done! Your bundle is now registered in the database.")
+    print("\n[ok] Done! Your bundle is now registered in the database.")
     print(f"  Bundle: {args.bundle}")
     print(f"  Stream: {args.bundle}.stream")
     print(f"  Resources: {args.textures}")

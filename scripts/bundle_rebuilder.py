@@ -143,12 +143,12 @@ def parse_bundle(data: bytes) -> BundleStructure:
     - uint32: resource_count
     - uint64[resource_count]: name hash table (at offset 4)
     - padding to 0x104
-    - Entry table: (type_hash, name_hash) × resource_count at 0x104
+    - Entry table: (type_hash, name_hash) x resource_count at 0x104
     - Resource data sections (each with metadata)
     """
     resource_count = struct.unpack_from('<I', data, 0)[0]
     
-    # Name hash table: resource_count × 8 bytes starting at offset 4
+    # Name hash table: resource_count x 8 bytes starting at offset 4
     hash_table_size = resource_count * 8
     name_hash_table = data[4:4 + hash_table_size]
     

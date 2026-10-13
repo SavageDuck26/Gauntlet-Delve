@@ -302,10 +302,10 @@ def build_bundle(resources: List[Resource]) -> bytes:
     Build an uncompressed bundle body for Gauntlet's 0xF0000004 format.
 
     Confirmed layout (reverse-engineered from native bundles):
-        [0x000:0x004]  uint32 N  — resource count
+        [0x000:0x004]  uint32 N  - resource count
         [0x004:0x058]  84-byte preamble (zeros for custom bundles)
         [0x058:0x104]  zeros (padding to 0x104)
-        [0x104:]       (N+1) × 16-byte TOC {type(8), name(8)}
+        [0x104:]       (N+1) x 16-byte TOC {type(8), name(8)}
                        entry[N] = sentinel = copy of entry[0]
         [toc_end:]     20-byte resource-0 metadata:
                            {flags(4), zeros(8), data_sz(4), stream_sz(4)}
@@ -329,7 +329,7 @@ def build_bundle(resources: List[Resource]) -> bytes:
     # 2. Preamble: 84 bytes zeros + padding to 0x104
     buf += b'\x00' * (0x104 - 4)
 
-    # 3. TOC: (N+1) entries — last entry is a sentinel = copy of entry[0]
+    # 3. TOC: (N+1) entries - last entry is a sentinel = copy of entry[0]
     for res in sorted_resources:
         buf += struct.pack('<QQ', res.type_hash, res.name_hash)
     # sentinel
@@ -393,7 +393,7 @@ def analyze_bundle(bundle_path: str) -> BundleInfo:
     # Parse based on bundle format
     if sig == BUNDLE_SIG_OLD:
         # Gauntlet 0xF0000004 format (confirmed layout):
-        #   [0x104] (N+1) × 16-byte TOC entries; entry[N] = sentinel = copy of entry[0]
+        #   [0x104] (N+1) x 16-byte TOC entries; entry[N] = sentinel = copy of entry[0]
         #   [toc_end] resource-0: 20-byte metadata {flags(4), zeros(8), data_sz(4), stream_sz(4)}
         #   [after res-0] resources 1..N-1: 36-byte header {type(8),name(8),flags(4),zeros(8),data_sz(4),stream_sz(4)}
         toc_start = 0x104
@@ -645,10 +645,10 @@ def create_texture_bundle(texture_folder: str,
                 "file": dds_path.name,
                 "size": len(tex_res.data)
             })
-            print(f"  ✓ {dds_path.name} → {resource_name}")
+            print(f"  [ok] {dds_path.name} -> {resource_name}")
             print(f"    Hash: 0x{tex_res.name_hash:016X}")
         except Exception as e:
-            print(f"  ✗ {dds_path.name}: {e}")
+            print(f"  [X] {dds_path.name}: {e}")
     
     if not resources:
         raise ValueError("No valid textures processed")
@@ -666,7 +666,7 @@ def create_texture_bundle(texture_folder: str,
                 "hash": mat_res.name_hash,
                 "texture_hash": tex["hash"]
             })
-            print(f"  ✓ {mat_name} → 0x{mat_res.name_hash:016X}")
+            print(f"  [ok] {mat_name} -> 0x{mat_res.name_hash:016X}")
     
     # Create package resource
     texture_names = [t["name"] for t in textures]
@@ -873,7 +873,7 @@ def cmd_create_texture_bundle(args):
         args.with_materials
     )
     
-    print(f"\n✓ Bundle created successfully!")
+    print(f"\n[ok] Bundle created successfully!")
     print(f"  {manifest['texture_count']} textures")
     if manifest['material_count'] > 0:
         print(f"  {manifest['material_count']} materials")
@@ -882,7 +882,7 @@ def cmd_create_texture_bundle(args):
 def cmd_create_mod(args):
     """Create a mod from config file."""
     result = create_mod_bundle(args.config, args.output)
-    print(f"\n✓ Mod bundle created: {result['bundle_file']}")
+    print(f"\n[ok] Mod bundle created: {result['bundle_file']}")
     print(f"  Package path: {result['package_path']}")
     print(f"  Resources: {result['resource_count']}")
 
