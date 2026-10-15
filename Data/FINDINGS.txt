@@ -9839,3 +9839,54 @@ safe to add to a group, and what a layout's group names are describing.
     - Groups can hold MULTI-LINE entries (`supply = math.huge`), so a line-wise
       rewrite orphans their inner lines.  Rebuild groups wholesale.
 
+==========================================================================
+9H.9  NAMES AND HASHES - what the quilt work needed, and what is still missing
+==========================================================================
+
+  WHAT THE LAYOUTS ASK FOR IS ALL NAMED
+    Every quilt name any layout references resolves to a catalogue resource:
+    266 asked for, 266 found.  Nothing in the quilt system is blocked by a missing
+    name - the 231 unused pieces are pieces nobody names, not names nobody has.
+
+  BUT 2,017 OF 20,004 RESOURCES HAVE NO NAME (by type)
+    texture 672, animation 539, shader_library 311, material 187, particles 141,
+    shader 64, unit 48, timpani_bank 37, level 12, flow 4, package 2
+    The two that gate level work: 12 level resources and 48 units.
+
+  THE ONE UNNAMED LEVEL WE COULD LOOK AT
+    hash f6e003b8ed3e7eb7, the only one of the 12 that was ever extracted
+    (unresolved/level/, 37,632 bytes): 363 entities, 24 distinct templates, and all
+    24 templates resolve - crypt walls, borders, railings, a light, and a
+    gameobjects/level_editor/unwalkable marker.
+    WHAT IT IS IS NOT ESTABLISHED.  An earlier reading of "80% match with
+    crypt_quilt_smallroom__o_e_i_e__01" was too strong: that percentage is over a
+    five-template set, and a smallroom quilt has few enough pieces that any crypt
+    room shares walls and borders with it.  Consistent with a small room or a quilt
+    piece; proof of neither.
+
+  CRACKING IT
+    Resource names hash as MurmurHash64A(name, 0), lowercase, little-endian
+    (hashcracker/README.md).  An implementation of that was self-checked against
+    three catalogue name/hash pairs - all three matched - so from here any candidate
+    list can be checked exactly and quickly in Python.
+    A first sweep of 6,600 candidates - crypt_quilt_<kind>__o_e_i_e__<NN>[_variant]
+    across five quilt directories, five kinds, twelve numbers and twenty variants -
+    found nothing.  The name is outside that space.
+    Better next step: the repo already has quilt-specific vocabulary builders
+    (hashcracker/tools/make_quilt_vocab.py and make_quilt_codes.py), which means the
+    real naming schema for this family was worked out before.  Feed that vocabulary
+    in rather than hand-rolled combinations, and widen the space to include
+    modules/d01_crypt/room_* and the other piece kinds.  A few million candidates is
+    minutes in Python; hashcracker's GPU path is for billions.
+
+  STILL OPEN, RECORDED SO THEY ARE NOT LOST
+    - 230 of the 231 unused pieces were never checked for the malformed-name defect
+      the caves spider piece has, so the unused count may overcount usable pieces.
+    - Which pieces render BROKEN in game is not recorded.  The full-environment
+      sweeps crashed on nothing, but some pieces render wrong, and only a run
+      distinguishes inert / renders-wrong / crashes.  bigcross is the sole entry on
+      the crashes side.
+    - In crypt.lua the per-section piece counts sum higher than the 38 pieces the
+      builder reported placing, which may mean some sections kept shipped pieces
+      alongside ours.  Unreconciled.
+
