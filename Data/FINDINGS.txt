@@ -9880,8 +9880,12 @@ safe to add to a group, and what a layout's group names are describing.
     minutes in Python; hashcracker's GPU path is for billions.
 
   STILL OPEN, RECORDED SO THEY ARE NOT LOST
-    - 230 of the 231 unused pieces were never checked for the malformed-name defect
-      the caves spider piece has, so the unused count may overcount usable pieces.
+    - The malformed-name check is now done for every one of them.  Of the 231 unused
+      pieces, 229 carry a signature that parses and would be usable if a layout named
+      them; 2 do not:
+        caves_quilt_largeroom__xox_xex__xix_xex__02_spider   (doubled underscore)
+        caves_quilt_straight__xx_e_xx_e_06_civilization      (no __ before variant)
+      All 231 are listed, split by the two cases, in Data/unused_quilt_pieces.txt.
     - Which pieces render BROKEN in game is not recorded.  The full-environment
       sweeps crashed on nothing, but some pieces render wrong, and only a run
       distinguishes inert / renders-wrong / crashes.  bigcross is the sole entry on
