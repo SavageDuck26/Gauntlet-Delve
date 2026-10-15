@@ -9737,3 +9737,105 @@ four calls, and every one of them is already in the game.
     mods/functions/CustomLevels) installs no hooks yet - see that repo's README for
     the exact state and the log evidence.
 
+==========================================================================
+9H.8  THE QUILT SYSTEM - and why 231 shipped pieces can never appear
+==========================================================================
+
+A crypt / caves / lava floor is not a level resource.  It is ASSEMBLED at load time
+by the dungeon generator from a Lua layout table.  That is the whole explanation for
+the odd result in 9H.7: no quilt piece is ever referenced by a .level - verified, 0
+of 209 crypt quilt resources appear in any of the 255 extracted .level files.  The
+layouts are the only place a piece is named, and they are Lua.
+
+  lua/dungeon/layouts/<env>_floor_NN.lua    a plain Lua table:
+                                              { path = "...",
+                                                <group> = { <piece> = { supply = N } } }
+  lua/dungeon/quilt_builder.lua:195         QuiltBuilder.parse_tiles reads it and
+                                            matches each piece name against
+      ^%w+_quilt_(%w+)__([^_]+)_([^_]+)_([^_]+)_([^_]+)__(.*)$
+                   kind   up        right     down      left       variant
+  lua/dungeon/dungeon_graph_builder.lua:416 QuiltBuilder(layout_node.quilt, seed)
+  lua/dungeon/dungeon_generator.lua         walks the built clusters into the level
+
+THE FOUR SIDE STRINGS ARE THE INTERFACE.  One character per tile, x = blocked,
+e / o / i = opening, and the string length is that side's tile width.  So
+xox_xi_xix_ix is a 3 / 2 / 3 / 2-tile room and xxoxx_xxxi_xxixx_ixxx is 5 / 4 / 5 / 4.
+Two pieces with the same signature are interchangeable - which is what makes a piece
+safe to add to a group, and what a layout's group names are describing.
+
+  INVENTORY OF UNUSED CONTENT (whole-name match against every shipped layout)
+    quilt pieces shipped            498
+    named by some layout            267
+    NEVER named by any layout       231     <- 46%
+
+  by kind:  straight 81, turn 48, mediumroom 43, largeroom 16, smallroom 12,
+            entrance 11, blackbox 11, encounter 3, exit 3, saferoom 3
+
+  This is not filler.  It includes rooms built for named enemies that were never
+  wired into any floor:
+    caves_quilt_mediumroom__xox_xex_xix_xex__01_juggernauts
+    caves_quilt_mediumroom__xox_xex_xix_xex__03_lobbers
+    caves_quilt_mediumroom__xox_xex_xix_xex__03_spider_queen
+    caves_quilt_mediumroom__xox_xex_xix_xex__03_spawner
+    caves_quilt_largeroom__ooo_xox_iii_xix__01_keydoorseast_spider_queen
+  plus three unused caves entrances (__01 / __02 / __03).
+
+  DEAD BY CONSTRUCTION, not merely unused:
+  caves_quilt_largeroom__xox_xex__xix_xex__02_spider has a doubled underscore
+  (xex__xix) where the convention is single.  parse_tiles cannot match that name, so
+  it could never be placed even if a layout listed it.  The other 230 were not
+  checked for the same defect - worth doing before assuming they are all merely
+  unwired.
+
+  WHICH FLOORS ARE PROCEDURAL
+    have a quilt table : crypt_floor_02, 05, 08 and every crypt_endless_* (the caves
+                         and lava equivalents likewise)
+    fixed_modules      : crypt_floor_01, 03, 04, 06, 07, 09, 10 and the six
+                         colosseums - hand-built, no quilt table at all
+  Overriding a fixed floor's layout with a quilt layout CONVERTS it into a generated
+  floor, because floor_data then has root = "quilt_cluster" where it had
+  fixed_modules.  That is a real change to those levels, not a swap of decoration.
+
+  TESTING A PIECE IN-GAME
+  Hook `require` and serve our own copy of the layout - see the loader repo,
+  mods/functions/QuiltExtras, and 9H.7 for the call shapes.  A piece in its own group
+  is placed as that group's role; a piece added to a group that already holds its
+  signature needs nothing else.  Grouping by signature is the safe default: every
+  list the generator draws from then holds interchangeable pieces, so it cannot pick
+  one that does not fit its neighbours.
+
+  PLACED AND CONFIRMED LOADING (crypt)
+    crypt_quilt_encounter__xox_xi_xix_ix__01
+    crypt_quilt_encounter__xxoxx_xxxi_xxixx_ixxx__01
+    crypt_quilt_mediumroom__xox_xex_xix_xex__01
+    crypt_quilt_smallroom__o_e_i_e__01_skeleton
+    crypt_quilt_mediumroom__xox_xex_xix_xox__01_keyenemies  (+ _skeleton)
+    crypt_quilt_straight__e_x_e_x__03_speartrapschain
+    crypt_quilt_straight__e_xx_e_xx__02_spiketrapschain
+  Full-environment sweeps - 38 crypt / 47 caves / 25 lava pieces, grouped by
+  signature, with every campaign floor of each environment pointed at its
+  environment's layout - produced NO CRASHES in game, but some pieces render broken.
+  So a piece can be inert, render wrong, or crash, and only running it says which.
+
+  CONFIRMED NEGATIVE
+    crypt_quilt_encounter__xex_xex_xex_xex__01_bigcross crashes the floor generator
+    when placed in the encounter set.  Its signature is four-way (every side xex),
+    unlike every other encounter piece, and the export shows 2 helper entities
+    skipped - and the helper units the exporter drops are the markers (spawn, nav)
+    the generator may be relying on.  Removing it from the layout stops the crash.
+
+  PROCESS NOTES THAT COST REAL TIME (worth not repeating)
+    - A generated layout must be COMPILED before it is deployed.  A one-line lupa
+      check catches it; two rounds were lost to malformed Lua reaching the game.
+    - The deploy must be CONDITIONAL on that check.  Chaining `cp` after a Python
+      step that printed a verdict instead of exiting non-zero deployed broken files
+      twice.  Exit non-zero on failure and let `&&` do the gating.
+    - Never splice text by offset.  Replacing one section invalidates the offsets of
+      every section after it - that is what produced mismatched braces, twice.  Split
+      at section headers, transform each section independently, rejoin.
+    - Match piece names WHOLE (`^\s*<name> = `), never as substrings.  A substring
+      test found four pieces "already used" because `..._xex__01` is inside
+      `..._xex__01_fancy`, and wrongly skipped two the same way.
+    - Groups can hold MULTI-LINE entries (`supply = math.huge`), so a line-wise
+      rewrite orphans their inner lines.  Rebuild groups wholesale.
+
