@@ -587,23 +587,29 @@ Triangle Winding:
 --------------------------------------------------------------------------------
 
 Shapes define which portions of the index buffer belong to each material.
-IMPORTANT: Shapes often don't cover ALL indices!
+IMPORTANT: the shape table stores its ranges in TRIANGLES, not indices.  For
+  every one of the 802 meshes in the 359-unit export:
 
-Coverage Issue:
-  Many .unit files have indices not covered by any shape. These uncovered
-  indices may represent:
-  - LOD (Level of Detail) geometry
-  - Shadow meshes
-  - Collision geometry
-  - Effects or decals
-  
-Example from 0x115530e5ba448e08.unit:
-  Total indices: 9,258
-  Shape 0 covers: indices 0-3,085 (3,086 indices)
-  Uncovered: indices 3,086-9,257 (6,172 indices)
-  
-Solution: Create "synthetic shapes" for uncovered index ranges to ensure
-complete geometry extraction.
+      sum(shape.index_count) * 3 == total_index_count
+
+  and multi-shape meshes only tile the buffer contiguously when both
+  `index_offset` and `index_count` are read as triangle units
+  (`off[i+1] == off[i] + cnt[i]`, 29/29 multi-shape meshes; read as indices the
+  tiling is 0/29).  `unit_to_obj.UnitParser` converts to index units on parse, so
+  `Shape.index_offset` / `Shape.index_count` are indices after decoding.
+
+This corrected a long-standing export bug: reading the counts as indices left
+  each shape covering exactly one third of the buffer, the coverage pass then
+  added a synthetic "gap" shape starting mid-triangle, and the exporters emitted
+  misaligned, distorted triangles for the other two thirds.  Measured against the
+  stored vertex normals (correct connectivity has each face normal agreeing with
+  the mean of its three vertex normals), face/vertex-normal coherence rises from
+  86.7% to 98.4% across the export, and per-mesh triangle counts now match the
+  shape table exactly (e.g. altar_01: 1,154; ham: 515).
+
+Element descriptor size note: descriptors are 17 bytes (4 x uint32 + a uint8
+  end-marker); the per-element byte sizes summed from the descriptors equal the
+  declared `vertex_stride` for all 802 meshes, which corroborates the layout.
 
 --------------------------------------------------------------------------------
 9.8 COORDINATE SYSTEM
@@ -2367,7 +2373,7 @@ Native bundle loading:
 9H. LEVEL RESOURCE FORMAT  *** NEW -- May 2026 ***
 ================================================================================
 
-Type hash: 0xE7F01A5344F7C5A3  (MurmurHash64 of "level")
+Type hash: 0x2A690FD348FE9AC5  (the catalogue type_hash for level; the 0xE7F01A5344F7C5A3 quoted in older revisions is the newer-engine hash and does not match this build - see 9H.5)
 Sample file: Exports/samples/level_24abcdf4b1fb4d4a.level  (1136 bytes)
 Tool: resource_tools/level_tools.py  (selftest: PASS, byte-exact)
 
@@ -2396,30 +2402,138 @@ Tool: resource_tools/level_tools.py  (selftest: PASS, byte-exact)
     @1088 sentinel (field_a == field_b)
 
 --------------------------------------------------------------------------------
-9H.2 ENTITY RECORDS (80 bytes each)
+9H.2 ENTITY RECORDS (72 bytes each)
 --------------------------------------------------------------------------------
 
-  Entities with template_hash != 0 are PLACED UNITS:
+  The table starts at header[0].field_a (128) and holds header[0].field_b
+  records.  Each record is 72 bytes; the stride and field offsets below were
+  confirmed against real levels (offsets 32 and 40 hit catalogue name hashes on
+  100% / 76% of a 372-entity room; positions land on the level's 4-unit grid):
 
-    Offset  Size  Field           Description
-    ------  ----  -----           -----------
-     0       8    entity_id       uint64: unique instance hash (0 = anonymous)
-     8       8    template_hash   uint64: MurmurHash64 of unit/prefab name
-    16       8    flags           uint64: unknown, usually 0
-    24      12    position        float[3]: world XYZ position
-    36       8    _pad_0          unknown floats (usually 0)
-    44      12    rotation_abc    float[3]: rotation components
-    56       4    scale           float: uniform scale (1.0, 8.0, 64.0 observed)
-    60       4    scale_w         float: secondary scale component
-    64       8    _pad_1          unknown floats
-    72       8    _tail_hash      uint64: extra hash/component reference
+    Offset  Size  Field              Description
+    ------  ----  -----              -----------
+      0       4    (NOT rotation)     float32: 0.0, or -1.0 as a flag - see 9H.6
+      4      12    region/size box    float32[3]      ) NOT a render scale - see
+     16       8    (unused)           always 0        ) the note below
+     24       8    entity_id          uint64: per-instance hash
+     32       8    template_hash      uint64: MurmurHash64 of the unit name
+     40       8    material_hash      uint64: material override (0 = none)
+     48      12    position xyz       float32[3]: world position
+     60       4    rotation quat x    float32         )
+     64       4    rotation quat y    float32         ) the quaternion is
+     68       4    rotation quat z    float32         ) (x,y,z) = (60,64,68)
+                                                       with w reconstructed
+                                                       - see 9H.6
 
-  Entities with template_hash == 0 are SPECIAL ENTITIES (world/env settings).
-  Their @24..71 region stores hashes rather than floats (preserved as raw hex).
+  FIELD MAP (confirmed).  A level entity is a placed unit, and the engine's own
+  Lua API says exactly what a placed unit carries: Unit.local_position,
+  Unit.local_rotation, Unit.local_scale, Unit.world_position, Unit.world_rotation,
+  Unit.set_local_position, Unit.teleport_local_pose,
+  Unit.teleport_local_rotation_and_scale, Unit.level and World.level.  Those names
+  appear in the shipped Lua (927 files; Unit.world_position x227,
+  Unit.local_position x118), and the binding tables are inside gauntlet.exe itself
+  - the registration calls push a table name, a function address and a method name
+  (0x4e94c0 -> "level" -> "Unit"; 0x5fb090 -> "level" -> "World").  So a placed
+  unit is position(3) + Quaternion rotation(4) + scale(3) = 10 floats, which is
+  exactly the record's 12 non-hash floats minus the two that are always zero:
 
-  Rotation encoding: three floats, likely a partial basis vector.
-  Values observed: (-0.707, -0.707, 1.0), (0.0, 0.0, 0.0)
-  NOT a standard quaternion (4 floats). Full decode TBD.
+    position   = f12, f13, f14   (bytes 48, 52, 56)   confirmed: lands on the
+                                                       level lattice
+    rotation   = (x,y,z) = f15,f16,f17 (60, 64, 68); w reconstructed (9H.6)
+    scale      = f1, f2, f3      (bytes 4, 8, 12)
+    padding    = f4, f5          (bytes 16, 20)       0 in all 65,953 records
+
+  ROTATION - RESOLVED against the running engine (9H.6).  The record stores the
+  quaternion's VECTOR part only:
+
+    (x, y, z) = (f15, f16, f17)   (bytes 60, 64, 68)
+    w         = -sqrt(1 - x*x - y*y - z*z)      reconstructed, NOT stored
+
+  Offset 0 is not a rotation component.  Measured against the engine's own runtime
+  transforms: (x,y,z) agrees to 1e-6, position to 0.0003, and the mapping
+  reproduces 100% of the engine's 9 distinct crypt_wall_4c orientations (633
+  instances / 1143 records), where w = f0 manages only 65%.
+
+  SCALE (f1,f2,f3) is NOT a render scale for the visible geometry - confirmed by
+  exporting a level with and without it and comparing.  Applying it inflates a
+  handful of props by their trigger-volume sizes (a potion_blue carries 60x53x9;
+  spawn_field 12x16x1; unwalkable 12x0.75x1; invisible_wall_2c 3x4x6) and
+  collapses the level under giant planes.  Those values are almost certainly how
+  the engine sizes the invisible trigger/collider boxes of logic units - none of
+  the 56 non-(1,1,1) triples in a 1,420-entity room is uniform - so the field is
+  left out of the transform by default (--apply-scale restores it).  The exact
+  owner of the field is still open.
+
+  CONFIRMED NEGATIVES (each tested against the shipping data, so they are not
+  re-treaded).
+
+  * There is no parent / instancing link inside the entity record.  All 1,420
+    instance ids (offset 24) in room_crypt_floor3_04_east_wing are distinct, and
+    no 8-byte window anywhere in any record equals another record's instance id,
+    or its own at any other offset.  A unit's placement is therefore absolute;
+    the engine's own level API agrees - DynamicData.LevelResource exposes
+    unit_index, unit_by_index, unit_indices, unit_position and unit_rotation, and
+    no parent and no scale.
+
+  * The rotation is not a plain stored quaternion over {f0, f15, f16, f17}.  Across
+    the 132 entities that set f15/f16 (the ones that need more than a yaw), the
+    norm of that 4-tuple ranges 0.463 - 1.225, so no component ORDER can make it
+    unit: for a wall the pair (f0, f17) can be (1,0) -> 1.0, (0.707,0) -> 0.707 or
+    (1, 0.707) -> 1.225.  The consistency tests agree - wall-mounted chains
+    (chains_wall_bend_4c_02 / _2c_01, a flat drape whose long axis must end up
+    vertical) satisfy that under every ordering at only 8/15 at best, and the
+    same test on decal normals peaks at 0.483.  Three-component models with W
+    reconstructed (w = sqrt(1 - |xyz|^2)) were tried for all 4x3 choices and are
+    no better (7/15).  So at least one quaternion component is derived, or the
+    four floats are not a quaternion at all (axis-angle, or a different
+    parameterisation) - this is the single remaining question, and it needs
+    either DynamicData.LevelResource.unit_rotation(level, i) dumped from the live
+    game or the loader read out of gauntlet.exe.
+
+  EXPORT NOTES (each confirmed on the shipped data).
+
+  * lambert1 meshes are not render geometry.  A .unit carries extra meshes under
+    Maya's default material name lambert1, and they duplicate or proxy the real
+    one: crypt_wall_4c mesh 1 is byte-identical to mesh 0 (565 verts / 2499
+    indices, same bbox), crypt_entrance_sand_01 carries twelve 24-vertex /
+    36-index boxes (collision volumes), caverock_stalagmites_01 repeats the whole
+    rock.  Corpus-wide 122 lambert1 meshes over 359 units, 97 of them boxes.
+    Rendering them is what makes an exported level look full of duplicates and
+    stray boxes; level_to_glb.py skips them (a unit that is lambert1-only keeps
+    them, which is 6 units).
+
+  * The rotation pivot is the unit's XY centre, with Z anchored at the mesh
+    origin.  Blocks ship corner-origin meshes (crypt_floor_4c_4c spans
+    (0,0)-(8,8)) but the level places them on cell centres, so rotating about the
+    mesh origin slides a block off its cell; rotating about the full 3D centre
+    instead sinks every block by its centre height (most blocks are 4-6 units
+    tall).  Confirmed by counting instances sitting at their authored height:
+    42/3379 with a 3D-centre pivot vs 1155/3379 with the XY-centre pivot.
+    level_to_glb.py --pivot center_xy does this; 'center' and 'origin' remain
+    available for comparison.
+
+  * Editor / logic units are dropped by default: skydome, room_marker,
+    level_editor markers, invisible walls, spawn fields, spawners, deathplane,
+    and procedural_floors/entrance_blocker.  core/editor_slave/units/skydome is a
+    ~1000-unit hemisphere the level scales by ~16, so on its own it spans ~16,000
+    units around a 16-unit room and reduces the real level to a dot.
+
+  The rotation is a standard quaternion, stored split head/tail:
+  (x, y, z, w) = (f60, f64, f0, f68).  The Z angle `2*atan2(z, w)` is
+  scale-invariant and lands on 0/90/180/270 degrees for the authored grid
+  rotations (over 65,953 records: 180 deg x18,010; 270 x8,692; 0 x8,162;
+  90 x5,700); the x/y channels are 0 on ~80% of records and carry out-of-plane
+  tilts on the rest.  The quaternion is not pre-normalised, so consumers must
+  normalise it before use (`level_to_glb.py` and `level_tools.py` do).
+
+  Earlier revisions read this table as 80-byte records and the transform as 3
+  loose floats, which mis-parsed every real level.  The small sample it was
+  derived from round-tripped byte-exactly only because the encoder re-packed
+  whatever the decoder had read.
+
+  Consumer: `scripts/level_to_glb.py` instances each entity's unit at its
+  transform; `resource_tools/level_tools.py` decodes/re-encodes byte-exactly
+  (255/255 real levels).
 
 --------------------------------------------------------------------------------
 9H.3 RESOURCE CONFIG SECTION  (@608 in sample)
@@ -2434,6 +2548,50 @@ Tool: resource_tools/level_tools.py  (selftest: PASS, byte-exact)
     'default'                         -- default layer name
 
 --------------------------------------------------------------------------------
+9H.5 SUB-LEVELS: A LEVEL PLACES OTHER LEVELS
+--------------------------------------------------------------------------------
+
+  A "room" level is not self-contained: it is the DECORATION layer and places
+  its shell as one or more sub-levels.  `room_crypt_floor_01_adventure` (371
+  entities: gold, urns, chests, doors, spawn fields) places
+
+      modules/d01_crypt/room_crypt_floor_01_adventure_template   (its shell)
+      modules/d01_crypt/prefabs/door_walls/prefab_crypt_door_wall_{6c,8c,10c,16c}
+
+  so exporting the level on its own shows a handful of props floating in the
+  dark - the "everything is scattered" symptom.  Composing the sub-levels back
+  in turns that same level into 4,740 entities / 11,344 nodes: a full dungeon.
+
+  The placement table is a run of 56-byte records:
+
+    Offset  Size  Field
+    ------  ----  -----
+      0       8    name_hash      uint64: MurmurHash64 of the sub-level name
+      8      12    position       float32[3]
+     20      16    rotation       float32[4]: quaternion (x, y, z, w), unit
+     36      12    scale          float32[3] (1, 1, 1) in every entry seen
+     48       8    extra          (a float that behaves like a radius, then an int)
+
+  Confirmed on the crypt room: the entries sit at a 0x38 (56-byte) stride, every
+  quaternion reads back unit, and the positions land on the level's own grid
+  (the shell at (84, 60, 7); the four door walls ranged around it).  An entry is
+  recognised by matching each 8-byte window against the catalogue's level name
+  hashes and then requiring a unit quaternion and a sane scale, which keeps
+  false positives out.
+
+  Composition: an entity inside a placed sub-level gets
+  `world = sublevel_TRS x entity_TRS`, so the exporter emits a full column-major
+  glTF `matrix` for those nodes (an unparented entity keeps a readable TRS).
+  `level_to_glb.py` walks this to `--max-depth` (default 3) with an ancestor set
+  for cycle safety; `--max-depth 0` reproduces the old decoration-only output.
+
+  Type hashes (from the catalogue, i.e. what the shipped build actually uses):
+  `unit` = 0xE0A48D0BE9A7453F, `level` = 0x2A690FD348FE9AC5.  (FINDINGS 9H's
+  header quotes 0xE7F01A5344F7C5A3 for "level" - that is the newer-engine hash
+  and it does NOT match this build; the catalogue's column is authoritative.)
+
+--------------------------------------------------------------------------------
+
 9H.4 EDITING NOTES
 --------------------------------------------------------------------------------
 
@@ -2443,6 +2601,87 @@ Tool: resource_tools/level_tools.py  (selftest: PASS, byte-exact)
   To CHANGE sky preset:   needs full config-section parser (TBD)
 
 ================================================================================
+
+9H.6 THE ROTATION IS (x,y,z) = (f15,f16,f17) WITH w RECONSTRUCTED   *** SETTLED ***
+--------------------------------------------------------------------------------
+
+  WHY IT HAD TO BE SETTLED FROM THE ENGINE.  No offline test could decide the
+  rotation: roughly half the records do not form a unit quaternion in any
+  ordering of {f0,f15,f16,f17}, so a correct read and a plausible one are
+  indistinguishable in the file alone (the yaw-vs-neighbour-axis test scored
+  0.635 for every ordering; the decal-normal test 0.483).  The engine knows, so
+  the engine was asked.
+
+  THE CAPTURE.  GauntletModLoader (../GauntletModLoader, src/level_mining.cpp and
+  mods/functions/LevelProbe/script_main.lua) records the engine's own per-unit
+  transforms at runtime; scripts/compare_runtime_units.py joins them to the 72-byte
+  records by TEMPLATE HASH - Unit.debug_name(unit) returns the unit's
+  resource-name hash, which is the value at record offset 32.  Three levels were
+  captured in one session (45, 244 and 7156 units; 147 templates), including 633
+  instances of crypt_wall_4c - the template that was being eyeballed in Blender.
+
+  THE CALL SHAPES COME FROM THE GAME'S OWN LUA, not from inference - the source
+  tree ships in the game folder as Gauntlet-Source-DO_NOT_EDIT/lua:
+
+    LevelAux.units_recursive(level)   a LIST of units
+        managers/dungeon_manager.lua:143, menu/team_preview.lua:58
+    Unit.local_position(unit, 0)      Vector3
+        managers/exploration_manager.lua:149, settings/network_object_settings.lua:4
+    Unit.local_rotation(unit, 0)      Quaternion
+        components/hit_react_component.lua:145
+    Unit.debug_name(unit)             the unit's resource-name hash
+        managers/camera_manager.lua:1078
+    Level.unit_index(level, unit)     the level's own index for a unit
+        flow/flow_callbacks.lua:744
+    Quaternion.to_elements(q)         the four components of a Quaternion
+        managers/vo_manager.lua:357
+
+  Two traps in that list, both of which cost a game crash each: the node index 0
+  in the Unit calls (without it the engine reads a garbage node), and the fact
+  that a Quaternion has no .x/.y/.z/.w fields - to_elements is how the game reads
+  them.  The engine's Lua also runs strict.lua, so an undeclared global anywhere
+  in a callback is a hard error that takes the game down.
+
+  WHAT IS CONFIRMED, WITH THE MEASUREMENTS
+
+    position       = f12,f13,f14 (48, 52, 56)      worst 0.0003 over 45 units
+    (x, y, z)      = f15,f16,f17 (60, 64, 68)      worst 1e-6 over 45 units
+    w              = -sqrt(1 - x*x - y*y - z*z)    100% of the engine's 9 distinct
+                                                   crypt_wall_4c orientations,
+                                                   over 633 instances / 1143 records
+    template_hash  = offset 32                     joins to Unit.debug_name 45/45
+
+  The record stores the quaternion's VECTOR part only.  w is reconstructed and the
+  engine normalises on load - which is why so many records carry a 4-tuple whose
+  norm is not 1 (sqrt(1.5), sqrt(2), ...).  The sign of w is free (q and -q are the
+  same rotation); the negative branch is the fitted one.
+
+  A fitted export of room_crypt_floor3_04_east_wing (scripts/level_to_glb.py, no
+  snapping, no pivot shift) was opened in Blender and reported correct - the
+  confirmation that the offline decode now matches the engine.
+
+  CONFIRMED NEGATIVES (each measured against the engine, so they are not re-treaded)
+
+  * w = f0, i.e. reading the four fields as a quaternion, is WRONG.  It reproduces
+    65.5% of the 1143 crypt_wall_4c records' orientations against 100% for the
+    reconstructed w.  Offset 0 is not a rotation component: it is 0.0 in most
+    records and exactly -1.0 in many, i.e. a flag.
+  * Yaw snapping is not needed.  The earlier snap-to-45/90 workaround only existed
+    to hide the wrong four-component reading.
+  * The mesh pivot is not shifted.  The record's position is the unit's local
+    origin (confirmed to 0.0003), and an exporter option that re-centred each
+    mesh's bounds in XY made the level visibly worse.
+  * LevelResource.unit_position(path, index) does not exist - the LevelResource
+    accessors are path-addressed with a single argument and return one value for
+    the level, and unit_indices(path) is empty even for a loaded room.  The units
+    are not reachable that way; LevelAux.units_recursive is the way in.
+
+  STILL OPEN, and it is not the rotation mapping: about 5 of the 14 distinct
+  orientations the crypt_wall_4c records decode to are not among the 9 the engine's
+  dungeon uses.  One is crypt_wall_4c#2480 in room_crypt_floor3_04_east_wing, which
+  carries (f15,f16,f17) = (-0.2315, 0, 0.9728) with |v| = 1, while the engine has an
+  orientation (0, 0.2315, 0, 0.9728) - the same magnitudes with the components
+  displaced.  That displacement is where to look next.
 9I. ADDITIONAL TYPE HASHES  *** NEW -- May 2026 ***
 ================================================================================
 
@@ -9439,4 +9678,62 @@ FIXPOINT - EXHAUSTED AT EVERY GRANULARITY
   per-technique version and conclude the space is closed.
 
   State after this round: overlay 6,903 names, 906 -> 905 unique unresolved hashes.
+
+==========================================================================
+9H.7  MENU AND LEVEL-LOAD API - driving both from Lua
+==========================================================================
+
+None of this needed disassembly.  The game's own Lua does all of it, so the call
+shapes below are copied from the shipped source rather than inferred, and the names
+are confirmed against the captured runtime API (runtime_lua_api.tsv).  The reason to
+have it written down: putting a level in front of the player without the campaign is
+four calls, and every one of them is already in the game.
+
+  RUNTIME WIDGET CREATION - lua/menu/screen_main_menu.lua:577-607
+    The main menu builds its PC-only "change controller" button while it runs:
+        local button_widget = GUI:load_proto(proto)
+        self.widget:add_child(button_widget)
+    proto = { id, selectable, style = "button_standard", type = "button", text,
+              position = {"left + 180", "bottom - 40"} }.  For button_standard the
+    `text` field alone renders the label - the larger menu buttons add a
+    create_text_shadow_proto child for theirs, but that helper is a file-local of
+    that file and is not reachable from a mod.  Note ScreenMainMenu.widget_clicked
+    dispatches on widget.id and silently ignores ids it has no case for, so a custom
+    id is inert until something handles it.
+
+  LOADING A LEVEL - lua/states/menu_level_daemon.lua:126-157
+    The menu's own background level, loaded on state_menu entry:
+        proxy = WorldManager:new_world_proxy(WORLD_NAME, Application.DISABLE_PHYSICS,
+                                             Application.DISABLE_APEX_CLOTH)
+        proxy:set_use_engine_dt(true)
+        viewport = proxy:create_viewport("menu_level_viewport_3d", "default")
+        viewport:set_shading_environment(level_name)
+        viewport:set_active(true)
+        level = proxy:load_level(LEVEL_NAME, level_name, false)
+        Level.trigger_level_loaded(level)
+    This is the shortest Lua route to "the engine has loaded this level" - no lobby,
+    no progression state, no level-select graph.  It loads into a world that already
+    has a viewport and a camera, which is why it is the cheap way to see a level load.
+
+  REACHING THOSE OBJECTS
+    WorldManager.world_proxies is a plain table keyed by world name; while the menu
+    is up, "menu_level_world" is already in it.  The MenuLevelDaemon instance is NOT a
+    global (lua/boot/game.lua creates it as a local) but it is published at
+    lua/boot/game.lua:420 as menu_manager.menu_level_daemon, and Game is a manager
+    singleton, so Game.menu_manager.menu_level_daemon reaches it.
+
+  STANDING THE DAEMON DOWN
+    MenuLevelDaemon.update begins `if not self.level then return end`.  Clearing
+    `level` is therefore the engine's own "nothing to do here" switch.  This has to
+    happen before swapping the level underneath it: the daemon drives
+    viewport.camera_unit every update, and a level swap may have freed that unit -
+    a stale handle the engine would follow.
+
+  STILL UNCONFIRMED
+    Whether a level swapped in this way renders sensibly from the menu camera.  The
+    menu camera is posed for the menu level's own camera_spline, and a gameplay room
+    has no camera_spline, so the camera is wherever the menu put it.  Not yet
+    established in-game: the mod written to try it (GauntletModLoader,
+    mods/functions/CustomLevels) installs no hooks yet - see that repo's README for
+    the exact state and the log evidence.
 

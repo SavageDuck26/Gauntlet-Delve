@@ -15,21 +15,28 @@ Format (reverse-engineered from binary analysis, Gauntlet Slayer Edition):
         @720: sub-section header (small lookup table)
         @824: lighting / render environment matrices
 
-  ENTITY RECORDS  (80 bytes each, at header[0].offset, count = header[0].count):
-    uint64  entity_id       - unique instance hash (0 = anonymous)
-    uint64  template_hash   - name hash of the unit/prefab template (0 = no template)
-    uint64  flags           - unknown; usually 0
-    float   position_x
-    float   position_y
-    float   position_z
-    float[2]  unknown_0     - extra floats, likely part of rotation/scale encoding
-    float   rot_a           - rotation / basis vector component
-    float   rot_b
-    float   rot_c           - often 1.0 (scale/w component)
-    float   scale           - uniform scale (8.0, 1.0, 64.0 observed)
-    float   scale_w
-    float[2]  unknown_1
-    uint64  tail_hash       - extra hash slot (type unknown; may be component ref)
+  ENTITY RECORDS  (72 bytes each, at header[0].offset, count = header[0].count):
+     Field layout (reverse-engineered; see FINDINGS 9H.2):
+
+     offset  size  field
+     ------  ----  -----
+       0      4    rotation quaternion  z        (float32)
+       4     12    scale                xyz      (float32[3])
+      16      8    unused                         (raw; always 0 in the corpus)
+      24      8    entity_id                      (uint64, per-instance)
+      32      8    template_hash                  (uint64: unit/prefab name hash)
+      40      8    material_override_hash         (uint64; 0 or a material variant)
+      48     12    position             xyz       (float32[3])
+      60      4    rotation quaternion  x        (float32)
+      64      4    rotation quaternion  y        (float32)
+      68      4    rotation quaternion  w        (float32)
+
+     The full rotation quaternion is (x, y, z, w) = (f60, f64, f0, f68); the Z
+     angle `2*atan2(z, w)` lands on 0/90/180/270 degrees for the authored grid
+     rotations.  An earlier revision read this as an 80-byte record with the
+     transform interpreted as 3 loose floats, which mis-parsed every real level
+     (the sample it was derived from round-tripped byte-exactly only because the
+     encoder re-packed whatever the decoder read).
 
   CONFIG/RESOURCE SECTION  (at @608 in sample, variable length):
     Contains resource path references and layer names stored as:
@@ -53,7 +60,7 @@ from typing import Any, Dict, List, Tuple
 
 HEADER_ENTRY_COUNT = 16
 HEADER_SIZE = HEADER_ENTRY_COUNT * 8  # 128 bytes
-ENTITY_RECORD_SIZE = 80
+ENTITY_RECORD_SIZE = 72
 
 
 # ---------------------------------------------------------------------------
@@ -72,77 +79,51 @@ def _encode_header(pairs: List[List[int]]) -> bytes:
     return out
 
 
-def _f32_hex(b: bytes, offset: int) -> str:
-    """Return a float32 from bytes as a compact hex string for lossless storage."""
-    return f"0x{struct.unpack_from('<I', b, offset)[0]:08x}"
-
-
 def _parse_entity(data: bytes) -> Dict[str, Any]:
-    """Decode one 80-byte entity record.
-
-    Entities with template_hash == 0 appear to use the transform region (@24..79)
-    for hash/reference data rather than float transforms.  Those bytes are stored
-    as raw hex to avoid precision loss.  Entities with template_hash != 0 store
-    actual position/rotation/scale floats in that region.
-    """
-    entity_id, template_hash, flags = struct.unpack_from('<QQQ', data, 0)
-    tail_hash = struct.unpack_from('<Q', data, 72)[0]
-    base = {
+    """Decode one 72-byte entity record (layout in FINDINGS 9H.2)."""
+    entity_id,     = struct.unpack_from('<Q', data, 24)
+    template_hash, = struct.unpack_from('<Q', data, 32)
+    material_hash, = struct.unpack_from('<Q', data, 40)
+    pos_x, pos_y, pos_z = struct.unpack_from('<fff', data, 48)
+    scale_x, scale_y, scale_z = struct.unpack_from('<fff', data, 4)
+    rot_z, = struct.unpack_from('<f', data, 0)
+    rot_x, = struct.unpack_from('<f', data, 60)
+    rot_y, = struct.unpack_from('<f', data, 64)
+    rot_w, = struct.unpack_from('<f', data, 68)
+    return {
         "entity_id":     f"0x{entity_id:016x}",
         "template_hash": f"0x{template_hash:016x}",
-        "flags":         f"0x{flags:016x}",
-        "_tail_hash":    f"0x{tail_hash:016x}",
+        "material_hash": f"0x{material_hash:016x}",
+        "position":      [pos_x, pos_y, pos_z],
+        "rotation":      [rot_x, rot_y, rot_z, rot_w],   # quaternion xyzw
+        "scale":         [scale_x, scale_y, scale_z],
+        # bytes 16..23 are unused/unwritten; preserved for a byte-exact re-encode
+        "_unused":       data[16:24].hex(),
     }
-    if template_hash != 0:
-        # Transform layout: pos(xyz), pad(2f), rot(3f), scale(2f), unk(2f)
-        pos_x, pos_y, pos_z = struct.unpack_from('<fff', data, 24)
-        unk0_a, unk0_b      = struct.unpack_from('<ff',  data, 36)
-        rot_a, rot_b, rot_c = struct.unpack_from('<fff', data, 44)
-        scale, scale_w      = struct.unpack_from('<ff',  data, 56)
-        unk1_a, unk1_b      = struct.unpack_from('<ff',  data, 64)
-        base.update({
-            "position":   [pos_x, pos_y, pos_z],
-            "_pad_0":     [_f32_hex(data, 36), _f32_hex(data, 40)],
-            "rotation_abc": [rot_a, rot_b, rot_c],
-            "scale":      scale,
-            "scale_w":    scale_w,
-            "_pad_1":     [_f32_hex(data, 64), _f32_hex(data, 68)],
-        })
-    else:
-        # Not a placed unit - store transform region as raw hex
-        base["_transform_raw"] = data[24:72].hex()
-    return base
 
 
 def _encode_entity(e: Dict[str, Any]) -> bytes:
     entity_id     = int(e["entity_id"], 16)
     template_hash = int(e["template_hash"], 16)
-    flags         = int(e["flags"], 16)
-    tail_hash     = int(e["_tail_hash"], 16)
+    material_hash = int(e["material_hash"], 16)
 
-    header = struct.pack('<QQQ', entity_id, template_hash, flags)
+    pos = e["position"]
+    scale = e["scale"]
+    rot_x, rot_y, rot_z, rot_w = e["rotation"]
 
-    if template_hash != 0:
-        pos    = e["position"]
-        pad0   = [int(v, 16) for v in e["_pad_0"]]
-        rot    = e["rotation_abc"]
-        scale  = e["scale"]
-        scale_w = e["scale_w"]
-        pad1   = [int(v, 16) for v in e["_pad_1"]]
-        transform = (
-            struct.pack('<fff', *pos)
-            + struct.pack('<II', *pad0)
-            + struct.pack('<fff', *rot)
-            + struct.pack('<ff', scale, scale_w)
-            + struct.pack('<II', *pad1)
-        )
-    else:
-        transform = bytes.fromhex(e["_transform_raw"])
-
-    tail = struct.pack('<Q', tail_hash)
-    out = header + transform + tail
+    out = bytearray(ENTITY_RECORD_SIZE)
+    struct.pack_into('<f', out, 0, rot_z)
+    struct.pack_into('<fff', out, 4, *scale)
+    out[16:24] = bytes.fromhex(e.get("_unused", "00" * 8))
+    struct.pack_into('<Q', out, 24, entity_id)
+    struct.pack_into('<Q', out, 32, template_hash)
+    struct.pack_into('<Q', out, 40, material_hash)
+    struct.pack_into('<fff', out, 48, *pos)
+    struct.pack_into('<f', out, 60, rot_x)
+    struct.pack_into('<f', out, 64, rot_y)
+    struct.pack_into('<f', out, 68, rot_w)
     assert len(out) == ENTITY_RECORD_SIZE, f"entity size {len(out)} != {ENTITY_RECORD_SIZE}"
-    return out
+    return bytes(out)
 
 
 def _extract_strings_from_section(blob: bytes) -> List[str]:
@@ -191,10 +172,16 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
 
     # Build raw sections dict (key = offset, value = hex)
     raw_sections: Dict[str, str] = {}
+    ent_end = ent_off + ent_count * ENTITY_RECORD_SIZE
     for idx, off in enumerate(section_offsets):
-        if off == ent_off:
-            continue  # entities section handled above
         next_off = section_offsets[idx + 1] if idx + 1 < len(section_offsets) else len(blob)
+        if off == ent_off:
+            # The entity table is rebuilt from the decoded records; preserve
+            # whatever sits between it and the next section so re-encoding is
+            # byte-exact.
+            if ent_end < next_off:
+                raw_sections[str(ent_end)] = blob[ent_end:next_off].hex()
+            continue
         chunk = blob[off:next_off]
         raw_sections[str(off)] = chunk.hex()
 
@@ -214,8 +201,9 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
         "_resource_strings": list(dict.fromkeys(all_strings)),  # unique, ordered
         "_raw_sections": raw_sections,
         "_note": (
-            "Entity transform layout is partially reverse-engineered. "
-            "position/rotation_abc/scale are editable. "
+            "Entity transform layout (72-byte records, FINDINGS 9H.2): "
+            "position/rotation (quaternion xyzw)/scale are decoded and editable; "
+            "the rotation is not pre-normalised. "
             "_raw_sections preserve all other level data byte-exactly."
         ),
     }
@@ -281,20 +269,30 @@ def encode_level_file(src: str, dst: str | None = None) -> str:
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == 'selftest':
-        sample = 'Exports/samples/level_24abcdf4b1fb4d4a.level'
-        orig = open(sample, 'rb').read()
-        data = decode_level(orig)
-        re_enc = encode_level(data)
-        if orig == re_enc:
-            print("level_tools selftest: PASS (byte-exact)")
-        else:
-            n_diff = sum(1 for a, b in zip(orig, re_enc) if a != b)
-            first = next(i for i in range(min(len(orig), len(re_enc))) if orig[i] != re_enc[i])
-            print(f"level_tools selftest: MISMATCH  "
-                  f"orig={len(orig)} re-enc={len(re_enc)} diff_bytes={n_diff}")
-            print(f"  first diff @ byte {first}: orig=0x{orig[first]:02x} re=0x{re_enc[first]:02x}")
-        print(f"  entities={data['entity_count']}  "
-              f"strings={data['_resource_strings']}")
+        import glob
+        export = os.path.expanduser('~/Documents/Coding/Gauntlet-Export/named')
+        samples = sorted(glob.glob(os.path.join(export, '**', '*.level'), recursive=True))
+        if not samples:
+            print("level_tools selftest: SKIP (no .level samples found)")
+            sys.exit(0)
+        ok = bad = 0
+        for sample in samples:
+            orig = open(sample, 'rb').read()
+            data = decode_level(orig)
+            re_enc = encode_level(data)
+            if orig == re_enc:
+                ok += 1
+            else:
+                bad += 1
+                if bad == 1:
+                    first = next(i for i in range(min(len(orig), len(re_enc)))
+                                 if orig[i] != re_enc[i])
+                    print(f"  MISMATCH {os.path.basename(sample)}: first diff @ {first}")
+        data = decode_level(open(samples[0], 'rb').read())
+        print(f"level_tools selftest: {'PASS' if bad == 0 else 'FAIL'} "
+              f"(byte-exact {ok}/{len(samples)})")
+        print(f"  {os.path.basename(samples[0])}: entities={data['entity_count']}  "
+              f"strings={data['_resource_strings'][:3]}")
     elif len(sys.argv) >= 3 and sys.argv[1] == 'decode':
         decode_level_file(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'encode':

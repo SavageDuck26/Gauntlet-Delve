@@ -18,6 +18,7 @@ it is all versioned here.
 | `resource_name_overlay.json` | recovered resource names (`hash -> name`); the tooling loads this |
 | `bundle_name_overlay.json` | recovered *bundle* names |
 | `bundle_manifest/` | the resource catalogue: `00_file_tree` ... `12_names_by_bundle` |
+| `runtime_units/` | per-level engine capture: one JSON per level - what the running engine reports for each unit's position and rotation. 27 levels, 67,682 units. This is what settled the `.level` rotation decode (FINDINGS §9H.6) and what the manifest is for |
 
 ## Documents
 
@@ -26,6 +27,26 @@ it is all versioned here.
 | `FINDINGS.txt` | the master document - every format finding, in order (the research log) |
 | `CUSTOM_ASSET_LOADING_FINDINGS.md` | the in-game-proven custom unit / material / texture recipe |
 | `DEP/` | archived, superseded modding docs - see [`DEP/README.md`](DEP/README.md) |
+
+## Capturing `runtime_units/` (needs a game run, not a script)
+
+The engine has to be run with the `LevelProbe` mod from `GauntletModLoader`. Loading
+a level makes the engine report that level's units through its own API, and the
+loader writes one JSON per level under `<game>/binaries/levels/`. Copy them here:
+
+```bash
+cp "<game>/binaries/levels/"*.json Data/runtime_units/
+```
+
+Each file is named after the level the engine loaded and holds `index`, `pos`, `rot`
+and `name_hash` per unit - the values are exactly what the engine returned, nothing
+recomputed. `name_hash` is `Unit.debug_name(unit)`, the same value a `.level` carries
+at record offset 32, which is what makes the join possible.
+
+The captured set is the campaign: all crypt / caves / lava rooms and arenas plus the
+campaign's menu and loadout screens. Not captured, because they never came up in
+play: the four `room_crypt_floor3_*_wing` rooms, `room_lava_floor3` and
+`room_lava_floor_10_boss_felix`.
 
 ## Regenerating the catalogue
 

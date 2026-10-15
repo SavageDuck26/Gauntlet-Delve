@@ -23,6 +23,13 @@ Extensions are the type name itself, which is what Bitsquid uses (`.unit`,
 Bodies are written exactly as they sit in the bundle: this is a faithful dump, not a
 conversion.  Some types reference data in the bundle's `.stream` sidecar (large
 textures especially) - phase two (`--dds` and friends) is where those get decoded.
+
+Pass `--convert` to run that phase two in the same command: `convert_export.py` is
+invoked afterwards so the dump also grows the openable `view/` trees -
+`view/png` (.texture), `view/mp3` (.ugg), `view/glb` (.unit) and `view/level`
+(.level instances its units).
+
+    python3 export_all_resources.py --dds-view --convert --out ~/Documents/Coding/Gauntlet-Export
 """
 import argparse
 import collections
@@ -151,6 +158,21 @@ def build_view_tree(out):
     print(f"view/dds         : {made:,} hardlinked, {skipped:,} not a DDS", flush=True)
 
 
+def run_conversions(out, jobs=None):
+    """Phase two: run convert_export.py so `view/` gets every openable type.
+
+    `view/png` (.texture -> PNG), `view/mp3` (.ugg -> MP3), `view/glb`
+    (.unit -> glTF, plus its `.bones`) and `view/level` (.level -> glTF with its
+    units instanced).  Failures inside the converter are counted, not fatal.
+    """
+    import subprocess
+    cmd = [sys.executable, str(HERE / "convert_export.py"), "--export", str(out)]
+    if jobs:
+        cmd += ["--jobs", str(jobs)]
+    print(f"\nconverting       : {' '.join(cmd[1:])}", flush=True)
+    subprocess.run(cmd, check=False)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -171,6 +193,10 @@ def main():
                          "really is a DDS, so it opens in any image viewer at no cost")
     ap.add_argument("--view-only", action="store_true",
                     help="skip the dump and only (re)build the view tree")
+    ap.add_argument("--convert", action="store_true",
+                    help="after the dump, run convert_export.py so view/ also gets "
+                         "png (texture), mp3 (ugg), glb (unit) and level trees")
+    ap.add_argument("--jobs", type=int, help="parallel conversions for --convert")
     args = ap.parse_args()
 
     out = pathlib.Path(args.out).expanduser()
@@ -178,6 +204,8 @@ def main():
 
     if args.view_only:
         build_view_tree(out)
+        if args.convert:
+            run_conversions(out, args.jobs)
         return
 
     cat = catalogue_rows()
@@ -280,6 +308,9 @@ def main():
 
     if args.dds_view:
         build_view_tree(out)
+
+    if args.convert:
+        run_conversions(out, args.jobs)
 
 
 if __name__ == "__main__":

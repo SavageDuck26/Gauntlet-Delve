@@ -4,14 +4,16 @@
     view/png/<resource path>.png     .texture is a DDS blob          -> PNG
     view/mp3/<resource path>.mp3     .ugg is 16 bytes + an Ogg stream -> MP3
     view/glb/<resource path>.glb     .unit                           -> glTF binary
+    view/level/<resource path>.glb   .level  (units instanced)       -> glTF binary
     view/<kind>/_unresolved/<hash>.*  the unnamed ones too, so they can be looked at
 
-The three formats, all verified: every `.texture` body starts with `DDS `; every
+The formats, all verified: every `.texture` body starts with `DDS `; every
 `.ugg` starts with a 4-byte size, 12 zero bytes, then `OggS` (so the Ogg stream is at
-offset 16); and `.unit` is handled by `unit_to_gltf.py`, which uses the companion
-`.bones` file of the same name when it exists.
+offset 16); `.unit` is handled by `unit_to_gltf.py`, which uses the companion
+`.bones` file of the same name when it exists; and `.level` is handled by
+`level_to_glb.py`, which instances the units each entity places.
 
-    python3 convert_export.py                     # all three kinds
+    python3 convert_export.py                     # every kind
     python3 convert_export.py --kind png          # one kind (repeatable)
     python3 convert_export.py --kind glb --limit 20
     python3 convert_export.py --jobs 8 --overwrite
@@ -82,7 +84,16 @@ def convert_mp3(src, dst, tmp):
 
 def convert_glb(src, dst, _tmp):
     try:
+        import struct
         import unit_to_gltf
+        # A unit can legitimately carry no geometry (logic-only units: player, the
+        # blood decals, carry_lights, ceiling_collisionbox).  Those are a skip, not
+        # a failure - there is nothing to write.
+        head = src.open("rb").read(8)
+        if (len(head) == 8
+                and struct.unpack_from("<I", head, 0)[0] == 0x00010090
+                and struct.unpack_from("<I", head, 4)[0] == 0):
+            return "skip: unit has no mesh"
         bones = src.with_suffix(".bones")
         dst.parent.mkdir(parents=True, exist_ok=True)
         unit_to_gltf.convert_unit_to_gltf(str(src),
@@ -93,18 +104,31 @@ def convert_glb(src, dst, _tmp):
         return f"{type(exc).__name__}: {exc}"
 
 
+def convert_level(src, dst, _tmp):
+    try:
+        import level_to_glb
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        level_to_glb.convert_level_to_glb(str(src), str(dst))
+        return None if dst.exists() else "no output written"
+    except Exception as exc:                                             # noqa: BLE001
+        return f"{type(exc).__name__}: {exc}"
+
+
 KINDS = {
-    "png": (".texture", convert_png),
-    "mp3": (".ugg", convert_mp3),
-    "glb": (".unit", convert_glb),
+    # kind: (source extension, converter, output extension)
+    "png": (".texture", convert_png, "png"),
+    "mp3": (".ugg", convert_mp3, "mp3"),
+    "glb": (".unit", convert_glb, "glb"),
+    "level": (".level", convert_level, "glb"),
 }
 
 
 def sources(kind):
     ext = KINDS[kind][0]
+    out_ext = KINDS[kind][2]
     for area in ("named", "unresolved"):
         for src in sorted((EXPORT / area).rglob(f"*{ext}")):
-            rel = src.relative_to(EXPORT).with_suffix("." + kind)
+            rel = src.relative_to(EXPORT).with_suffix("." + out_ext)
             if area == "unresolved":
                 rel = pathlib.Path("_unresolved") / rel.relative_to("unresolved")
             yield src, VIEW / kind / rel
@@ -135,7 +159,7 @@ def main():
                 if args.overwrite or not d.exists()]
         if args.limit:
             todo = todo[:args.limit]
-        done = failed = 0
+        done = failed = skipped = 0
         errors = []
         print(f"\n=== {kind}: {len(todo):,} to convert ===", flush=True)
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -145,16 +169,19 @@ def main():
                 jobs = {pool.submit(fn, s, d, tmp): s for s, d in todo}
                 for i, job in enumerate(futures.as_completed(jobs), 1):
                     err = job.result()
-                    if err:
+                    if err is None:
+                        done += 1
+                    elif isinstance(err, str) and err.startswith("skip:"):
+                        skipped += 1
+                    else:
                         failed += 1
                         if len(errors) < 12:
                             errors.append((jobs[job], err))
-                    else:
-                        done += 1
                     if i % 100 == 0 or i == len(todo):
-                        print(f"  {i:,}/{len(todo):,}  ok {done:,}  failed {failed:,}",
-                              flush=True)
-        print(f"  {kind}: {done:,} written, {failed:,} failed -> {VIEW / kind}", flush=True)
+                        print(f"  {i:,}/{len(todo):,}  ok {done:,}  skipped {skipped:,}"
+                              f"  failed {failed:,}", flush=True)
+        print(f"  {kind}: {done:,} written, {skipped:,} skipped, {failed:,} failed"
+              f" -> {VIEW / kind}", flush=True)
         for src, err in errors:
             print(f"    ! {src.relative_to(EXPORT)}: {err.splitlines()[0][:110]}", flush=True)
 

@@ -70,8 +70,8 @@ and the scratch `_check_db.py`, `_check_entry_table.py`, `_compare_db.py`,
 
 | script | purpose |
 | --- | --- |
-| `export_all_resources.py` | Walks every bundle and writes each resource body to a file named after it, with the type name as its extension (`named/<resource path>.unit`, `named/lua/managers/x.lua`, ...). Rows we could not name go to `unresolved/<type>/<hash>.<ext>`, one file per distinct hash - the gaps, kept visible. Also writes `index.tsv` (every catalogue row: status, type, name, hash, package, size, bundle, index, path) and `summary.txt`. `--dds-view` adds `view/dds/**`, a hardlink per texture whose body really is a DDS, so image viewers open them at no disk cost. `--only TYPE`, `--limit N`, `--named-only`, `--view-only`. |
-| `convert_export.py` | Turns the dump into types you can just open: `view/png/**` (a `.texture` body is a DDS blob), `view/mp3/**` (`.ugg` is 16 bytes then an Ogg stream, through ffmpeg) and `view/glb/**` (`.unit` -> glTF, using its companion `.bones` when it has one). Unnamed rows land under `view/<kind>/_unresolved/`. Failures are counted, not fatal - cubemaps and BC6/BC7 defeat Pillow. Each job now gets its **own** temp file: `named/elias/*/audio/` is full of identical stems (`1_0_1.ugg`, `completed.ugg`, ...) and a stem-keyed temp path let parallel workers clobber and unlink each other's stream, which silently lost 10 of the 144 tracks on a clean rebuild. |
+| `export_all_resources.py` | Walks every bundle and writes each resource body to a file named after it, with the type name as its extension (`named/<resource path>.unit`, `named/lua/managers/x.lua`, ...). Rows we could not name go to `unresolved/<type>/<hash>.<ext>`, one file per distinct hash - the gaps, kept visible. Also writes `index.tsv` (every catalogue row: status, type, name, hash, package, size, bundle, index, path) and `summary.txt`. `--dds-view` adds `view/dds/**`, a hardlink per texture whose body really is a DDS, so image viewers open them at no disk cost. `--convert` then runs `convert_export.py` in the same command, so the dump also grows the openable `view/` trees. `--only TYPE`, `--limit N`, `--named-only`, `--view-only`, `--jobs N`. |
+| `convert_export.py` | Turns the dump into types you can just open: `view/png/**` (a `.texture` body is a DDS blob), `view/mp3/**` (`.ugg` is 16 bytes then an Ogg stream, through ffmpeg), `view/glb/**` (`.unit` -> glTF, using its companion `.bones` when it has one) and `view/level/**` (`.level` -> glTF, via `level_to_glb.py`: the scene is composed by walking the level's placed sub-levels - a room level is only its decoration layer and places its shell as `..._template` plus door-wall prefabs, so merging them turns a scatter of props into the full dungeon - editor/logic units such as the ~16,000-unit skydome are dropped, and the record's region-box field is not applied as a scale; see `--max-depth` / `--include-helpers` / `--apply-scale` on that tool). Unnamed rows land under `view/<kind>/_unresolved/`. The output extension is the kind's own, so `level` writes `.glb` too. Failures are counted, not fatal - cubemaps and BC6/BC7 defeat Pillow. A unit with `mesh_count == 0` (the logic-only `player`, blood decals, `carry_lights`, `ceiling_collisionbox`) is counted as **skipped**, not failed: there is no geometry to write. Each job gets its **own** temp file: `named/elias/*/audio/` is full of identical stems (`1_0_1.ugg`, `completed.ugg`, ...) and a stem-keyed temp path let parallel workers clobber and unlink each other's stream, which silently lost 10 of the 144 tracks on a clean rebuild. |
 
 What the dump actually contains, learned the hard way: `.texture` bodies begin with
 `DDS `, so they are real DDS files; `.lua` bodies are **LuaJIT bytecode** behind a
@@ -88,7 +88,45 @@ per (type, hash) pair).
 
 `extract_all_textures.py`, `extract_textures.py`, `extract_textures_named.py`,
 `extract_materials.py`, `extract_resource_samples.py`, `decode_materials.py`,
-`decode_pkg.py`, `batch_export_glb.py`, `gauntlet_unit_parser.py`.
+`decode_pkg.py`, `batch_export_glb.py`, `gauntlet_unit_parser.py`,
+`level_to_glb.py`, `compare_runtime_units.py`.
+
+`level_to_glb.py` exports a whole `.level` to one `.glb`: it decodes the 72-byte
+entity table, resolves each entity's template hash to a `.unit`, builds each
+unique unit's mesh once, then drops one glTF node per placed entity carrying its
+position/rotation (FINDINGS 9H.2 and 9H.6).  Single file, a directory, or
+`--export <root>` (every `named/**/*.level`); `selftest` checks the 371-entity
+crypt room.
+
+The rotation decode is **settled against the running engine** (FINDINGS 9H.6):
+the record stores the quaternion's vector part, `(x,y,z) = (f15,f16,f17)`, and
+`w = -sqrt(1 - |v|^2)` is reconstructed.  Offset 0 is not a component.  That
+reproduces 100% of the engine's `crypt_wall_4c` orientations over 633 captured
+instances; the old four-component reading managed 65%.  `--pivot`, `--rotation-snap`,
+`--yaw-scale`, `--yaw-offset`, `--swap-zw` and `--apply-scale` are therefore
+**diagnostic only** - they existed to work around the wrong reading, and a fitted
+export with none of them was verified correct in Blender by eye.
+
+The captures themselves are versioned in `Data/runtime_units/` - one JSON per level,
+27 levels / 67,682 units, straight from the engine, nothing recomputed. That is the
+manifest; the combined `runtime_units.tsv` has the same fields per unit but merges
+levels by the engine's index.
+
+`compare_runtime_units.py <level> <runtime_units.tsv>` joins the engine's runtime
+units to a `.level`'s 72-byte records.  The join key is the **template hash**: 
+`Unit.debug_name(unit)` returns the unit's resource-name hash, which is the value
+at record offset 32.  It prints the worst position disagreement and, when the
+capture carries rotations, the engine's rotation beside each record's fields -
+that comparison is what settled 9H.6.
+
+The engine side of that capture lives in the loader repo:
+`../GauntletModLoader/src/level_mining.cpp` and
+`../GauntletModLoader/mods/functions/LevelProbe/script_main.lua`.  Its call shapes
+are copied from the game's own Lua (`Gauntlet-Source-DO_NOT_EDIT/lua`), not
+inferred - `LevelAux.units_recursive(level)` for the unit list,
+`Unit.local_position(unit, 0)` / `Unit.local_rotation(unit, 0)` for transforms (the
+node index 0 is required), `Quaternion.to_elements(q)` for a quaternion's four
+components, and `Level.unit_index(level, unit)` for the level's own numbering.
 
 ## Modding / packaging
 
@@ -199,9 +237,18 @@ python3 ../hashcracker/tools/build_targets.py      # catalogue         -> target
 The two exports are the other half of the same idea:
 
 ```bash
+# one command: dump + decode every openable view (dds hardlinks, png, mp3, glb, level)
+python3 export_all_resources.py --dds-view --convert --jobs 8
+
+# or the two steps on their own
 python3 export_all_resources.py --dds-view         # -> <the export dir you pass>
-python3 convert_export.py --jobs 8 --overwrite     # -> that folder's view/{png,mp3,glb}
+python3 convert_export.py --jobs 8 --overwrite     # -> that folder's view/{png,mp3,glb,level}
 ```
+
+Current state of the view tree: **478** dds, **579** png, **7** mp3, **359** unit
+glb (`view/glb`) and **256** level glb (`view/level`; 151,948 nodes, 6.28 M
+triangles). The 7 `.unit` files with no `.glb` are genuinely `mesh_count == 0`
+(logic-only units).
 
 `export_all_resources.py` skips files that already exist, so a re-run only writes what a
 new name has changed; delete the folder (or move it aside) for a genuinely clean tree,

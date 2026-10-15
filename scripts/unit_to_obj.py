@@ -43,10 +43,10 @@ A .unit file in older Stingray engines (like Gauntlet uses) contains:
    
    g) SHAPES/SUBMESHES
       - uint32: shape_count
-      - For each shape:
+      - For each shape (16 bytes):
         - uint32: material_index
-        - uint32: index_offset (starting index in buffer)
-        - uint32: index_count
+        - uint32: index_offset (TRIANGLE offset - multiplied by 3 on parse)
+        - uint32: index_count (TRIANGLE count - multiplied by 3 on parse)
         - uint32: shape_index
    
    h) BOUNDING BOX (28 bytes = 7 floats)
@@ -555,10 +555,21 @@ class UnitParser:
             shape_idx = struct.unpack_from('<I', data, offset)[0]
             offset += 4
             
-            shape = Shape(mat_idx, idx_off, idx_cnt, shape_idx)
+            # The shape table stores its ranges in TRIANGLES, not indices.
+            # Verified over the whole corpus (802 meshes): every mesh satisfies
+            #   sum(shape.index_count) * 3 == total_index_count
+            # and multi-shape meshes only tile the buffer when the counts (and
+            # offsets) are read as triangle units.  Treating them as index ranges
+            # left each shape covering exactly one third of the buffer, so the
+            # coverage pass added a synthetic shape starting mid-triangle and the
+            # exporters emitted misaligned, distorted triangles for the other two
+            # thirds.  Convert to index units once, here, so every consumer
+            # (glTF/OBJ writers, coverage check) slices the index buffer correctly.
+            shape = Shape(mat_idx, idx_off * 3, idx_cnt * 3, shape_idx)
             mesh.shapes.append(shape)
-            self.log(f"  Shape {j}: material={mat_idx}, offset={idx_off}, "
-                    f"count={idx_cnt}, index={shape_idx}")
+            self.log(f"  Shape {j}: material={mat_idx}, tri_offset={idx_off}, "
+                    f"tri_count={idx_cnt} -> index_offset={idx_off * 3}, "
+                    f"index_count={idx_cnt * 3}, index={shape_idx}")
         
         # Check for coverage gaps
         self._check_index_coverage(mesh, total_index_count)
