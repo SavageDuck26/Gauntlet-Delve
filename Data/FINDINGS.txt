@@ -12934,3 +12934,43 @@ THE FIX IN THE TOOLKIT (2026-10-19).
 NOTE FOR THE NEXT BUILD: the level deployed at 11:26 still contains the broken road and chains
 (both written before this guard existed).  The guard now stops a rebuild until the two objects are
 split, so the split is a prerequisite for the next deploy.
+
+9H.40 THE AUTHOR SPLIT THE TWO BIG MESHES, AND A NAMING BUG FELL OUT  *** Oct 2026 ***
+
+The route taken was the one 9H.39 recommended - split in Blender, each piece its own unit:
+
+    Elevator Chains   968 objects, 60 verts each (77 exported)  -> ONE unit placed 968 times
+    Spiral Road       7 objects, 3,101-5,399 verts (9,506-16,608 exported) -> 7 units, 7 placements
+
+So every shipped mesh is now under 16,608 verts - the same order as the game's own largest (15,972)
+- and all 15 units use 16-bit indices (checked on the deployed bytes: 15 of 15 blocks, 2 bytes each).
+
+MEASURED RESULT (deployed 2026-10-19 11:41).
+    996 mesh nodes -> 984 placed, 0 dropped, 12 ignored (the throwaway markers)
+    level 986 records / 83,456 B   (968 chain links + 3 floors + 7 road pieces + 6 others + ours)
+    rotation + orientation checks: 984 placements, worst 0.000 deg
+    check_deployed_placement.py: 984 of 984 at 0.0000 deg
+    bundle: 4.39 MB packed / 7.32 MB unpacked   (was 7.95 / 17.24 MB)
+  The chain unit alone went from 5,568,816 B (one 74,536-vert mesh, 32-bit indices) to 5,912 B (a
+  77-vert link, 16-bit) - 940x smaller - because 968 instances now reuse one tiny unit instead of one
+  giant mesh being drawn as a chain.
+
+THE NAMING BUG THIS EXPOSED (fixed).  `build_own_units.base_name` stripped a trailing dot-suffix
+whenever it STARTED with a digit, while `level_from_glb.base_name` required it to be ALL digits.  The
+author's road pieces are named `Spiral Road.002safdasdf`, `.003745sdgd`, `.004fdghdfghf`,
+`.005jfgjr`, `.006fdhdfhdfgh` - five DIFFERENT shapes whose suffixes start with a digit - so the unit
+builder collapsed all five into one `Spiral Road` base and built it from the first piece's mesh,
+while the level converter (all-digits rule) saw five separate names.  The two MUST agree or the level
+references units the builder never built: they now both strip only Blender's own purely-numeric
+suffix (`Floor.001`, `Floor.003#7` -> `Floor`), verified on eight name shapes.  `Spiral RoadFirst`
+and `Spiral RoadLast` were always distinct (no dot) - and note the tool would have kept any name
+that has no digits, so a tidier naming scheme needs no code at all.
+
+HOUSEKEEPING: three unit files the config no longer references (the old crane 2.3 MB, the old
+157,180-vert spiral_road 10.3 MB and the old stair) were removed from arena_mod/units/.  They were
+never shipped - the bundle builder packages the config's `resources` list (measured: 17 resources =
+package + level + 15 units, no stale entries).
+
+STILL OPEN: the `none`/physics bisect (B: lights/light, C: strip:) - every role is still on the
+proven floor template (step A) - and the walking question, which needs the ActorProbe grid on a floor
+tile in game.

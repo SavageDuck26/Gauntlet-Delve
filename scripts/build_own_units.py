@@ -93,11 +93,19 @@ def accessor(js, bin0, index, kind):
 
 
 def base_name(name: str) -> str:
-    """`Floor.001`, `Stair#12`, `Floor.003#7` all reduce to the unit's base name."""
+    """`Floor.001`, `Stair#12`, `Floor.003#7` all reduce to the unit's base name.
+
+    ONLY A PURELY NUMERIC TAIL IS BLENDER'S DUPLICATE SUFFIX, and this is the same rule
+    level_from_glb.base_name applies - the two MUST agree, or the level resolves one base name
+    while the unit builder builds another.  They disagreed once: this one stripped any tail
+    STARTING with a digit, so the author's road pieces (`Spiral Road.002safdasdf`, `.003745sdgd`,
+    ...) collapsed into a single `Spiral Road` unit built from the first piece's mesh, and seven
+    different shapes would all have rendered as that one.
+    """
     for sep in ('#', '.'):
         if sep in name:
             head, tail = name.split(sep, 1)
-            if sep == '.' and not tail[:1].isdigit():
+            if sep == '.' and not tail.isdigit():
                 continue
             name = head
     return name.strip()
