@@ -314,6 +314,24 @@ def accessor_vec3(js: dict, index: int) -> List[Tuple[float, float, float]]:
     return out
 
 
+# NODES THE BUILD IGNORES BY NAME.
+#
+# A scene legitimately carries objects that are not part of the level: working copies, reference
+# geometry, scratch parts the author is still assembling.  A node whose name contains one of these
+# substrings - case-insensitively - is not placed, does not vote in the frame measurements
+# (detect_vertical / detect_mesh_up / detect_world_up / world_bounds), never becomes one of our
+# units (build_own_units.py imports `ignored_node`), and is reported as IGNORED rather than as an
+# unresolved unit name.  `--ignore SUBSTR` adds to the list, which defaults to the author's own
+# scratch marker.
+IGNORE_NAME_SUBSTRINGS: List[str] = ['throwaway']
+
+
+def ignored_node(name: str) -> bool:
+    """True when a node's name marks it as not part of the build (see IGNORE_NAME_SUBSTRINGS)."""
+    lowered = (name or '').lower()
+    return any(s.lower() in lowered for s in IGNORE_NAME_SUBSTRINGS)
+
+
 def base_name(node_name: str) -> str:
     """Strip Blender's suffixes.  Both can be present, in either role: `unit#326.001`."""
     name = node_name
@@ -378,6 +396,8 @@ def world_bounds(js: dict) -> Tuple[List[float], List[float]]:
     for node in js['nodes']:
         if 'mesh' not in node:
             continue
+        if ignored_node(node.get('name', '')):
+            continue
         t = node.get('translation', [0.0, 0.0, 0.0])
         q = tuple(node.get('rotation', [0.0, 0.0, 0.0, 1.0]))
         s = node.get('scale', [1.0, 1.0, 1.0])
@@ -405,6 +425,8 @@ def detect_vertical(js: dict, by_base: Dict[str, List[str]]) -> Tuple[int, str]:
     groups: Dict[str, List[List[float]]] = {}
     for node in js['nodes']:
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
             continue
         base = base_name(node.get('name', ''))
         if resolve(base, by_base) is None:
@@ -439,6 +461,8 @@ def flat_meshes(js: dict, by_base: Dict[str, List[str]]) -> List[Tuple[str, int]
     out: List[Tuple[str, int]] = []
     for node in js['nodes']:
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
             continue
         base = base_name(node.get('name', ''))
         if resolve(base, by_base) is None:
@@ -531,6 +555,8 @@ def detect_world_up(js: dict, by_base: Dict[str, List[str]],
     votes: Dict[int, int] = {}
     for node in js['nodes']:
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
             continue
         base = base_name(node.get('name', ''))
         if resolve(base, by_base) is None:
@@ -1112,7 +1138,8 @@ def baked_nodes(js: dict) -> bool:
     there is no per-unit rotation left to read - and the engine needs one, because it rotates
     ITS OWN unit mesh by the record's rotation (FINDINGS 9H.22.3).
     """
-    mesh_nodes = [n for n in js['nodes'] if 'mesh' in n]
+    mesh_nodes = [n for n in js['nodes']
+                  if 'mesh' in n and not ignored_node(n.get('name', ''))]
     if not mesh_nodes:
         return False
     return not any(k in n for n in mesh_nodes
@@ -1138,6 +1165,8 @@ def canonical_meshes(references) -> Dict[str, List[dict]]:
         js = read_glb(Path(reference))
         for node in js['nodes']:
             if 'mesh' not in node:
+                continue
+            if ignored_node(node.get('name', '')):
                 continue
             kind = resolve(base_name(node.get('name', '')), by)
             if kind is None:
@@ -1315,6 +1344,8 @@ def recover_baked(js: dict, by_base, deg_pos: int, reference, branch: bool = Tru
              'proxy_kinds': {}, 'exact_idx': set()}
     for idx, node in enumerate(js['nodes']):
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
             continue
         kind = resolve(base_name(node.get('name', '')), by_base)
         parts = ref.get(kind) if kind else None
@@ -1567,6 +1598,12 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
 
     placed: List[dict] = []
     unresolved: Dict[str, int] = {}
+    # NODES THE AUTHOR MARKED AS NOT PART OF THE BUILD (an object whose name carries one of
+    # IGNORE_NAME_SUBSTRINGS - working copies, scratch parts).  They are skipped everywhere and
+    # reported as IGNORED, not as an unresolved unit name: the difference matters, because an
+    # unresolved name is a build error to fix while an ignored one is a decision already made.
+    ignored_names: List[str] = []
+
     # THE ORIENTATION CHECK (FINDINGS 9H.29).  A record's rotation must reproduce the orientation
     # the node gives its mesh in the ENGINE'S frame: F * R_node * F^-1, F being the file -> engine
     # change the positions get.  It is checked for every placement that is COMPUTED from a node
@@ -1577,6 +1614,9 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
     orient = {'n': 0, 'worst': 0.0, 'bad': [], 'skipped': 0}
     for idx, node in enumerate(js['nodes']):
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
+            ignored_names.append(node.get('name', ''))
             continue
         base = base_name(node.get('name', ''))
         path = resolve(base, by_base)
@@ -1652,9 +1692,15 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
     lo, hi = world_bounds(js)
     extent = [hi[i] - lo[i] for i in range(3)]
     vertical = extent.index(min(extent))
-    print('  nodes  : %d with a mesh (%d placed, %d dropped)' % (
+    print('  nodes  : %d with a mesh (%d placed, %d dropped%s)' % (
         sum(1 for n in js['nodes'] if 'mesh' in n), len(placed),
-        sum(unresolved.values())))
+        sum(unresolved.values()),
+        (', %d ignored' % len(ignored_names)) if ignored_names else ''))
+    if ignored_names:
+        shown = ', '.join(sorted(ignored_names)[:4]) + (' ...' if len(ignored_names) > 4 else '')
+        print('  ignored: %d node(s) whose name carries %s - NOT placed, and excluded from the'
+              ' up-axis measurements: %s'
+              % (len(ignored_names), '/'.join(repr(s) for s in IGNORE_NAME_SUBSTRINGS), shown))
     if unresolved:
         print('  UNRESOLVED unit names (dropped - fix these before shipping):')
         for b, c in sorted(unresolved.items(), key=lambda kv: -kv[1]):
@@ -2145,6 +2191,12 @@ def main() -> int:
                     help='a unit the author ships themselves: a node whose base name is BASE '
                          'resolves to this unit path instead of a game unit.  Repeatable.  See '
                          'scripts/build_own_units.py (FINDINGS 9H.28).')
+    ap.add_argument('--ignore', action='append', default=None, metavar='SUBSTR',
+                    help='a node whose NAME contains SUBSTR (case-insensitive) is not part of '
+                         'this build: it is not placed, does not vote on the up axis, and never '
+                         'becomes one of our units.  Repeatable; the default list is %r (the '
+                         'author\'s scratch marker).  build_own_units.py honours the same list.'
+                         % (IGNORE_NAME_SUBSTRINGS,))
     ap.add_argument('--mesh-frame', choices=('auto', 'y-up', 'engine'), default='auto',
                     help='which frame the MESH DATA of the export is in, OVERRIDING what the '
                          'flat meshes\' own normals say.  auto (the default) measures it, and '
@@ -2172,6 +2224,12 @@ def main() -> int:
         spawn_at = tuple(float(v) for v in a.spawn_at.replace(' ', '').split(','))
         if len(spawn_at) != 3:
             raise SystemExit('--spawn-at wants X,Y,Z')
+    for spec in (a.ignore or []):
+        if spec.strip() and spec.strip().lower() not in [s.lower() for s in IGNORE_NAME_SUBSTRINGS]:
+            IGNORE_NAME_SUBSTRINGS.append(spec.strip())
+    if IGNORE_NAME_SUBSTRINGS:
+        print('ignoring nodes whose name contains: %s'
+              % ', '.join(repr(s) for s in IGNORE_NAME_SUBSTRINGS))
     for spec in (a.own_unit or []):
         if '=' not in spec:
             raise SystemExit('--own-unit wants BASE=PATH, got %r' % spec)

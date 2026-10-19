@@ -12695,3 +12695,57 @@ STILL OPEN, LABELLED:
     multiset under either reading.  What the fix guarantees is that a unit's scale, like its w, is
     written where the engine's pointer arithmetic reads it.  CODE-MEASURED, not corpus-measured.
   * The MATERIALS (9H.35) and COLLISION (9H.31) issues are unchanged.
+
+9H.37 IGNORED-BY-NAME NODES, AND A MIXED-EXPORT READING THAT WAS THE TOOL'S OWN FAULT
+      *** Oct 2026 ***  -- the scratch parts voted on the up axis, and a circular check said OK
+
+WHAT CHANGED IN THE KIT.  A scene legitimately carries objects that are not part of the level:
+working copies, reference geometry, scratch parts being assembled.  level_from_glb now ignores any
+node whose NAME contains one of IGNORE_NAME_SUBSTRINGS (default ['throwaway'], case-insensitive;
+`--ignore SUBSTR` adds more) - it is not placed, does not vote in the up-axis measurements, and
+never becomes one of our units (build_own_units.py imports `ignored_node`).  It is reported as
+IGNORED, separately from an unresolved unit name, because one is a decision already made and the
+other is a build error.
+
+THE TRAP THE AUTHOR'S SCENE SPRANG (and the reason the rule matters for more than tidiness).  The
+10:47 export carried 34 mesh nodes, 23 of them the author's scratch parts, and the build printed
+
+    up  : placements: 22 flat mesh(es) point +Z in the world  -> positions read as-is
+    up  : meshes    : 3 flat mesh normal(s) average to +Y     -> rotations composed with -90
+    *** MIXED EXPORT ... if a build looks wrong in game, this line is the first thing to re-check
+    orient : 34 placement(s) NOT checked - recovered from geometry, or the export is mixed
+
+That reading was WRONG.  The export was an ordinary Y-up one: the author's Floor.006 sits in
+Blender at (8.026, -0.013, -0.185) and the file carries (8.026, -0.185, 0.013) = (bx, bz, -by),
+i.e. export_yup=True was applied, and its mesh normal is +Y.  detect_world_up had counted every
+flat mesh whose normal votes - including 22 panels whose NODE ROTATION turns them upright - and
+those outvoted the three floors, flipping the layout half to "engine-space" and manufacturing a
+mixed pair.  With the scratch parts excluded from the vote (this finding's rule), the same scene
+detects +Y, the pair is the self-consistent one (deg_pos=+90, deg_mesh=-90), and the orientation
+check RUNS and passes at 0.000 deg.
+
+WHY IT IS WORTH RECORDING.  For a mixed export the tool SKIPS its node-vs-record orientation check
+(that check can only express F * R_node * F^-1), so a wrong pair ships silently - the 9H.22
+failure mode.  So a mixed reading means VERIFY, never "handled".
+
+AND THE VERIFICATION I FIRST USED WAS CIRCULAR.  "Which deg_pos makes the record equal
+to_engine_position(node)?" answered "0.00000" - but the record had been BUILT with that deg_pos, so
+the test only confirmed what the build had already done.  A frame pair can only be confirmed
+against something outside the tool:
+  * the flat meshes' OWN normals (a floor tile's normal is the file's up) plus the exporter's
+    setting, which for `blender_export_glb.py` is export_yup=True;
+  * THE BLENDER OBJECTS THEMSELVES - the engine frame IS the Blender frame, so a record's position
+    and rotation must equal the object's world transform, R_x(90) . R_node . R_x(-90) reducing to
+    R_blender exactly.  Measured on the new build, all 11 placements: position 0.000000, rotation
+    worst 0.0212 deg (float32 noise);
+  * the engine's own runtime capture, after loading the level.
+
+THE NEW SCENE (author's 10:57 blend, built and deployed 11:01).  24 objects: 11 real + 12
+`throwaway*` + `.MIDPOINT` (an EMPTY).  All scales applied by the author (every node is 1,1,1 now,
+so no entity-scale write - the crash history of 9H.34 does not apply), `Spiral Road` has geometry
+now, and the names are one per shape.  Result: 23 mesh nodes -> 11 placed, 0 dropped, 12 ignored;
+level 1724 B / 13 records; bundle 7.87 MB packed (17.24 MB unpacked, 54.4%): the two big units are
+spiral_road (10.27 MB) and elevator_chains (5.57 MB), both far above the old crane's 2.3 MB.  All
+nine units wear the floor template as a PLACEHOLDER (physics + material come from the trailer) -
+replace per kind when the real template is chosen.  Extent 65 x 75 x 62 units, which is much larger
+than the hub room module it ships as.

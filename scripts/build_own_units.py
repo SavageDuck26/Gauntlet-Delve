@@ -51,6 +51,10 @@ sys.path.insert(0, str(HERE))
 from gltf_to_unit import encode_unit                       # noqa: E402
 from glb_to_template_unit import (read_u32, splice_into_template,   # noqa: E402
                                   unit_mesh_end, UNIT_SIGNATURE)
+# The SAME name filter the level converter uses (level_from_glb.IGNORE_NAME_SUBSTRINGS /
+# ignored_node): a node the author marked as scratch must not be placed AND must not become one
+# of our units, or the package would ship a unit nothing references.
+from level_from_glb import IGNORE_NAME_SUBSTRINGS, ignored_node     # noqa: E402
 
 # The rotation about X, in degrees, that maps the export's mesh up onto the engine's +Z - i.e.
 # exactly the inverse of the level tool's `deg_mesh` (level_from_glb.detect_mesh_up), which is
@@ -208,8 +212,12 @@ def main():
               ' with its up axis on Y or Z.' % up)
         deg = 90
     groups = {}
+    ignored = []
     for node in js['nodes']:
         if 'mesh' not in node:
+            continue
+        if ignored_node(node.get('name', '')):
+            ignored.append(node.get('name', ''))
             continue
         b = base_name(node.get('name', ''))
         if b in mapping:
@@ -224,6 +232,9 @@ def main():
     print('mesh up  : %s' % why)
     print('           -> vertices rotated %+d degrees about X into engine Z-up%s'
           % (deg, '' if deg else ' (already engine-space, no rotation)'))
+    if ignored:
+        print('ignored  : %d node(s) whose name carries %s - no unit is built from them'
+              % (len(ignored), '/'.join(repr(s) for s in IGNORE_NAME_SUBSTRINGS)))
     print('template : %s (%d bytes, %d mesh(es), trailer %d bytes)'
           % (template.name, len(tpl), tpl_meshes, len(tpl) - unit_mesh_end(tpl)))
     print()
