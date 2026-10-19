@@ -87,6 +87,12 @@ def main() -> int:
                     help='build and verify, but do not put the bundle in the game folder')
     ap.add_argument('--force', action='store_true',
                     help='build anyway when the .blend is newer than the GLB')
+    ap.add_argument('--spawn-at', default=None, metavar='X,Y,Z',
+                    help='forwarded to level_from_glb.py for a scratch level: put OUR '
+                         'player_spawn_marker at these engine coordinates instead of at the centre '
+                         'of the median floor tile.  Use it when the scene has its own spawn marker '
+                         'object - the node\'s engine position is (x, -z, y) of its glTF '
+                         'translation, which is what level_from_glb.py prints and the decoder dumps.')
     args = ap.parse_args()
 
     spec = json.loads(args.mod_json.read_text())
@@ -176,6 +182,8 @@ def main() -> int:
     for u in own:
         cmd += ['--own-unit', '%s=%s' % (u['base'], u['unit'])]
     cmd += ['--unit-offsets', str(offsets_file)]
+    if args.spawn_at:
+        cmd += ['--spawn-at', args.spawn_at]
     if not run(cmd, 'level %s' % level_out.name):
         return 1
 

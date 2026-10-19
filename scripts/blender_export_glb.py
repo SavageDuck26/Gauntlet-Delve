@@ -35,7 +35,16 @@ WANT = {
     'export_format': 'GLB',
     'use_selection': False,
     'export_yup': True,
-    'export_apply': False,
+    # APPLY MODIFIERS AT EXPORT TIME - never in the .blend (2026-10-19).  The author keeps live
+    # geometry-nodes modifiers and curves in the scene and the GAME gets what the author SEES.
+    # Blender evaluates them for the export only, and the node transforms survive: measured on the
+    # arena, 1499/1499 nodes kept their own translation and 690 their rotation, so this is NOT a
+    # BAKED export (a baked one has no transforms at all and level_from_glb.py refuses it without
+    # --reference).  The thing that forced it: the 13 `Road Top` objects are CURVES with a geometry
+    # nodes modifier, and with this False they arrived as nodes with NO mesh - the road was silently
+    # missing from the level while Blender happily showed it.  `--no-apply` restores the old
+    # behaviour for an A/B on a specific file.
+    'export_apply': True,
     'export_animations': False,
     'export_skins': False,
     'export_morph': False,
@@ -74,6 +83,10 @@ def main():
     out = argv[argv.index('--') + 1] if '--' in argv else 'export.glb'
     props = {p.identifier for p in bpy.ops.export_scene.gltf.get_rna_type().properties}
     kwargs = {k: v for k, v in WANT.items() if k in props}
+    if '--no-apply' in argv and 'export_apply' in kwargs:
+        kwargs['export_apply'] = False
+        log('--no-apply: modifiers are NOT evaluated for this export - an object that needs them '
+            '(a curve, a geometry-nodes modifier) will arrive as a node with no mesh')
     dropped = sorted(set(WANT) - set(kwargs))
     if dropped:
         log('this Blender does not know: %s' % ', '.join(dropped))
@@ -100,6 +113,30 @@ def main():
             % (i, node.get('name', ''), t[0], t[1], t[2], q[0], q[1], q[2], q[3], angle))
         if any(abs(v - 1.0) > 1e-6 for v in s):
             log('      scale = %s' % [round(v, 4) for v in s])
+
+    # WHAT ARRIVED WITHOUT GEOMETRY.  A node with no mesh cannot become a unit or be placed, so an
+    # object that SHOULD have geometry and did not is the one failure this export can hide - it is
+    # exactly how the 13 Road Top curves went missing (their modifiers were not applied).  Empties
+    # and other markers are expected to have no mesh, so only objects that could have one are
+    # reported.
+    by_name = {o.name: o for o in bpy.data.objects}
+    hollow = []
+    for node in js.get('nodes', []):
+        if 'mesh' in node:
+            continue
+        o = by_name.get(node.get('name', ''))
+        if o is not None and o.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
+            hollow.append((node.get('name', ''), o.type))
+    if hollow:
+        log('')
+        log('WARNING: %d object(s) that should have geometry arrived with NO mesh:' % len(hollow))
+        for name, kind in hollow[:20]:
+            log('    %-24s (a Blender %s object)' % (name, kind.lower()))
+        if len(hollow) > 20:
+            log('    ... and %d more' % (len(hollow) - 20))
+        log('  They cannot be built into units or placed in the level.  A curve or an object with')
+        log('  modifiers needs export_apply (the default); a mesh with no polygons or a hidden')
+        log('  object needs fixing in Blender.')
 
 
 main()

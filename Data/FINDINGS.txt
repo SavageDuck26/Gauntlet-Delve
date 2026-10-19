@@ -13078,3 +13078,48 @@ back by exactly that, and the level still renders what Blender shows:
 The rotations the author lost while separating the links are still to redo - and they are safe to
 restore per link: the compensation goes through EACH PLACEMENT'S OWN ROTATION (pos -= R(q) . (s*d)),
 so a rotated link's patch rotates with it and its mesh still lands on the patch.
+
+9H.42 APPLY MODIFIERS AT EXPORT TIME, NEVER IN THE .BLEND - OR THE ROAD IS SILENTLY MISSING
+
+The author's big-update scene has 1485 MESH objects, 13 CURVE objects and 1 EMPTY.  The 13 curves are
+the `Road Top` sections: each carries a GEOMETRY NODES modifier (`Mult Curve Instancing`) that
+generates the actual road.  blender_export_glb.py asked the glTF exporter for `export_apply: False`,
+so those modifiers were never evaluated - and the exporter wrote the 13 `Road Top` nodes WITH NO
+MESH.  Blender showed the road; the GLB did not; the unit builder built no `road_top`; the level
+placed 1486 of 1499 nodes and the bundle then failed on the missing resource.  A node without a mesh
+cannot become a unit or a placement, so the whole thing surfaced as one error far from its cause.
+
+THE FIX.  `export_apply: True` - the exporter evaluates modifiers for the export and the .blend
+keeps them live, which is exactly what the author asked for ("apply them during export to keep them
+in the blend file but have the translations in game").  Measured before trusting it, because a
+BAKED export - transforms applied into the meshes, no node transforms at all - is what
+9H.22.3/9H.23.1 had to build a recovery path for:
+
+    nodes 1499, with a mesh 1498 (was 1485), with translation 1499, with rotation 690
+    Big Spike  node t=(9.653, -26.138, -30.680)  ==  Blender loc (9.6531, 30.6801, -26.1382) in Y-up
+
+Every node keeps its own transform, so this is NOT a baked export: the level pipeline is unaffected.
+`--no-apply` restores the old behaviour for an A/B on one file.
+
+AND IT CANNOT HAPPEN QUIETLY AGAIN.  The export now ends with a warning listing every object that
+arrived with no mesh but COULD have one (a mesh/curve/surface/meta/font object - an empty is
+legitimate and skipped):
+
+    WARNING: N object(s) that should have geometry arrived with NO mesh: ...
+
+THE TEST BUILD (deployed 14:53).  The config went from 15 to 17 own kinds: 11 added for the new
+objects (Big Spike, Elevator Scaffold Top, FLOOR BOTTOM, PLAYER_SPAWN, Road Top, TODO_*, Topside
+Floor, Topside Floor Half, Waterfall Back) and 9 dropped because their objects no longer exist in the
+scene (the old spiral road pieces and Start Scaffolding).  The author's own PLAYER_SPAWN object now
+drives the spawn: build_level_mod.py grew `--spawn-at`, forwarded to level_from_glb.py, so the level
+no longer guesses the median floor tile - here (0.03, -0.01, 14.25).  Every node accounted for:
+
+    GLB mesh nodes 1486 == level placements 1486, per kind exact (1280 chains, 65 topside floors,
+    64 floors, 50 shafts, 13 road sections, ...);  worst placement error 0.0000 deg; every unit's
+    mesh exact (worst 0.000004, Road Top's 18107 verts included); bundle verified and deployed.
+
+WHAT IS STILL OFF, ON PURPOSE (the author asked for a test build): `Road Top` is 13 DIFFERENT
+shapes under one base name, and one base name is one unit - all 13 placements render the first
+section.  `Floor` similarly mixes 8x8 tiles with 8x4 halves.  Distinct shapes need distinct base
+names (`Road Top A`, `Road Top B`, ...) - a purely numeric tail like `.001` is stripped as Blender's
+duplicate suffix (9H.40), so letters or words are what works.
