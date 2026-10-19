@@ -15,8 +15,8 @@ Entity record layout (72 bytes, table starts at byte 128, count from the header)
 
   offset  size  field
   ------  ----  -----
-    0      4    NOT a rotation component      (float32)
-    4     12    scale                xyz      (float32[3], usually 1)
+    0      4    the PREVIOUS unit's w        (float32; see 9H.36)
+    4     12    scale                xyz      (float32[3], usually 1) - the PREVIOUS unit's, 9H.36
    16      8    unused                         (always 0 in the corpus)
    24      8    entity id                      (uint64, per-instance)
    32      8    template hash                  (uint64 name hash of the unit)
@@ -24,17 +24,18 @@ Entity record layout (72 bytes, table starts at byte 128, count from the header)
    48     12    position            xyz        (float32[3])
    60      4    rotation quaternion  x         (float32)
    64      4    rotation quaternion  y         (float32)
-   68      4    rotation quaternion  w         (float32)
+   68      4    rotation quaternion  z         (float32)
+   72      4    rotation quaternion  w         (float32 - the FOURTH consecutive float at 60,
+                                                 which is the NEXT record's offset 0; 9H.36)
+   76     12    this unit's scale    xyz        (float32[3] - the next record's offset 4; 9H.36)
 
-so the rotation is (x, y, z) = (f15, f16, f17) with w reconstructed as
-+/-sqrt(1 - x*x - y*y - z*z).  CONFIRMED against the running engine (45 units,
-(x,y,z) agreeing to 1e-6); offset 0 is not a rotation component.  The sign of w
-is free: q and -q are the same rotation.  Every one of the
-three rotation channels is a value in [-1, 1]; the recovered Z angle
-`2*atan2(z, w)` lands on 0/90/180/270 degrees for the overwhelming majority of
-records (the authored grid rotations) and only the x/y channels and the odd
-non-90 degree value carry an out-of-plane tilt, which is why x and y are 0 on
-~80% of records.
+so the rotation is the four consecutive floats at 60, and the unit's own offsets 0 and 4 belong
+to the PREVIOUS unit.  CONFIRMED against the code (FUN_00430440 -> FUN_0042db10 -> FUN_0042d7f0,
+FINDINGS 9H.34/9H.36) and against the running engine's own per-unit capture (9H.36).  The sign of
+w is free: q and -q are the same rotation.  Every one of the three rotation channels is a value in
+[-1, 1]; the yaw `2*atan2(z, w)` lands on 0/90/180/270 degrees for the overwhelming majority of
+records (the authored grid rotations) and only the x/y channels and the odd non-90 degree value
+carry an out-of-plane tilt, which is why x and y are 0 on ~80% of records.
 
 Confidence: the *positions* (48), *scale* (4), and *template* (32) fields are
 confirmed - offsets 32 and 40 hit catalogue name hashes on 100% / 76% of a
@@ -100,7 +101,8 @@ ENTITY_RECORD_SIZE = 72
 OFF_QUAT_X   = 60
 OFF_QUAT_Y   = 64
 OFF_QUAT_Z   = 68
-OFF_SCALE    = 4
+OFF_QUAT_W   = 72          # the FOURTH consecutive float at 60 = the next record's offset 0
+OFF_SCALE    = 76          # the unit's own scale = the next record's offset 4 (FINDINGS 9H.36)
 OFF_ENTITY_ID = 24
 OFF_TEMPLATE = 32
 OFF_MATERIAL = 40
@@ -184,16 +186,22 @@ def parse_entities(blob: bytes) -> List[Entity]:
         material, = struct.unpack_from('<Q', blob, base + OFF_MATERIAL)
         pos = struct.unpack_from('<3f', blob, base + OFF_POSITION)
         scale = struct.unpack_from('<3f', blob, base + OFF_SCALE)
-        f0, = struct.unpack_from('<f', blob, base + 0)   # not a component; sign only
+        f0, = struct.unpack_from('<f', blob, base + 0)   # the PREVIOUS unit's w (9H.36)
         qx, = struct.unpack_from('<f', blob, base + OFF_QUAT_X)
         qy, = struct.unpack_from('<f', blob, base + OFF_QUAT_Y)
         qz, = struct.unpack_from('<f', blob, base + OFF_QUAT_Z)
-        # The stored triple is the quaternion's VECTOR part; w is reconstructed.
-        # Confirmed against the running engine: (x,y,z) = (f15,f16,f17) agrees to
-        # 1e-6 over 45 units, while the rotated-in f0 does not match the engine's w
-        # at all (6/45) - f0 is not a rotation component.  The sign of w is free
-        # because q and -q are the same rotation.
-        qw_src = f0 if f0 != 0.0 else 1.0
+        qw, = struct.unpack_from('<f', blob, base + OFF_QUAT_W)
+        # FOUR CONSECUTIVE floats at 60 are the quaternion (FINDINGS 9H.36): the vector at
+        # 60/64/68 and the w at 72, which is the NEXT record's offset-0 field.  The record's own
+        # f0 belongs to the PREVIOUS unit; reconstructing the w from the vector (what this did
+        # before) reports the wrong angle for every rotated placement, and f0 as the w is the
+        # off-by-one a whole build shipped.
+        r2 = qx * qx + qy * qy + qz * qz + qw * qw
+        if r2 < 1e-12:
+            qw_src = 1.0
+            qx = qy = qz = 0.0
+        else:
+            qw_src = qw
         r2 = qx * qx + qy * qy + qz * qz
         if r2 > 1.0:
             # longer than unit: keep the direction, take the 180-degree rotation
@@ -201,16 +209,12 @@ def parse_entities(blob: bytes) -> List[Entity]:
             qx, qy, qz = qx / n, qy / n, qz / n
             qw = 0.0
         else:
-            # w is reconstructed, NOT stored.  Fitted against the engine over 633
-            # crypt_wall_4c instances (9 distinct orientations) and 1143 records:
-            #   (x,y,z) = (f15,f16,f17) with w = -sqrt(1-|v|^2)  -> 100% coverage,
-            # and every one of the top candidates is (f15,f16,f17) - no other
-            # triple of the record's fields comes close.  The sign of w is free for
-            # q == -q, and (x,y,z)=(f15,f16,f17); the negative branch is the
-            # fitted one.  A handful of orientations (~5 of 14 distinct for walls)
-            # are still not produced by the engine's set; those are listed, not
-            # hidden.
-            qw = -math.sqrt(1.0 - r2)
+            # THE W IS STORED - it is the fourth consecutive float at 60, i.e. the next record's
+            # offset-0 field (FINDINGS 9H.36).  Reconstructing it from the vector (what this did
+            # before) is only right for a 180-degree rotation, and it is why this export could not
+            # show the author what the engine would draw.  The sign is free for q == -q; the
+            # stored sign goes in, and a zero-length vector takes the negative branch.
+            qw = qw_src if qw_src != 0.0 else -math.sqrt(max(0.0, 1.0 - r2))
         out.append(Entity(ent_id, template, material, pos, (qx, qy, qz, qw), scale))
     return out
 # -- sub-levels ----------------------------------------------------------------
@@ -478,7 +482,9 @@ def _add_instance(builder: GltfBuilder, mesh_indices: List[int], ent: Entity,
                   yaw_offset: float = 0.0, swap_zw: bool = False) -> None:
     qx, qy, qz, qw = ent.quaternion_unit()
     if swap_zw:
-        # f17 is the quaternion's Z and f0 its W (the reverse of the first guess)
+        # DIAGNOSTIC OF A READING THAT IS NOW SUPERSEDED: this once swapped the stored w with Z
+        # because the record's own f0 was believed to be the w.  The w is the fourth consecutive
+        # float at 60 (FINDINGS 9H.36), so the swap only has meaning for old fits.
         qz, qw = qw, qz
     if yaw_scale != 1.0 or yaw_offset:
         yaw = 2.0 * math.atan2(qz, qw) * yaw_scale + math.radians(yaw_offset)

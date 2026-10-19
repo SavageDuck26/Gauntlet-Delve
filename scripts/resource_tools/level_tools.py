@@ -55,12 +55,104 @@ Round-trip status: BYTE-EXACT - all unknown sections preserved as raw_hex.
 """
 
 from __future__ import annotations
-import json, os, struct, sys
+import json, math, os, struct, sys
 from typing import Any, Dict, List, Tuple
 
 HEADER_ENTRY_COUNT = 16
 HEADER_SIZE = HEADER_ENTRY_COUNT * 8  # 128 bytes
 ENTITY_RECORD_SIZE = 72
+
+# ---------------------------------------------------------------------------
+# WHERE A UNIT'S TRANSFORM ACTUALLY LIVES  (FINDINGS 9H.36 - READ FROM THE CODE)
+# ---------------------------------------------------------------------------
+# The 72-byte stride is real, but a unit's transform is 48 bytes and does not
+# start at its record's start: it starts at record+0x30 (48), so its LAST 24
+# bytes fall into the NEXT record's first 24.  The engine proves it -
+# FUN_00430440 walks the array at `data + 0xb0 + i*0x48` (data+0x80 is the unit
+# table, so its entry i is record i + 48) and builds every placement with
+#
+#     FUN_0042db10(out, entry + 0xc, entry + 0, entry + 0x1c)
+#       -> FUN_0042d7f0(out, quaternion, position, scale)
+#
+# and FUN_0042d7f0 reads FOUR consecutive floats from the quaternion pointer and
+# normalises them into a rotation matrix.  So, per unit:
+#
+#     position   entry + 0x00  = record + 0x30 (3 floats)
+#     rotation   entry + 0x0c  = record + 0x3c (4 floats: x,y,z and w at +0x48)
+#     scale      entry + 0x1c  = record + 0x4c (3 floats)
+#
+# The quaternion's w is therefore at record+0x48, which for a 72-byte stride is
+# the NEXT record's offset-0 float, and the scale is the next record's offset-4
+# fields.  The last unit's overflow sits in the 24 bytes reserved after the
+# table (u32[3] = table_end + 24, which every shipped level has, holding
+# {w, scale(3), 8 padding} = 1.0,1.0,1.0,1.0,0,0,0,0 when the last unit is
+# unrotated with unit scale).
+#
+# WHAT THE TOOLKIT USED TO DO: treat record i's own offsets 0 and 4 as that
+# unit's w and scale.  Its id/template/material/position/rotation-xyz offsets
+# were all right - which is why every round trip was byte-exact and every id,
+# name and position check passed - but the w and scale it read and wrote
+# belonged to the PREVIOUS unit.  Nothing showed on identity placements (xyz is
+# zero, so any w is the same rotation) or on unit scales, and it is exactly the
+# off-by-one that shipped rotations built from the wrong w.
+TRANSFORM_LEAD_SIZE = 24    # rot.w (1 float), scale (3 floats), 8 padding bytes
+
+
+def unit_transform_lead(blob: bytes, ent_off: int, count: int, index: int) -> bytes:
+    """Unit `index`'s 24-byte transform lead: its rotation w, its scale, 8 padding.
+
+    It sits at the NEXT record's start (and, for the last unit, in the block
+    reserved after the table).
+    """
+    off = ent_off + (index + 1) * ENTITY_RECORD_SIZE
+    return bytes(blob[off:off + TRANSFORM_LEAD_SIZE])
+
+
+def table_prologue(blob: bytes, ent_off: int) -> bytes:
+    """The 24 bytes in front of unit 0's block - the unit table's own header.
+
+    Its first u32 is the byte COUNT the loader allocates (0 in all 255 shipped
+    levels; a float there is a crash - FINDINGS 9H.23.3), the rest is padding.
+    """
+    return bytes(blob[ent_off:ent_off + TRANSFORM_LEAD_SIZE])
+
+
+def set_record_rotation(entity: Dict[str, Any], quat: List[float]) -> None:
+    """Set a decoded record's rotation, in a record dict, without leaving a stale cache behind.
+
+    `_parse_entity` keeps the record's original three floats as `rotation_vector` so an untouched
+    round trip stays byte-exact, and `_encode_entity` prefers that key over `rotation`.  So any
+    code that CHANGES an entity's rotation must drop it - otherwise the encoder quietly writes the
+    rotation the record already had (the donor path's placements did exactly that) - and dropping
+    `flag` lets the encoder derive the w for the new rotation instead of reusing the old one.
+    """
+    entity['rotation'] = [float(v) for v in quat]
+    entity.pop('rotation_vector', None)
+    entity.pop('flag', None)
+
+
+def shift_leads_forward(blob: bytearray, ent_off: int, count: int,
+                        prologue: bytes = None) -> None:
+    """Move every unit's transform lead one record later - where the engine reads it.
+
+    The encoder writes each record with its OWN lead in its own first 24 bytes
+    (that is the record dict's `flag`/`scale`/`_unused`); the file the engine
+    wants has each lead 72 bytes further on.  `prologue` restores the unit
+    table's header (default: zeros, i.e. a zero count - never unit 0's data,
+    which would be read as a byte count and crash the load).
+    """
+    if count <= 0:
+        return
+    lead = TRANSFORM_LEAD_SIZE
+    leads = [bytes(blob[ent_off + i * ENTITY_RECORD_SIZE:
+                        ent_off + i * ENTITY_RECORD_SIZE + lead]) for i in range(count)]
+    for i in range(count - 1, 0, -1):
+        dst = ent_off + i * ENTITY_RECORD_SIZE
+        blob[dst:dst + lead] = leads[i - 1]
+    dst = ent_off + count * ENTITY_RECORD_SIZE
+    blob[dst:dst + lead] = leads[count - 1]
+    blob[ent_off:ent_off + lead] = prologue if prologue is not None else b'\x00' * lead
+
 
 
 # ---------------------------------------------------------------------------
@@ -79,26 +171,93 @@ def _encode_header(pairs: List[List[int]]) -> bytes:
     return out
 
 
-def _parse_entity(data: bytes) -> Dict[str, Any]:
-    """Decode one 72-byte entity record (layout in FINDINGS 9H.2)."""
+def record_rotation_vector(quat: List[float]) -> List[float]:
+    """The three floats a record holds for a rotation: the quaternion's VECTOR part (x, y, z).
+
+    FROM THE CODE (FINDINGS 9H.34, layout corrected in 9H.36).  The per-unit pass builds every
+    placement with
+
+        FUN_0042db10(out, entry + 0xc, entry + 0, entry + 0x1c)
+          -> FUN_0042d7f0(out, quat, position, scale)
+
+    where `entry` is the unit's transform block, and FUN_0042d7f0 reads FOUR CONSECUTIVE floats
+    from the quaternion pointer and normalises them:
+
+        k = 2.0 / (x*x + y*y + z*z + w*w)
+        m00 = 1 - k(y*y + z*z)   m01 = k(x*y + w*z)   m02 = k(x*z - w*y)
+        m10 = k(x*y - w*z)       m11 = 1 - k(x*x + z*z)   m12 = k(y*z + w*x)
+        m20 = k(x*z + w*y)       m21 = k(y*z - w*x)   m22 = 1 - k(x*x + y*y)
+
+    i.e. a NORMALISED unit quaternion, in the ordinary (x, y, z, w) order.  The vector part goes
+    in a record's offsets 60/64/68; the w is the fourth consecutive float, at 72 - the next
+    record's first float, NOT this record's offset 0 (9H.36).
+
+    So this function is deliberately the identity on the vector part.
+    """
+    x, y, z, w = (float(v) for v in quat)
+    n = math.sqrt(x * x + y * y + z * z + w * w)
+    if n > 0.0:
+        x, y, z, w = x / n, y / n, z / n, w / n
+    return [x, y, z]
+
+
+def quat_from_record_vector(vec: List[float], w: float = None) -> List[float]:
+    """The rotation the engine builds for a record: normalize((x, y, z, w)).
+
+    `w` is the FOURTH consecutive float after the vector, i.e. the record's offset-0 float of the
+    NEXT record (9H.36) - pass `unit_transform_lead()`'s first float.  When it is not given it is
+    reconstructed, which is only right for an identity placement (the vector is then all zeros and
+    the angle is 0 whatever the w is).
+    """
+    x, y, z = (float(v) for v in vec)
+    if w is None:
+        w = -math.sqrt(max(0.0, 1.0 - x * x - y * y - z * z))
+    n = math.sqrt(x * x + y * y + z * z + float(w) * float(w))
+    if n == 0.0:
+        return [0.0, 0.0, 0.0, 1.0]
+    return [x / n, y / n, z / n, float(w) / n]
+
+
+def _parse_entity(data: bytes, lead: bytes = None) -> Dict[str, Any]:
+    """Decode one 72-byte entity record (layout in FINDINGS 9H.2, transform in 9H.36).
+
+    THE ROTATION.  The vector part is three floats at 60/64/68 and the engine reads FOUR
+    consecutive floats - so the w is at 72, the next record's offset 0 - and normalises them into
+    a rotation matrix (FUN_0042d7f0).  `lead` is that 24-byte block (`unit_transform_lead`): its
+    first float is the w, its next three are the unit's scale, its last eight are padding.  The
+    record's OWN offsets 0 and 4 belong to the PREVIOUS unit, so reading them as this unit's w
+    and scale (what this module did before 9H.36) rotates every placement by its successor's w.
+
+    `lead=None` falls back to the record's own leading float for the w, which is only meaningful
+    for an identity placement - pass the real lead whenever it is available.
+    """
     entity_id,     = struct.unpack_from('<Q', data, 24)
     template_hash, = struct.unpack_from('<Q', data, 32)
     material_hash, = struct.unpack_from('<Q', data, 40)
     pos_x, pos_y, pos_z = struct.unpack_from('<fff', data, 48)
-    scale_x, scale_y, scale_z = struct.unpack_from('<fff', data, 4)
-    rot_z, = struct.unpack_from('<f', data, 0)
-    rot_x, = struct.unpack_from('<f', data, 60)
-    rot_y, = struct.unpack_from('<f', data, 64)
-    rot_w, = struct.unpack_from('<f', data, 68)
+    if lead is not None:
+        flag, = struct.unpack_from('<f', lead, 0)
+        scale_x, scale_y, scale_z = struct.unpack_from('<fff', lead, 4)
+        unused = bytes(lead[16:24]).hex()
+    else:
+        flag, = struct.unpack_from('<f', data, 0)
+        scale_x, scale_y, scale_z = struct.unpack_from('<fff', data, 4)
+        unused = data[16:24].hex()
+    vec = [struct.unpack_from('<f', data, 60)[0],
+           struct.unpack_from('<f', data, 64)[0],
+           struct.unpack_from('<f', data, 68)[0]]
     return {
         "entity_id":     f"0x{entity_id:016x}",
         "template_hash": f"0x{template_hash:016x}",
         "material_hash": f"0x{material_hash:016x}",
         "position":      [pos_x, pos_y, pos_z],
-        "rotation":      [rot_x, rot_y, rot_z, rot_w],   # quaternion xyzw
+        # the rotation the engine will build: normalize((x, y, z, w)), w = the lead's first float
+        "rotation":      quat_from_record_vector(vec, flag),
+        "rotation_vector": vec,
         "scale":         [scale_x, scale_y, scale_z],
-        # bytes 16..23 are unused/unwritten; preserved for a byte-exact re-encode
-        "_unused":       data[16:24].hex(),
+        "flag":          flag,
+        # the unit's own 8 padding bytes; preserved for a byte-exact re-encode
+        "_unused":       unused,
     }
 
 
@@ -111,17 +270,33 @@ def _encode_entity(e: Dict[str, Any]) -> bytes:
     scale = e["scale"]
     rot_x, rot_y, rot_z, rot_w = e["rotation"]
 
+    # THE ROTATION THE RECORD HOLDS is the rotation vector, axis * tan(theta/2), NOT the
+    # quaternion's vector part: the engine builds q = normalize(vector, 1.0) (FINDINGS 9H.33).
+    # A record decoded by this module carries its original three floats as `rotation_vector`, so
+    # a round trip is byte-exact; anything authored upstream goes through the division.
+    vec = e.get("rotation_vector")
+    if vec is None:
+        vec = record_rotation_vector([rot_x, rot_y, rot_z, rot_w])
+
+    # THE RECORD'S OWN LEAD IS WRITTEN HERE AND MOVED LATER.  This encoder puts the unit's
+    # rotation w, its scale and its 8 padding bytes in the record's own first 24 bytes; the
+    # engine reads them 72 bytes further on (9H.36), so `encode_level` runs
+    # `shift_leads_forward` over the finished buffer.  Writing them here keeps the round trip
+    # readable: one record dict in, the same record dict out.
+    if "flag" in e:
+        flag = float(e["flag"])
+    else:
+        flag = -math.sqrt(max(0.0, 1.0 - rot_x * rot_x - rot_y * rot_y - rot_z * rot_z))
+
     out = bytearray(ENTITY_RECORD_SIZE)
-    struct.pack_into('<f', out, 0, rot_z)
+    struct.pack_into('<f', out, 0, flag)
     struct.pack_into('<fff', out, 4, *scale)
     out[16:24] = bytes.fromhex(e.get("_unused", "00" * 8))
     struct.pack_into('<Q', out, 24, entity_id)
     struct.pack_into('<Q', out, 32, template_hash)
     struct.pack_into('<Q', out, 40, material_hash)
     struct.pack_into('<fff', out, 48, *pos)
-    struct.pack_into('<f', out, 60, rot_x)
-    struct.pack_into('<f', out, 64, rot_y)
-    struct.pack_into('<f', out, 68, rot_w)
+    struct.pack_into('<fff', out, 60, *vec)
     assert len(out) == ENTITY_RECORD_SIZE, f"entity size {len(out)} != {ENTITY_RECORD_SIZE}"
     return bytes(out)
 
@@ -161,7 +336,11 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
             start = ent_off + i * ENTITY_RECORD_SIZE
             end = start + ENTITY_RECORD_SIZE
             if end <= len(blob):
-                entities.append(_parse_entity(blob[start:end]))
+                # A unit's rotation w and scale live one record further on (9H.36); the last
+                # unit's are in the 24 bytes reserved after the table.
+                lead = unit_transform_lead(blob, ent_off, ent_count, i)
+                entities.append(_parse_entity(blob[start:end], lead if len(lead) ==
+                                              TRANSFORM_LEAD_SIZE else None))
 
     # Identify section boundaries from known header entries
     # Collect all distinct non-zero offsets >= HEADER_SIZE, sorted
@@ -198,12 +377,15 @@ def decode_level(blob: bytes) -> Dict[str, Any]:
         "header": [[a, b] for (a, b) in header_pairs],
         "entity_count": ent_count,
         "entities": entities,
+        # the unit table's own 24-byte header (its first u32 is the load's byte COUNT); unit 0's
+        # transform does NOT live here - it lives one record on, like every other unit's (9H.36)
+        "_lead_prologue": table_prologue(blob, ent_off).hex() if ent_count else "",
         "_resource_strings": list(dict.fromkeys(all_strings)),  # unique, ordered
         "_raw_sections": raw_sections,
         "_note": (
-            "Entity transform layout (72-byte records, FINDINGS 9H.2): "
-            "position/rotation (quaternion xyzw)/scale are decoded and editable; "
-            "the rotation is not pre-normalised. "
+            "Entity transform layout (72-byte records, FINDINGS 9H.2/9H.36): "
+            "position at 48, the rotation quaternion's x/y/z at 60/64/68 and its w one record "
+            "later (with the unit's scale at that record's offset 4); "
             "_raw_sections preserve all other level data byte-exactly."
         ),
     }
@@ -232,6 +414,17 @@ def encode_level(data: Dict[str, Any]) -> bytes:
         off = int(off_str)
         raw = bytes.fromhex(hex_data)
         buf[off:off + len(raw)] = raw
+
+    # THE LAST STEP: PUT EVERY UNIT'S TRANSFORM LEAD WHERE THE ENGINE READS IT (9H.36).
+    # `_encode_entity` writes each unit's rotation w / scale / padding into its own record's
+    # first 24 bytes; the engine reads them at record+0x48 and record+0x4c - one record later -
+    # so the whole set has to move, with the last unit's landing in the 24 bytes reserved after
+    # the table.  This runs after the raw sections so it wins over the copy of the old epilogue.
+    if ent_count > 0 and ent_off >= HEADER_SIZE:
+        prologue = data.get("_lead_prologue")
+        prologue = bytes.fromhex(prologue) if prologue and len(prologue) == 2 * TRANSFORM_LEAD_SIZE \
+            else None
+        shift_leads_forward(buf, ent_off, ent_count, prologue)
 
     return bytes(buf)
 

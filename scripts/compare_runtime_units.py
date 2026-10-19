@@ -12,8 +12,9 @@ resource-name hash, which is the same MurmurHash64A value the .level record
 carries at offset 32.
 
 Record layout (72 bytes at 128 + i*72), all CONFIRMED against the engine:
-   0   float    quaternion component (w)     60,64,68  float  x, y, z
   32   uint64   template hash (the join key)  48,52,56  float  position x,y,z
+  60..76 float   x, y, z, w of the rotation quaternion - FOUR CONSECUTIVE floats, so the w is
+                 the NEXT record's offset-0 field and NOT this record's own (FINDINGS 9H.36)
 
 Usage:
   python3 compare_runtime_units.py <level file> <runtime_units.tsv>
@@ -24,7 +25,7 @@ REC = 72
 TABLE = 128
 OFF_TEMPLATE = 32
 OFF_POS = 48
-OFF_ROT = (0, 60, 64, 68)
+OFF_ROT = (60, 64, 68, 72)      # x, y, z and w - FOUR CONSECUTIVE floats at 60 (FINDINGS 9H.36)
 
 
 def read_records(path):
