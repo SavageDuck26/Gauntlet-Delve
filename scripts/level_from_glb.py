@@ -1461,7 +1461,8 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
           branch: bool = True, ruler: bool = False,
           mesh_frame: str = 'auto',
           spawn_at: Optional[Tuple[float, float, float]] = None,
-          unit_offsets: Optional[Dict[str, list]] = None) -> int:
+          unit_offsets: Optional[Dict[str, list]] = None,
+          spawn_at_node: Optional[str] = None) -> int:
     js = read_glb(glb)
     by_base = load_names()
 
@@ -1752,6 +1753,23 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
     # with it - which is the whole point (FINDINGS 9H.23).  The only shared thing is the
     # section skeleton, which every shipped level has and none of it is content.
     if scratch:
+        if spawn_at_node:
+            # READ THE SPAWN OFF THE SCENE.  The author's own marker object is the intent, and a
+            # coordinate on a command line goes stale the moment it is moved - so resolve it here,
+            # where the axis this build detected (deg_pos) is known.
+            want = base_name(spawn_at_node)
+            matches = [n for n in js.get('nodes', []) if base_name(n.get('name', '')) == want]
+            if not matches:
+                raise SystemExit('--spawn-at-node %s: no node of that name in %s'
+                                 % (spawn_at_node, glb.name))
+            if len(matches) > 1:
+                print('  spawn  : %d node(s) match %s - using the first (%s)'
+                      % (len(matches), spawn_at_node, matches[0].get('name')))
+            t = matches[0].get('translation', [0.0, 0.0, 0.0])
+            spawn_at = tuple(to_engine_position(t, deg_pos))
+            print('  spawn  : --spawn-at-node %s -> engine (%.3f, %.3f, %.3f) from glTF %s'
+                  % (spawn_at_node, spawn_at[0], spawn_at[1], spawn_at[2],
+                     [round(float(v), 3) for v in t]))
         if z_offset:
             for p in placed:
                 p['t'][2] += z_offset
@@ -2236,6 +2254,12 @@ def main() -> int:
                     help='with --scratch: put the player_spawn_marker exactly at these engine '
                          'coordinates instead of at the centre of the median floor tile.  '
                          'Coordinates are the ones the tool reports and the decoder dumps.')
+    ap.add_argument('--spawn-at-node', default=None, metavar='NODE',
+                    help='with --scratch: the same thing, read off a GLB node - the scene\'s own '
+                         'spawn marker object.  Its engine position is (x, -z, y) of the glTF '
+                         'translation, converted with the axis this build detected, so it cannot '
+                         'go stale when the author moves the marker; the name is matched as a base '
+                         'name and the first match wins.')
     ap.add_argument('--unit-offsets', type=Path, default=None, metavar='FILE',
                     help='a JSON map of unit path -> the vector build_own_units.py moved that '
                          'unit\'s mesh by, so its template\'s collider (which sits on the '
@@ -2296,7 +2320,7 @@ def main() -> int:
                  a.verbatim, a.keep_slot_transform,
                  a.scratch, a.skeleton, a.shading, not a.no_spawn, not a.no_skydome,
                  a.reference, not a.no_branch, a.rotation_ruler,
-                 a.mesh_frame, spawn_at, unit_offsets)
+                 a.mesh_frame, spawn_at, unit_offsets, spawn_at_node=a.spawn_at_node)
 
 
 if __name__ == '__main__':

@@ -22,8 +22,8 @@ one the author is looking at (2026-10-18: blend 11:30, glb 09:50).
 
 CONFIG - a "build" block in the mod json (paths may be absolute or relative to the mod dir):
   "build": {
-    "blend":  "Base.blend",
-    "glb":    "Levels/test_arena_03.glb",
+    "blend":  "Lost_Mine_Of_Tom'Aud.blend",
+    "glb":    "Levels/Lost_Mine_Of_Tom'Aud.glb",
     "skeleton": "assets/exports-samples/samples/level_24abcdf4b1fb4d4a.level",
     "own_units": [
       {"base": "Floor", "unit": "units/custom/duckomp_room/floor",
@@ -93,6 +93,12 @@ def main() -> int:
                          'of the median floor tile.  Use it when the scene has its own spawn marker '
                          'object - the node\'s engine position is (x, -z, y) of its glTF '
                          'translation, which is what level_from_glb.py prints and the decoder dumps.')
+    ap.add_argument('--spawn-at-node', default=None, metavar='NODE',
+                    help='forwarded to level_from_glb.py for a scratch level: the same thing, but '
+                         'read off that GLB node - the scene\'s own spawn marker object.  The mod '
+                         'json\'s build.spawn_node is the default, so a scene with a spawn marker '
+                         'needs no coordinates on the command line, and moving the marker in '
+                         'Blender moves the spawn.')
     args = ap.parse_args()
 
     spec = json.loads(args.mod_json.read_text())
@@ -184,6 +190,9 @@ def main() -> int:
     cmd += ['--unit-offsets', str(offsets_file)]
     if args.spawn_at:
         cmd += ['--spawn-at', args.spawn_at]
+    spawn_node = args.spawn_at_node or build.get('spawn_node')
+    if spawn_node:
+        cmd += ['--spawn-at-node', spawn_node]
     if not run(cmd, 'level %s' % level_out.name):
         return 1
 
