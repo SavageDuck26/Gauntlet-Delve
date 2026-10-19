@@ -100,7 +100,32 @@ def join(records, capture, offset, tol=0.05):
     return pairs
 
 
+def index_pairs(records, capture):
+    """Capture unit i against FILE RECORD i - the only join that works for dense duplicates.
+
+    The engine reports a level's units in the file's order, so this is valid - but it has to be
+    proved rather than assumed, which is why `--by-index` measures every position before trusting
+    a rotation.  A (hash, position) join cannot do this level: the author arena chains 968 links
+    about 0.08 apart, so every link's key collides and only the 16 isolated units match.
+    """
+    return [(records[i], capture[i]) for i in range(min(len(records), len(capture)))]
+
+
+def best_index_offset(records, capture):
+    """The offset that lines record i up with capture unit i (for `--by-index` without --offset)."""
+    n = min(len(records), len(capture))
+    best = None
+    for ox in (0.0, 4.0, -4.0, 8.0, -8.0):
+        for oy in (0.0, 4.0, -4.0, 8.0, -8.0):
+            err = sum(sum(abs(records[i]['pos'][k] + (ox, oy, 0.0)[k] - capture[i]['pos'][k])
+                          for k in range(3)) for i in range(n)) / max(n, 1)
+            if best is None or err < best[0]:
+                best = (err, (ox, oy, 0.0))
+    return best[1]
+
+
 def best_offset(records, capture):
+    """The offset that joins the most (hash, position) pairs - the non-index route."""
     best = None
     for ox in (0.0, 4.0, -4.0, 8.0, -8.0):
         for oy in (0.0, 4.0, -4.0, 8.0, -8.0):
@@ -123,25 +148,52 @@ def main() -> int:
                          'capture disagree about those bytes (a level this side edited after the '
                          'capture, or a copy that is not the file that was captured), never a '
                          'tolerance to widen.')
+    ap.add_argument('--by-index', action='store_true',
+                    help='line up capture unit i with FILE RECORD i instead of joining on '
+                         '(template hash, position) - the only way to check a level with DENSE '
+                         'DUPLICATES.  The author arena chains 968 links about 0.08 apart, so every '
+                         'link\'s (hash, position) key collides and only its 16 isolated units can '
+                         'be joined (measured: 16 of 986).  The engine reports a level unit by unit '
+                         'in the file\'s order, so index alignment is valid - and this mode guards '
+                         'it by checking every position first, and picks the offset that lines them '
+                         'up when --offset is not given.')
     a = ap.parse_args()
 
     blob = Path(a.level).read_bytes()
     name, capture = read_capture(Path(a.capture))
     shipped, old = raw_readings(blob)
 
-    offset = tuple(float(v) for v in a.offset.split(',')) if a.offset \
-        else best_offset(shipped, capture)
-    pairs = join(shipped, capture, offset)
-    print('%s' % Path(a.level).name)
-    print('  capture : %s (%d units)' % (name, len(capture)))
-    print('  joined  : %d of %d record(s) at offset %s'
-          % (len(pairs), len(shipped), tuple(round(v, 1) for v in offset)))
-    if not pairs:
-        print('  *** nothing joined - wrong level/capture pair, or the positions moved')
-        return 1
+    if a.by_index:
+        offset = tuple(float(v) for v in a.offset.split(',')) if a.offset \
+            else best_index_offset(shipped, capture)
+        pairs = index_pairs(shipped, capture)
+        print('%s' % Path(a.level).name)
+        print('  capture : %s (%d units)  [BY INDEX]' % (name, len(capture)))
+        print('  aligned : %d record(s) against %d capture unit(s) at offset %s'
+              % (len(pairs), len(capture), tuple(round(v, 1) for v in offset)))
+        worst_pos = max(max(abs(r['pos'][k] + offset[k] - u['pos'][k]) for k in range(3))
+                        for r, u in pairs)
+        print('  position: worst error %.5f  (this is what proves the alignment is real)'
+              % worst_pos)
+        if worst_pos > 0.05:
+            print('  *** the positions do not line up by index - the capture is not in the file\'s'
+                  ' order, or the offset is wrong; use the (hash, position) join instead')
+            return 1
+    else:
+        offset = tuple(float(v) for v in a.offset.split(',')) if a.offset \
+            else best_offset(shipped, capture)
+        pairs = join(shipped, capture, offset)
+        print('%s' % Path(a.level).name)
+        print('  capture : %s (%d units)' % (name, len(capture)))
+        print('  joined  : %d of %d record(s) at offset %s'
+              % (len(pairs), len(shipped), tuple(round(v, 1) for v in offset)))
+        if not pairs:
+            print('  *** nothing joined - wrong level/capture pair, or the positions moved')
+            return 1
 
     def score(reading):
-        pairs_r = join(reading, capture, offset)
+        pairs_r = index_pairs(reading, capture) if a.by_index \
+            else join(reading, capture, offset)
         worst, bad = 0.0, []
         for r, u in pairs_r:
             err = quat_angle_deg(r['quat'], u['rot'])

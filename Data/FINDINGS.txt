@@ -12974,3 +12974,30 @@ package + level + 15 units, no stale entries).
 STILL OPEN: the `none`/physics bisect (B: lights/light, C: strip:) - every role is still on the
 proven floor template (step A) - and the walking question, which needs the ActorProbe grid on a floor
 tile in game.
+
+9H.40.1 CONFIRMED IN GAME (2026-10-19 11:44) - and the join a level of duplicates needs
+
+The author loaded the 984-placement arena and reports it RENDERS CORRECTLY: the spiral road is whole
+again (the 16-bit split fixed the warping) and the 968-link chain is right.
+
+THE ENGINE'S OWN NUMBERS.  crash_trace.log for that run holds ONE dump - the known-benign AlienFX
+0xE06D7363 first-chance - and NO 0xC0000005 at all, so the 9H.38.1 crash did not recur.
+level_mining captured the level at 11:44:03 with 984 units, and runtime_units.tsv shows exactly what
+the file says: 968 x #ID[07e203c799450ae5] (the chain link), 3 x #ID[6892a66dda35e093] (the floors),
+and one each of the other 13 kinds - no missing unit, no extra one.
+
+HOW TO CHECK A LEVEL WHOSE UNITS SIT ON TOP OF EACH OTHER.  The checked-in capture is
+Data/runtime_units/modules_d01_hub_room_custom_duckomp_room.json (984 units, superseding the 12-unit
+one from the earlier build), and `check_level_capture_rotation.py` grows a `--by-index` mode for it:
+the 968 links stand about 0.08 apart, so every (template hash, position) key collides and the
+default join can only match the 16 ISOLATED units (measured: 16 of 986).  `--by-index` lines capture
+unit i up with file record i - valid, because the engine reports a level's units in the file's order
+- and proves the alignment first by measuring every position:
+
+    --by-index : 984/984 within 1.0 deg, worst 0.000 deg;  worst position error 0.00005
+                 (offset (4,4,0) detected automatically; the OLD reading fails on 982/984, worst
+                 90 deg - the two rotated placements - so this level DOES distinguish them)
+    default    :  16/986 joined, 16/16 exact
+
+The capture also settles the whole pipeline at scale: 984 authored placements, 15 units, every mesh
+under 16,608 verts and every index 16-bit, all of it reproducing exactly what the .blend holds.
