@@ -13056,3 +13056,25 @@ parse is findable (9H.19).
 
 TO CONFIRM IN GAME.  Walk onto a floor tile: the patch is now under the visible tile instead of
 diagonally off it.  ActorProbe on a tile should report the 8x8 footprint AT the tile.
+
+9H.41.1 THE CHAIN'S ORIGINS: 968 UNITS IN ONE SPOT BECOME 968 ALONG THE CHAIN
+
+The author's 968 chain links exported with 968 IDENTICAL node translations - one distinct position,
+measured in the GLB - while the link meshes carried the real offsets, which is why the chain still
+rendered right in game (9H.40.1).  It also meant every link's unit origin, and therefore every
+collider patch, was in the same place: the chain had collision in one spot and none along its
+length.  Re-applying each object's origin fixed the export: 968 nodes, 968 distinct translations,
+about 0.31 apart and running z = +41.93 down to -32.82 and back (a 74.7-unit loop).
+
+The rebuild that followed needed NO change to the toolkit, and that is the point of 9H.41's design:
+the collider vector is re-derived per build from the mesh that is actually there
+(`template_box_min - mesh_box_min`), so moving 968 origins is just another input.  The chains' vector
+is (0.03, 0.13, 0) because their origins now sit by their geometry; every link's placement moved
+back by exactly that, and the level still renders what Blender shows:
+
+    worst placement error 0.0000 deg over 984 placements (968 of them chain links), every unit's
+    mesh exact to 0.000002, bundle verified, deployed 12:02
+
+The rotations the author lost while separating the links are still to redo - and they are safe to
+restore per link: the compensation goes through EACH PLACEMENT'S OWN ROTATION (pos -= R(q) . (s*d)),
+so a rotated link's patch rotates with it and its mesh still lands on the patch.
