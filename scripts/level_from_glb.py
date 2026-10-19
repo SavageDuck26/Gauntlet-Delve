@@ -961,10 +961,12 @@ def is_floor_unit(path: str) -> bool:
 def write_scratch(placed, out: Path, skeleton: Path, shading: Optional[str] = None,
                   spawn: bool = True, skydome: bool = True,
                   ruler_kinds: Optional[List[str]] = None,
-                  spawn_at: Optional[Tuple[float, float, float]] = None) -> int:
+                  spawn_at: Optional[Tuple[float, float, float]] = None,
+                  unit_offsets: Optional[Dict[str, list]] = None) -> int:
     """Build a level that is ONLY our content, and say what went into it."""
     paths = unit_paths()
     corpus = shipped_material_map()
+    offsets = unit_offsets or {}
     records: List[dict] = []
     unknown: Dict[str, int] = {}
     floors = [p['t'] for p in placed if is_floor_unit(p['unit'])]
@@ -983,6 +985,7 @@ def write_scratch(placed, out: Path, skeleton: Path, shading: Optional[str] = No
     # file and shows up as "the crane is facing backwards" in game (FINDINGS 9H.29), so the
     # build fails loudly instead of shipping it.
     audit = {'n': 0, 'identity': 0, 'worst': 0.0, 'kinds': {}, 'bad': []}
+    collide = {'n': 0, 'worst': 0.0}
 
     def record(p, i):
         mat = corpus.get(p['unit'])
@@ -999,7 +1002,8 @@ def write_scratch(placed, out: Path, skeleton: Path, shading: Optional[str] = No
         # engine builds q = normalize(vector, 1.0), so the error is measured between the authored
         # orientation and what the engine will build from the bytes this build writes - not
         # between the intent and itself, which is what it used to compare (FINDINGS 9H.33).
-        err = _quat_angle_deg(quat_from_record_vector(record_rotation_vector(rot)), p['q'])
+        q_rec = quat_from_record_vector(record_rotation_vector(rot))
+        err = _quat_angle_deg(q_rec, p['q'])
         audit['n'] += 1
         audit['worst'] = max(audit['worst'], err)
         if max(abs(v) for v in rot[:3]) < 1e-6:
@@ -1009,15 +1013,30 @@ def write_scratch(placed, out: Path, skeleton: Path, shading: Optional[str] = No
             audit['kinds'][key] = audit['kinds'].get(key, 0) + 1
         if err > ORIENT_TOL_DEG:
             audit['bad'].append((p.get('node') or p['unit'], err))
+        # THE COLLIDER SHIFT, UNDONE (FINDINGS 9H.41).  build_own_units.py moves a unit's mesh
+        # onto the template's collider box, because the collider is anchored in the UNIT'S frame -
+        # it is compiled into the template and follows the placement, so only the mesh can move.
+        # The placement has to move the other way by the same vector to leave the level looking
+        # exactly like Blender, and the vector has to go through the record's own rotation and
+        # scale, because that is what the engine applies to the mesh before translating it.
+        pos = list(p['t'])
+        d = offsets.get(p['unit'])
+        if d and max(abs(v) for v in d) > 1e-6:
+            s = p['s']
+            w = quat_rotate(q_rec, (d[0] * s[0], d[1] * s[1], d[2] * s[2]))
+            pos = [float(pos[k] - w[k]) for k in range(3)]
+            collide['n'] += 1
+            collide['worst'] = max(collide['worst'], math.sqrt(sum(v * v for v in d)))
         return {
             'entity_id': '0x%016x' % _scratch_id(p['unit'], i),
             'template_hash': '0x%016x' % murmur64(p['unit']),
             'material_hash': mat,
-            'position': list(p['t']),
+            'position': pos,
             'rotation': rot,
             'scale': list(p['s']),
             '_unused': '00' * 8,
         }
+
 
     for i, p in enumerate(placed):
         records.append(record(p, i))
@@ -1036,6 +1055,11 @@ def write_scratch(placed, out: Path, skeleton: Path, shading: Optional[str] = No
         raise SystemExit('REFUSING: %d record(s) hold a rotation that is not the authored one,'
                          ' e.g. %s by %.3f deg - the branch is being applied twice (9H.29)'
                          % (len(audit['bad']), audit['bad'][0][0], audit['bad'][0][1]))
+
+    if collide['n']:
+        print('  collider: %d placement(s) moved back by their unit\'s collider vector (worst'
+              ' %.2f units), so the template\'s collider lands on the mesh while the level still'
+              ' looks exactly like Blender (FINDINGS 9H.41)' % (collide['n'], collide['worst']))
 
     # OUR spawn marker.  A donor body inherits the donor's, which is how the previous builds
     # got a spawn at all; a level of our own has to place one, and it goes on our floor.
@@ -1436,7 +1460,8 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
           with_skydome: bool = True, reference: Optional[Path] = None,
           branch: bool = True, ruler: bool = False,
           mesh_frame: str = 'auto',
-          spawn_at: Optional[Tuple[float, float, float]] = None) -> int:
+          spawn_at: Optional[Tuple[float, float, float]] = None,
+          unit_offsets: Optional[Dict[str, list]] = None) -> int:
     js = read_glb(glb)
     by_base = load_names()
 
@@ -1734,7 +1759,7 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
         return write_scratch(placed, out, skeleton or SCRATCH_SKELETON, shading,
                              spawn=spawn, skydome=with_skydome,
                              ruler_kinds=RULER_KINDS if ruler else None,
-                             spawn_at=spawn_at)
+                             spawn_at=spawn_at, unit_offsets=unit_offsets)
 
     data = decode_level((body or donor).read_bytes())
     before = data['entity_count']
@@ -2211,6 +2236,14 @@ def main() -> int:
                     help='with --scratch: put the player_spawn_marker exactly at these engine '
                          'coordinates instead of at the centre of the median floor tile.  '
                          'Coordinates are the ones the tool reports and the decoder dumps.')
+    ap.add_argument('--unit-offsets', type=Path, default=None, metavar='FILE',
+                    help='a JSON map of unit path -> the vector build_own_units.py moved that '
+                         'unit\'s mesh by, so its template\'s collider (which sits on the '
+                         'TEMPLATE\'s mesh box, not ours) lands on the mesh.  Every placement of '
+                         'such a unit is moved back by the same vector, rotated and scaled into '
+                         'the placement\'s own frame, so the level still looks exactly like '
+                         'Blender (FINDINGS 9H.41).  build_own_units.py writes it with --offsets '
+                         'and build_level_mod.py passes it through.')
     ap.add_argument('--rotation-ruler', action='store_true',
                     help='DIAGNOSTIC: add four copies of the units reported as rotated (crypt_railing_straight_4c, crypt_border_straight_4c, crypt_stairs_low_4c, coffin_open) at 0/90/180/270 degrees in a row beside the spawn, so one look says which yaw the engine draws correctly')
     a = ap.parse_args()
@@ -2237,12 +2270,33 @@ def main() -> int:
         OWN_UNITS[base.strip()] = path.strip()
     if OWN_UNITS:
         print('own units: %s' % ', '.join('%s -> %s' % kv for kv in sorted(OWN_UNITS.items())))
+    unit_offsets = None
+    if a.unit_offsets:
+        if not a.unit_offsets.exists():
+            raise SystemExit('--unit-offsets %s does not exist' % a.unit_offsets)
+        unit_offsets = json.loads(a.unit_offsets.read_text())
+        if isinstance(unit_offsets, dict) and 'units' in unit_offsets:
+            unit_offsets = unit_offsets['units']     # the file is sectioned; a flat map is fine too
+        if not isinstance(unit_offsets, dict):
+            raise SystemExit('--unit-offsets %s is not a map of unit path -> vector' % a.unit_offsets)
+        kinds = sorted(unit_offsets)
+        print('collider offsets: %d unit kind(s) from %s%s - each placement of those is moved back '
+              'by its own vector so the template\'s collider lands on the mesh (FINDINGS 9H.41)'
+              % (len(kinds), a.unit_offsets.name,
+                 ' (e.g. %s)' % ', '.join('%s %s' % (k.split('/')[-1],
+                                                     unit_offsets[k]) for k in kinds[:3])
+                 if kinds else ''))
+    elif OWN_UNITS:
+        print('WARNING: own units are in play but no --unit-offsets file was given.  If they were '
+              'built by build_own_units.py their meshes were moved onto their template\'s collider '
+              'box, and without this file the whole level sits displaced by those vectors '
+              '(FINDINGS 9H.41).')
     return build(Path(a.glb), Path(a.donor), Path(a.out), a.max_entities, a.z_offset,
                  a.body, a.keep_from, a.allow_logic, a.hide, a.align, offset, a.fit,
                  a.verbatim, a.keep_slot_transform,
                  a.scratch, a.skeleton, a.shading, not a.no_spawn, not a.no_skydome,
                  a.reference, not a.no_branch, a.rotation_ruler,
-                 a.mesh_frame, spawn_at)
+                 a.mesh_frame, spawn_at, unit_offsets)
 
 
 if __name__ == '__main__':

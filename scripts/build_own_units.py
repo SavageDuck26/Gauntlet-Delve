@@ -37,6 +37,17 @@ overrides the measurement when there is nothing to measure.
 Usage:
   build_own_units.py <export.glb> <template.unit> <base_name>=<unit/path> [...] --out <dir>
   build_own_units.py <export.glb> <template.unit> Floor=units/custom/x/floor --out=dir --mesh-frame=engine
+
+THE MESH IS MOVED ONTO THE TEMPLATE'S COLLIDER BOX (FINDINGS 9H.41), and the level builder puts the
+placement back so nothing visible moves.  A splice's collider is the TEMPLATE's, and in game it sits
+on the TEMPLATE's own geometry: the splash plane spliced into cryptsmooth_floor_4c_4c came out with
+an 8x8 patch spanning x,y in [0,+8) at the unit's origin (9H.20, read with ActorProbe) and that
+template's mesh box is exactly (0,0,0)->(8,8,0).  The author's tiles are centred on their origin
+(-4..+4), so a tile built that way has its collider four units away in x and y: three quarters of
+the visible tile has nothing under it and the player walks or falls straight through.  So the
+generated mesh is moved by `template_box_min - mesh_box_min` in x and y, and the vector is written
+to --offsets for level_from_glb.py to subtract from every placement - which leaves the level looking
+exactly like Blender while the collider lands on the mesh.  `--no-collider-shift` builds the old way.
 """
 import json
 import numpy as np
@@ -229,6 +240,56 @@ def load_template(spec: Path) -> bytes:
     return data
 
 
+def template_mesh_bbox(data: bytes):
+    """min/max of every vertex of a native unit - the box a splice's collider is built around.
+
+    FINDINGS 9H.41.  A splice's collider is the TEMPLATE's, compiled into its trailer, and in game
+    it sits ON THE TEMPLATE'S OWN GEOMETRY: the splash plane spliced into cryptsmooth_floor_4c_4c
+    came out with an 8x8 collider patch spanning x,y in [0,+8) at the unit's origin (9H.20, read
+    with ActorProbe), and this template's mesh box is exactly (0,0,0) -> (8,8,0).  So the template's
+    box is where a splice has to put its own geometry, and that is what collider_shift returns.
+    """
+    lo = [1e30, 1e30, 1e30]
+    hi = [-1e30, -1e30, -1e30]
+    off = 8
+    for _ in range(read_u32(data, 4)):
+        vbuf = read_u32(data, off)
+        start = off + 4
+        # A mesh block is [size][vertex bytes][8][count][stride][element_count][elements*17][12]
+        # [index_count][index_size][indices][shape_count][shapes*16][28][materials].  Each
+        # vertex's POSITION is its first 12 bytes (a normal and a UV follow it).
+        count = read_u32(data, start + vbuf + 8)
+        stride = read_u32(data, start + vbuf + 12)
+        for i in range(count):
+            p = struct.unpack_from('<3f', data, start + i * stride)
+            for k in range(3):
+                lo[k] = min(lo[k], p[k])
+                hi[k] = max(hi[k], p[k])
+        off = start + vbuf + 8
+        off += 12 + read_u32(data, off + 8) * 17 + 12          # vertex elements
+        off += 8 + read_u32(data, off + 4)                     # the index buffer
+        off += 4 + read_u32(data, off) * 16 + 28               # shapes, and their 28-byte tail
+        material_count = read_u32(data, off)
+        off += 4
+        for _ in range(material_count):
+            off += 4 + read_u32(data, off)
+    return lo, hi
+
+
+def collider_shift(tpl: bytes, positions) -> list:
+    """How far a generated mesh has to move for the template's collider to land on it.
+
+    X and Y only, and that is deliberate: the collider of every template this toolkit uses is a
+    HORIZONTAL patch (the floor's is 8x8 at z = 0), so x,y decide whether there is anything under
+    the player, while z is the height that patch sits at - which the author already controls with
+    the object's own z.  Aligning z as well would sink a walkable patch to the underside of a thick
+    slab and raise a prop off the floor.
+    """
+    lo, _hi = template_mesh_bbox(tpl)
+    gen = positions.min(axis=0)
+    return [float(lo[0] - gen[0]), float(lo[1] - gen[1]), 0.0]
+
+
 def rotate_x(verts, deg):
     """Rotate vertices about X by a multiple of 90 degrees: the file's mesh frame -> engine.
 
@@ -303,6 +364,7 @@ def main():
     glb, template = Path(argv[0]), Path(argv[1])
     mapping, out_dir, frame, duplicate_meshes = {}, None, 'auto', True
     templates, physics_by_base = {}, {}
+    offsets_out, collider_shift_on = None, True
     for a in argv[2:]:
         if a == '--out':
             continue
@@ -310,6 +372,10 @@ def main():
             out_dir = Path(a.split('=', 1)[1])
         elif a == '--no-duplicate-meshes':
             duplicate_meshes = False
+        elif a == '--no-collider-shift':
+            collider_shift_on = False
+        elif a.startswith('--offsets='):
+            offsets_out = Path(a.split('=', 1)[1])
         elif a.startswith('--mesh-frame='):
             frame = a.split('=', 1)[1]
             if frame not in ('auto', 'y-up', 'engine'):
@@ -374,6 +440,7 @@ def main():
             groups.setdefault(b, []).append(node)
 
     tpl_bytes: dict = {}
+    shifts: dict = {}          # unit path -> the vector its mesh was moved by (see 9H.41)
 
     def template_for(role: str) -> Path:
         return templates[role] if templates else template
@@ -436,6 +503,15 @@ def main():
             'uvs': np.array(uv, dtype=np.float32),
             'indices': np.array(idx, dtype=np.int64),
         }
+        # PUT THE MESH WHERE THE TEMPLATE'S COLLIDER IS (9H.41).  The collider is anchored in the
+        # UNIT'S own frame - it is compiled into the template and follows the placement, not the
+        # mesh - so moving the mesh is the only way to make it land on our geometry.  The level
+        # builder subtracts the same vector from every placement (--unit-offsets), which cancels
+        # out: the level still looks exactly like Blender, and the collider now covers the mesh.
+        shift = collider_shift(tpl, mesh['positions']) if collider_shift_on else [0.0, 0.0, 0.0]
+        if max(abs(v) for v in shift) > 1e-4:
+            mesh['positions'] = mesh['positions'] + np.array(shift, dtype=np.float32)
+            shifts[mapping[base]] = shift
         if len(pos) > MAX_VERTS_PER_MESH:
             raise SystemExit(
                 '%s: the mesh exports %d verts, over the %d a single mesh block may hold.\n'
@@ -460,12 +536,46 @@ def main():
               '(%d mesh block(s), %d primitive(s): %s)'
               % (base, unit_path, len(nodes), len(pos), len(idx) // 3, len(unit), written,
                  len(prim_sizes), ' '.join(prim_sizes)))
+        csh = shifts.get(mapping[base])
+        if csh is not None:
+            print('%-16s    collider shift (%+.2f, %+.2f, %+.2f): the template\'s collider sits on'
+                  ' ITS mesh box (FINDINGS 9H.41), so the mesh is moved onto it and the placement'
+                  ' is moved back by the same vector - nothing visible moves.'
+                  % ('', csh[0], csh[1], csh[2]))
         if len(pos) > 15972:
             print('%-16s    %d verts is larger than any mesh the game ships (15,972) - fine, but it\n'
                   '%-16s    is %d%% of the 65,535 block limit, where 32-bit indices start'
                   % ('', len(pos), '', 100 * len(pos) // MAX_VERTS_PER_MESH))
         print('%-16s    role %-9s  %s  <- read back from the built file'
               % ('', role, physics_of(unit)))
+    if shifts and offsets_out is None:
+        print('WARNING: %d unit kind(s) had their mesh moved onto their template\'s collider, but'
+              ' --offsets was not given - the level builder cannot move the placements back, so the'
+              ' level would sit displaced by those vectors.  Pass --offsets=<file>;'
+              ' build_level_mod.py does.' % len(shifts))
+    if offsets_out is not None:
+        old = json.loads(offsets_out.read_text()) if offsets_out.exists() else {}
+        units_map = (old.get('units') or {}) if isinstance(old, dict) else {}
+        bases_map = (old.get('bases') or {}) if isinstance(old, dict) else {}
+        for base_, path_ in mapping.items():
+            d = shifts.get(path_)
+            if d is None:
+                continue
+            units_map[path_] = [round(float(v), 6) for v in d]
+            bases_map[base_] = [round(float(v), 6) for v in d]
+        offsets_out.parent.mkdir(parents=True, exist_ok=True)
+        offsets_out.write_text(json.dumps({
+            '_comment': 'FINDINGS 9H.41.  The vector build_own_units.py moved a unit\'s mesh by, in '
+                        'the unit\'s own frame (x and y only).  "units" is keyed by the unit PATH - '
+                        'level_from_glb.py subtracts it, rotated and scaled into the record\'s '
+                        'frame, from every placement of that unit - and "bases" by the GLB node '
+                        'base name, which is what the offline checkers key on.',
+            'units': dict(sorted(units_map.items())),
+            'bases': dict(sorted(bases_map.items())),
+        }, indent=2) + '\n')
+        print()
+        print('collider offsets: %s (%d unit kind(s), %d from this run)'
+              % (offsets_out, len(units_map), len(shifts)))
     print()
     print('unit paths (hash these into the level):')
     for base, path in sorted(mapping.items()):

@@ -14,7 +14,15 @@ the authored one, and does every deployed unit's mesh equal the GLB's mesh in th
 If both hold to float precision, then the game renders the .blend for this content and any
 remaining difference is not in the pipeline.
 
+ONE THING IS DELIBERATELY NOT EQUAL (FINDINGS 9H.41): a unit whose mesh build_own_units.py moved
+onto its template's collider box.  The move is undone on the placement, so pass
+`--unit-offsets <the build's unit_offsets.json>` and both halves are measured with it - the record
+plus the vector the engine applies has to land on the authored node, and the unit's mesh minus it
+has to equal the GLB's mesh.  Without the file a shifted level reports a mismatch of exactly that
+vector, which is the tool telling the truth.
+
 usage: check_deployed_placement.py <deployed level> <glb> [<unit file>=<base name> ...]
+                                   [--unit-offsets <unit_offsets.json>]
 """
 from __future__ import annotations
 
@@ -28,6 +36,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from resource_tools.level_tools import quat_from_record_vector       # noqa: E402
+from level_from_glb import base_name, quat_rotate                    # noqa: E402
 
 
 def read_glb(path: Path):
@@ -128,14 +137,30 @@ def main() -> int:
         return 1
     level = Path(sys.argv[1])
     glb = Path(sys.argv[2])
-    own = [a.split('=') for a in sys.argv[3:]]          # <unit file>=<base name>
+    rest = sys.argv[3:]
+    offsets_file = None
+    if '--unit-offsets' in rest:
+        i = rest.index('--unit-offsets')
+        if i + 1 >= len(rest):
+            print('--unit-offsets wants a file')
+            return 1
+        offsets_file = Path(rest[i + 1])
+        rest = rest[:i] + rest[i + 2:]
+    own = [a.split('=') for a in rest]                  # <unit file>=<base name>
+    offsets = {}
+    if offsets_file:
+        raw = json.loads(offsets_file.read_text())
+        offsets = (raw.get('bases') or {}) if isinstance(raw, dict) else {}
+        print('collider shift: %d unit kind(s) from %s - the level moved those placements back by '
+              'the same vector, so it is added here before comparing (FINDINGS 9H.41)'
+              % (len(offsets), offsets_file.name))
 
     js, bin0 = read_glb(glb)
     nodes = {}
     for node in js['nodes']:
         if 'mesh' not in node:
             continue
-        base = node.get('name', '').split('.')[0]
+        base = base_name(node.get('name', ''))
         nodes.setdefault(base, []).append((node.get('name'),
                                            node.get('translation', [0, 0, 0]),
                                            node.get('rotation', [0, 0, 0, 1]),
@@ -157,9 +182,16 @@ def main() -> int:
         for group in nodes.values():
             for name, t, nq, s in group:
                 pt = apply(RX90, t)
-                d = sum((pt[k] - pos[k]) ** 2 for k in range(3)) ** 0.5
-                if d < best_d:
-                    best, best_d = (name, t, nq, s), d
+                d = offsets.get(base_name(name))
+                if d:
+                    # the placement was moved back by this vector; the engine applies the record's
+                    # rotation and the placement's scale to it, so the authored node is the record
+                    # PLUS it - subtract to bring the authored point into the file's frame
+                    w = quat_rotate(q_engine, (d[0] * s[0], d[1] * s[1], d[2] * s[2]))
+                    pt = [pt[k] - w[k] for k in range(3)]
+                d_ = sum((pt[k] - pos[k]) ** 2 for k in range(3)) ** 0.5
+                if d_ < best_d:
+                    best, best_d = (name, t, nq, s), d_
         if best is None or best_d > 0.05:
             print('   rec %2d  no GLB node at %s (closest %.4f)' % (i, pos, best_d))
             continue
@@ -187,12 +219,16 @@ def main() -> int:
         prim = js['meshes'][node['mesh']]['primitives'][0]
         src = accessor(js, bin0, prim['attributes']['POSITION'], 3)
         worst_v = 0.0
+        d = offsets.get(base, [0.0, 0.0, 0.0])
         for i in range(min(len(src), vc)):
             want = apply(RX90, src[i])
+            want = [want[k] + d[k] for k in range(3)]      # the collider shift (9H.41)
             got = verts[i]
             worst_v = max(worst_v, max(abs(want[k] - got[k]) for k in range(3)))
-        print('   %-16s %5d verts, stride %d : worst vertex error %.6f%s'
-              % (base, vc, stride, worst_v, '   *** MISMATCH' if worst_v > 1e-4 else ''))
+        print('   %-16s %5d verts, stride %d : worst vertex error %.6f%s%s'
+              % (base, vc, stride, worst_v, '   *** MISMATCH' if worst_v > 1e-4 else '',
+                 '' if not any(d) else '   (unit shifted by %s)'
+                 % ', '.join('%+.2f' % v for v in d)))
 
     print()
     print('Both halves are the code\'s own arithmetic.  If they pass, the game renders the .blend'

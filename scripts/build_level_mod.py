@@ -143,12 +143,20 @@ def main() -> int:
     # because a unit's collider IS the template's trailer (FINDINGS 9H.19/9H.20/9H.31).
     templates = spec['build'].get('templates') or {}
     physics = spec['build'].get('physics') or {}
+    # THE COLLIDER OFFSET FILE (FINDINGS 9H.41).  A unit's collider is the template's and is
+    # anchored on the TEMPLATE's mesh box, so build_own_units.py moves our mesh onto it - and the
+    # level has to be told, or the whole level would sit displaced by those vectors.  One file, two
+    # readers, and it is deleted up front so a stale entry from an earlier build can never be
+    # reused: each build_own_units run merges in the kinds it built.
+    offsets_file = mod_dir / 'build' / 'unit_offsets.json'
+    if offsets_file.exists():
+        offsets_file.unlink()
     for u in own:
         tpl = Path(u['template'])
         tpl = tpl if tpl.is_absolute() else (HERE / tpl)
         cmd = [sys.executable, HERE / 'build_own_units.py', glb, tpl,
                '%s=%s' % (u['base'], u['unit']), '--out', unit_dir,
-               '--mesh-frame=%s' % frame]
+               '--mesh-frame=%s' % frame, '--offsets=%s' % offsets_file]
         for role, path in templates.items():
             # `strip:PATH` is a template spec, not a path: resolve only the inner path
             if path.startswith('strip:'):
@@ -167,6 +175,7 @@ def main() -> int:
     cmd = [sys.executable, HERE / 'level_from_glb.py', glb, skeleton, level_out, '--scratch']
     for u in own:
         cmd += ['--own-unit', '%s=%s' % (u['base'], u['unit'])]
+    cmd += ['--unit-offsets', str(offsets_file)]
     if not run(cmd, 'level %s' % level_out.name):
         return 1
 

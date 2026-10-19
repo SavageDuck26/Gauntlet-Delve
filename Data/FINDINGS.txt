@@ -13001,3 +13001,58 @@ unit i up with file record i - valid, because the engine reports a level's units
 
 The capture also settles the whole pipeline at scale: 984 authored placements, 15 units, every mesh
 under 16,608 verts and every index 16-bit, all of it reproducing exactly what the .blend holds.
+
+9H.41 THE COLLIDER SITS ON THE *TEMPLATE'S* MESH BOX - AND OUR MESHES WERE CENTRED, WHICH IS WHY THE PLAYER FALLS THROUGH
+
+SYMPTOM.  In the 984-placement arena (build confirmed in game, 9H.40.1) the player falls through
+pretty much everything.
+
+CAUSE, measured offline in one command: the template's geometry and ours are anchored differently.
+A splice's collider is the TEMPLATE's - so where is it?  9H.20 answered that in game with
+ActorProbe: the splash plane spliced into cryptsmooth_floor_4c_4c came out with an 8x8 collider
+patch spanning x,y in [0,+8) anchored at the unit's own origin.  That is EXACTLY the template's own
+mesh box:
+
+    template cryptsmooth_floor_4c_4c  v=9  min=(0.000, 0.000, 0.000)  max=(8.000, 8.000, 0.000)
+    our floor unit (as deployed)      v=9  min=(-4.000, -4.000, 0.000) max=(4.000, 4.000, 0.000)
+
+The author's tile is centred on its origin; the template's is anchored at its corner.  So the
+collider patch sits FOUR UNITS AWAY in x and y from the visible tile: three quarters of every floor
+tile has nothing under it, and the spawn marker - which the build places at the median tile's
+centre, i.e. exactly the patch's CORNER - drops the player straight through.
+
+THE FIX, in the pipeline rather than by re-anchoring 984 objects in Blender.  A unit's collider is
+anchored in the UNIT'S OWN frame - it is compiled into the template and follows the placement - so
+the only thing that can be moved onto it is the MESH:
+
+  * build_own_units.py moves the generated mesh by `template_box_min - mesh_box_min` (x and y only,
+    after the frame rotation) and writes the vector to --offsets (unit_offsets.json, keyed both by
+    unit path and by node base name);
+  * level_from_glb.py reads it with --unit-offsets and subtracts it from every placement of that
+    unit THROUGH THE RECORD'S OWN ROTATION AND SCALE - pos -= R(q) . (s * d) - because that is what
+    the engine applies to the mesh before translating it;
+  * build_level_mod.py deletes the file up front and threads both flags, so one run is
+    self-consistent, and every build_own_units run merges in only the kinds it built;
+  * check_deployed_placement.py takes the same file and measures both halves of the truth: the
+    record plus what the engine applies has to land on the authored node, and the unit's mesh minus
+    the vector has to equal the GLB's mesh.
+
+Net effect: nothing visible moves - the level still renders what the .blend shows - and the
+collider now covers the mesh.  For a floor tile that is exact, because the shifted unit's box comes
+out (0,0,0)->(8,8,0), identical to the template's, so the 8x8 patch covers the whole visible tile.
+
+WHY X AND Y ONLY.  The collider of every template this toolkit uses is a HORIZONTAL patch (the
+floor's is 8x8 at z = 0), so x,y decide whether there is anything under the player, while z is the
+height that patch sits at - which the author already controls with the object's own z (in the arena
+the record's z IS the floor surface, so the patch is at the surface).  Aligning z as well would sink
+a walkable patch to the underside of a thick slab.
+
+WHAT THIS DOES NOT DO.  It does not give a big object a big collider.  The patch is still the
+TEMPLATE's 8x8, so a 56-unit road piece has an 8x8 patch at its own box corner and each of the 968
+chain links gets one too.  Real per-mesh collision means synthesising actors into the trailer's
+physics blob, which requires that blob decoded; the actor types the engine knows are named in its
+own strings (CollisionTriangles / CollisionPlanes / CollisionConvexMasks / CollisionSpheres), so the
+parse is findable (9H.19).
+
+TO CONFIRM IN GAME.  Walk onto a floor tile: the patch is now under the visible tile instead of
+diagonally off it.  ActorProbe on a tile should report the 8x8 footprint AT the tile.
