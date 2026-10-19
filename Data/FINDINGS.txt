@@ -12826,3 +12826,59 @@ WHAT IS STILL OPEN, AND THE ONE THING TO MEASURE NEXT.
     6.3 x 6.3 x 75.2, elevator_shaft 9.6 x 9.6 x 69.7, spiral_road (and _follow) 56.3 x 56.3 x 44.9,
     start_scaffolding 4.8 x 6.3 x 24.4 (its top 1.6 above the floor, ~5 units from the spawn),
     floors 8 x 8 x 0.0.
+
+9H.38.1 THE FIRST `none` BUILD CRASHED AT LEVEL LOAD (2026-10-19 11:23) - AND IT IS NOT YET
+       ATTRIBUTED  *** the strip and the light template are BOTH unproven in game ***
+
+THE CRASH, FROM crash_trace.log.  Three dumps, of which the first is the known-benign AlienFX one
+(0xE06D7363 raised through LightFX.dll/kernelbase) and the other two are identical:
+
+    exception 0xC0000005 at 00402e4c   RVA 0x00002E4C
+    access    write at 00000004         RVA 0x00000004
+
+0x402e4c is +0x3C into FUN_00402e10, a container `resize(new_size)`:
+
+    402e14  mov  ecx,[esi+4]        ; capacity (this = esi)
+    402e1b  cmp  edi,ecx / jbe ...  ; grow via FUN_00402e70 if the new size exceeds it
+    402e40  mov  ecx,[esi]          ; size
+    402e42  mov  eax,[esi+8]        ; DATA POINTER
+    402e45  lea  eax,[eax+ecx*4]    ; &data[size]
+    402e4c  mov  DWORD PTR [eax],0  ; <-- the fault: write to 0x4
+
+The container is {size@+0, capacity@+4, data@+8}; eax = data + size*4 = 4, so DATA WAS NULL WHILE
+SIZE WAS ALREADY 1 - an inconsistent (freed, or sized without a buffer) container that the level
+load then zero-fills.  FUN_00402e10's callers include FUN_0042b6b0, the level loader, which resizes
+containers as it builds the Level (its decompile calls it with `*(level_data + 4)` - the unit count -
+right beside a run of `param_1[0x26..0x3f]` container fields).  The stack scan puts FUN_00424470 (a
+0x340-byte instantiation helper that walks a {size@0x40, data@0x48} container) on the frame.
+
+WHEN.  modloader.log: the package `resource_packages/custom/custom_run` resolved at 11:23:11, the
+menu UI loaded, the Custom Run button was armed at 11:23:15 - and the log stops there.  level_mining
+captured the TITLESCREEN (45 units) and never reached our level, so the fault is inside our level's
+load, not the package registration.
+
+WHAT IS AND IS NOT KNOWN.  The level file is unchanged since the build that loaded and rendered
+(11:01); the ONLY change in the 11:17 build was the eight `none` units' trailers.  But BOTH
+candidate trailers are untested in game - `strip:` (590 B, physics 0, nav ignore, swatch kept) AND
+the shipped `lights/light` (1037 B, physics 0, light flow, no swatch) - so the crash cannot yet be
+attributed to either, and the earlier "the light template works" assumption was never tested.  What
+is measured: a trailer the ENGINE ITSELF shipped (the floor's, 670 B / 80 B / 'floor') loads, and
+the strip's own shape is not obviously wrong (its 16-byte header {0,0,0,2} matches the skydome's).
+The strip remains REJECTED until the loader's parse is read: it removes 80 bytes from the middle of
+the trailer, and if anything in the trailer or the unit header holds a trailer-relative offset, that
+move breaks it silently.
+
+WHAT WAS DONE.  The build was returned to BISECT STEP A: all three roles point at the floor
+template, i.e. exactly the physics of the build that loaded (every unit walkable-patched, 670 B
+trailer, verifier: "mesh count 1 = template declares 1").  Deployed 11:26.  The roles themselves stay
+in the config (name flags, per-kind map, per-role templates), so the bisect is one line per run:
+
+    A  all roles -> the floor template            PROVEN (this build)
+    B  none -> lights/light                       0 B physics, is a zero-physics trailer safe at all?
+    C  none -> strip:<floor>                      only if B is safe, and only after the loader is read
+
+THE AUTHOR'S "road follow" SUSPICION, CHECKED.  `Spiral Road` and `Spiral Road Follow` are NOT the
+same mesh and never were: road = 157,180 verts in the built unit (62,368 in the .blend), follow =
+195 verts, with the SAME local bbox (56.3 x 56.3 x ~45) - i.e. the follow is a low-poly shell of the
+road, which matches "meant to be nearly the same".  Their trailers were identical in the 11:17 build
+(both `none`), so nothing singles the follow out.
