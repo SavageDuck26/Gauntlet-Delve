@@ -122,6 +122,18 @@ def base_name(name: str) -> str:
 PHYSICS_ROLES = ('walkable', 'collision', 'none')
 NAME_ROLES = (('_walkable', 'walkable'), ('_collision', 'collision'))
 
+# HOW MANY VERTICES ONE MESH BLOCK MAY HOLD (FINDINGS 9H.39).  Sixteen-bit indices are what the
+# engine's own data uses, and it never goes past them: across 1,242 mesh blocks in 582 shipped
+# units EVERY index is 2 bytes and the largest mesh the game ships is 15,972 verts.  This toolkit
+# used to write 32-bit indices past 65,535 - and the only two meshes that ever needed it (the
+# 157,180-vert spiral road and the 74,536-vert chains) are the two that render corrupted, the road
+# going wrong from about 65,536/157,180 = 42% in.  So a node that exports past this is REFUSED here
+# rather than written: split the object in Blender (each piece becomes its own unit, which is how
+# the game's own content is built) so every piece is comfortably under the limit.  NOTE the
+# exporter inflates the count - the spiral road is 62,368 verts in Blender and 157,180 in the GLB -
+# so judge it by what the build prints, not by Blender's counter.
+MAX_VERTS_PER_MESH = 65535
+
 
 def role_of(base: str, per_base: dict) -> str:
     """Which physics role a base name asks for: the name flag, then the config, then 'none'."""
@@ -416,6 +428,17 @@ def main():
             'uvs': np.array(uv, dtype=np.float32),
             'indices': np.array(idx, dtype=np.int64),
         }
+        if len(pos) > MAX_VERTS_PER_MESH:
+            raise SystemExit(
+                '%s: the mesh exports %d verts, over the %d a single mesh block may hold.\n'
+                '  Sixteen-bit indices are what every one of the game\'s 1,242 shipped mesh blocks\n'
+                '  uses and its largest mesh is 15,972 verts (FINDINGS 9H.39); writing 32-bit indices\n'
+                '  instead is what corrupted the spiral road from about 42%% in.  Split this object in\n'
+                '  Blender into pieces that each export well under the limit - each piece becomes its\n'
+                '  own unit and placement, which is how the game\'s own content is built.  Watch the\n'
+                '  count this tool prints: the exporter inflates it, so compare this number with what\n'
+                '  Blender shows rather than trusting Blender\'s vertex counter.'
+                % (base, len(pos), MAX_VERTS_PER_MESH))
         generated = encode_unit([mesh])
         try:
             unit, _tpl_meshes, written = splice_into_template(
@@ -429,6 +452,10 @@ def main():
               '(%d mesh block(s), %d primitive(s): %s)'
               % (base, unit_path, len(nodes), len(pos), len(idx) // 3, len(unit), written,
                  len(prim_sizes), ' '.join(prim_sizes)))
+        if len(pos) > 15972:
+            print('%-16s    %d verts is larger than any mesh the game ships (15,972) - fine, but it\n'
+                  '%-16s    is %d%% of the 65,535 block limit, where 32-bit indices start'
+                  % ('', len(pos), '', 100 * len(pos) // MAX_VERTS_PER_MESH))
         print('%-16s    role %-9s  %s  <- read back from the built file'
               % ('', role, physics_of(unit)))
     print()

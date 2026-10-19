@@ -198,8 +198,18 @@ def _build_mesh_block(positions: np.ndarray,
     out += b'\x00' * 12
 
     # ---- INDEX BUFFER ----
+    # SIXTEEN-BIT INDICES, ALWAYS, IS WHAT THE ENGINE'S OWN DATA USES: across 1,242 mesh blocks in
+    # 582 shipped units every index is 2 bytes and the largest mesh the game ships is 15,972 verts
+    # (FINDINGS 9H.39), while the only two meshes this toolkit ever wrote as 32-bit - the 157,180-vert
+    # spiral road and the 74,536-vert chains - are the two that render corrupted.  So 32-bit is
+    # written, but LOUDLY, and build_own_units.py refuses a node that needs it.
     max_idx = int(indices.max()) if len(indices) > 0 else 0
     if max_idx > 65535:
+        print('WARNING: mesh %r has %d verts (max index %d) - writing 32-BIT indices.  No shipped\n'
+              '         mesh exceeds 15,972 verts and every shipped index is 2 bytes, so the engine\n'
+              '         may not read this (FINDINGS 9H.39).  Split the mesh so each piece is under\n'
+              '         65,535 exported verts (build_own_units.py refuses past that on purpose).'
+              % (mat_name, vc, max_idx), file=sys.stderr)
         idx_bytes = indices.astype(np.uint32).tobytes()
     else:
         idx_bytes = indices.astype(np.uint16).tobytes()

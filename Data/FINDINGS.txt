@@ -12882,3 +12882,55 @@ same mesh and never were: road = 157,180 verts in the built unit (62,368 in the 
 195 verts, with the SAME local bbox (56.3 x 56.3 x ~45) - i.e. the follow is a low-poly shell of the
 road, which matches "meant to be nearly the same".  Their trailers were identical in the 11:17 build
 (both `none`), so nothing singles the follow out.
+
+9H.39 SIXTEEN-BIT INDICES, ALWAYS: 65,535 VERTS PER MESH BLOCK  *** Oct 2026 ***
+      --- the corpus rule, the two meshes that broke it, and why the road warped halfway ---
+
+THE SYMPTOM.  "Spiral Road is getting messed up about halfway down, and its geometry looks like it
+is being pulled upwards."
+
+WHAT THE ENGINE'S OWN DATA DOES.  Across 582 shipped units / 1,242 mesh blocks:
+
+    bytes per index        2 (uint16) for ALL 1,242 blocks - no shipped mesh uses 32-bit indices
+    largest shipped mesh   15,972 verts (0x27e2679c6a12fc0c.unit)
+    mesh blocks per unit   439 units have 1; 67 have 2; 12 have 3; 7 have 4; 9 have 5; 5 have 6;
+                           10 have 9; 5 have 11
+
+So the de-facto limit is 65,535 verts PER MESH BLOCK, with more geometry carried by ADDING BLOCKS -
+which is what the game's own units do (the crypt stairs wear 5 blocks).
+
+WHY THE ROAD WARPED.  Our encoder writes 32-bit indices when a mesh needs them
+(`gltf_to_unit._build_mesh_block`, `max_idx > 65535`), a branch the corpus never exercises, and the
+only two meshes this toolkit has ever written that way are:
+
+    Spiral Road      157,180 exported verts (62,368 in Blender - the exporter splits at UV seams)
+    Elevator Chains   74,536 exported verts (58,080 in Blender)
+
+and those are exactly the two that render corrupted.  For the road the corruption starts at
+65,536/157,180 = 42% in - "about halfway down" - which is where a reader taking 2-byte indices from
+our 4-byte buffer would have consumed the real data and started indexing garbage; triangles then
+stretch to whatever vertex the garbage names, which is what "pulled upwards" looks like.
+MEASURED IN CORPUS + MATCHED TO THE SYMPTOM; the engine's own index read has not been decompiled, so
+"32-bit is illegal" is still an inference - but splitting into 16-bit blocks is what the game does
+regardless, so it is the safe fix either way.
+
+CAN A BIG MESH BE WELDED DOWN INSTEAD?  No.  Distinct (position, normal, UV) triples:
+Spiral Road 157,180 of 157,180 (every vertex is unique - the exporter's splits are real UV/normal
+seams), Elevator Chains 74,536 of 74,536.  Welding would change the shading, so splitting is the
+only route.
+
+THE FIX IN THE TOOLKIT (2026-10-19).
+  * `build_own_units.py` REFUSES a node whose mesh exports more than MAX_VERTS_PER_MESH (65,535),
+    with the count, the corpus rule and the remedy in the message; it also flags any unit over
+    the game's own largest mesh (15,972) and says what fraction of the limit it is.
+  * `gltf_to_unit._build_mesh_block` still writes 32-bit indices if asked (other callers exist), but
+    now says so LOUDLY on stderr, quoting the corpus numbers.
+  * The author's route - split the object in Blender so each piece is its own unit, exactly as the
+    game's own content is built - is the intended one, and it needs no template juggling: a small
+    mesh is a single-block unit and wears whatever role template is configured (a 1-mesh template
+    cannot host a big mesh at all, because a body MUST declare as many mesh blocks as its template
+    - 9H.31 - so splitting into 5 blocks would force a 5-mesh template and drag its physics along).
+
+NOTE FOR THE NEXT BUILD: the level deployed at 11:26 still contains the broken road and chains
+(both written before this guard existed).  The guard now stops a rebuild until the two objects are
+split, so the split is a prerequisite for the next deploy.
