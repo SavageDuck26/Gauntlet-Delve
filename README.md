@@ -21,6 +21,7 @@ Gauntlet-Reverse-Engineering/
 |
 +-- Data/                        <- every finding, in one place (see Data/README.md)
     +-- FINDINGS.txt                 <- MASTER format document (all discoveries)
+    +-- LEVEL_RECORD_LAYOUT.md       <- the authoritative .level record field map (9H.36)
     +-- CUSTOM_ASSET_LOADING_FINDINGS.md
     +-- DEP/                         <- archived + guide docs (DEP/README.md)
     +-- hash_database.json           <- 142k name->hash dictionary

@@ -1,4 +1,252 @@
 ================================================================================
+9H.10  MOD-BUNDLE LEVEL RESOURCES HANG THE ENGINE'S BOOT  *** Oct 2026 ***
+================================================================================
+
+STATUS: confirmed by single-variable test.  The cause inside the engine is NOT
+known - that is the open question at the end of this section.
+
+The test rig
+------------
+Custom bundles are injected by the mod loader in THREE parts, and only one of them
+is a folder:
+
+    mods/bundles/<Name>/          the folder         <- deleting it removes only this
+    contents/<bundleHash>         a copy placed there <- SURVIVES deleting the folder
+    bundle_database.data rows     one row per resource<- SURVIVES deleting the folder
+
+So "remove the bundle" is not "delete the folder".  Two test runs in this session
+were invalidated by exactly that: the engine kept resolving the package from the
+surviving rows and copy, and the run measured the remnant.  `scripts/bundle_control.py`
+exists to make the state a declared, checkable thing:
+
+    bundle_control.py --list
+    bundle_control.py --only LuaResTest
+    bundle_control.py --none
+
+It deploys the named bundles, strips every other mod bundle's rows and contents
+copy, and exits non-zero unless the resulting state matches the request.  It
+never touches shipped game data.  Note for anyone extending it: it pulls each
+bundle's hash from the DEV tree first, because reading it from the deployed folder
+during a strip reported RtexTest as 0 rows immediately after deploying it.
+
+What was measured
+-----------------
+TEST PROCEDURE - read this before running anything (confirmed the hard way):
+`steam -applaunch 258970` does NOT start a second instance when one is already
+running - it focuses the existing process.  So a "relaunch" without killing first
+means the log you read belongs to the OLD run, while you believe it is the new one.
+That produced two runs of garbage data in this session.
+
+Before every test, and after every test:
+
+    pgrep -x gauntlet.exe          # must be EMPTY before launching
+    pkill -x gauntlet.exe          # if it is not: kill by NAME
+    (after reading the result) pkill -x gauntlet.exe
+
+Match by name (`-x`), never by command line: a `pkill -f <pattern>` whose pattern
+appears in the very command you are running kills your own shell, because the shell's
+command line contains the pattern.  That happened three times here.
+
+If you must match on a command line, bracket the first character so the pattern cannot
+match itself - `pgrep -f '[a]nalyzeHeadless'` matches the process running
+`analyzeHeadless`, while the literal text `[a]nalyzeHeadless` in your own command line
+does not match that regex.  Two caveats, both learned the hard way:
+
+  * The command must not contain an UNBRACKETED occurrence anywhere else, or you match
+    yourself again.  Listing a process and starting it in the same command is enough to
+    do that - which is exactly what happened when this was written.
+  * Without the brackets this traps you every time: it killed this session's shell a
+    fourth time while checking on the very analysis below.
+
+Same mod shape each time - a custom package path, a custom resource path, no
+[BootOverlay] - differing only in the resource TYPE.  Each run was verified to
+have actually been injected (`Patched bundle_database.data: N row(s)` in
+modloader.log, plus the rows and contents copy on disk) before its boot result was
+read.  "Passes the splash" means the log reaches the game's own hero packages
+(resource_packages/heroes/*_banks), which every level-resource run failed to reach.
+
+    resources in the bundle           injected    boot result
+    -------------------------------------------------------------------
+    texture   (RtexTest)              yes         passes the splash
+    lua       (LuaResTest)            yes         passes the splash
+    level     (RoomEditTest, 9)       yes         HANGS, right after the engine
+                                                  resolves resource_packages/
+                                                  custom/room_edit_test
+    level     (earlier, 1 resource)   yes         HANGS at the same point
+
+The hang signature is consistent: the engine resolves the package -
+`resource_package("resource_packages/custom/<name>") -> original returned 1 result(s)` -
+and then nothing at all is logged again.  A single level resource is enough; it is
+not a count or a size effect, and it is not the boot overlay (a run with the
+[BootOverlay] section removed from bundle.ini hung identically).
+
+So the trigger is the `level` resource type specifically.  The engine's boot does
+something with a custom package's level resources that it does not do for other
+types, and it waits.
+
+CONFIRMED: the hang happens BEFORE the game's PackageManager exists
+-------------------------------------------------------------------
+A Lua-side fix was written to bring the package online from the game's own path
+(Game:load_package -> PackageManager.load_package -> ResourcePackage.load + flush,
+see the Lua contract below).  In a clean single-instance run with the bundle
+injected, that mod never fired at all - its gate `Game.package_manager ~= nil` never
+passed - while the engine still hung at the same place:
+
+    [Bundles] Registered 'RoomEditTest' -> ... (9 resources)
+    [ResourceHooks] Patched bundle_database.data: 9 row(s) inserted for 1 bundle(s).
+    [RoomEditPackage] watching require for Game.load_package        <- never fired
+    [HOOK] resource_package("resource_packages/custom/room_edit_test")
+           -> original returned 1 result(s)
+    <hang>
+
+Two facts follow, and they matter more than the hang itself:
+
+* The engine resolves the custom package during BOOT, before Game.package_manager is
+  constructed.  So a Lua mod cannot bring the package online in time.  The fix is not
+  a Lua mod.
+* The resolve CALL COMPLETES - the hook logs "original returned 1 result(s)" - so the
+  hang is not inside Application.resource_package.  It is in the CALLER: the engine's
+  boot code that asked for the package and then did something with it.
+
+That narrows the disassembly target to one thing: the callers of the function the
+loader hooks (VA 0x4BAA10).  Find the caller that runs during boot, and read what it
+does with a package whose resources are `level` type.
+
+Supporting facts from the engine's own Lua (foundation/lua/base/package_manager.lua)
+----------------------------------------------------------------------------------
+    PackageManager.load_package(self, path, flush):
+        local package = Application.resource_package(path)   -- resolve
+        ResourcePackage.load(package)                        -- async
+        if flush then ResourcePackage.flush(package) end      -- resources come online
+
+    PackageManager.update()       -- per frame: flushes once has_loaded(package)
+    PackageManager.are_all_packages_online / has_all_loaded
+
+The game's loading states wait on are_all_packages_online / has_all_loaded.  A
+package that is resolved but never loaded-and-flushed never becomes online.
+
+Related loader facts (src/, read, not guessed)
+---------------------------------------------
+* The loader's injection is correct end to end.  modloader.log shows it validate the
+  manifest, find the bundle, copy it to contents/, register it, patch
+  bundle_database.data with one row per resource, and install the boot overlay.
+  Nine rows for a 9-resource bundle is the right shape.
+* TryGameLoadPackage (src/lua_bindings.cpp:361) calls
+  `Game:load_package(path, <sync>)`, which IS PackageManager.load_package - the
+  resolve/load/flush path above.  It has no call site anywhere in src/, and no
+  `[EXTREME] TryGameLoadPackage` line appears in any log, so nothing calls it.
+* Consequence: a bundle's package is resolved (the engine's boot finds it because
+  the DB was patched) but never loaded+flushed by the loader.
+
+OPEN - the question this leaves
+------------------------------
+Why does a custom package's `level` resource stall the engine's boot?  Candidates
+not yet distinguished: a validation the engine applies to level resources, a
+dependency of a level resource that must resolve in the same package, or the level
+resource's payload being read asynchronously in a way that waits on a package that
+is not online.
+
+The intended way in: gauntlet.exe is PE32 and disassembles with
+`i686-w64-mingw32-objdump`; the image base is 0x400000 and .text starts at 0x401000.
+The loader already knows one verified RVA - [ResourceHooks]
+LuaCApplicationResourcePackage=0xBAA10 (VA 0x4BAA10), the function it hooks, and the
+log lines for it come from that hook.  `Mods.Level.probe()` can report the address
+behind each named engine binding, which is the cheapest way to locate
+ResourcePackage.load / flush / has_loaded for hooking.
+
+CONFIRMED: the addresses of the package API (found by registration pattern)
+-----------------------------------------------------------------------
+The engine registers Lua bindings as (function address, table-name string, method-name
+string).  Scanning gauntlet.exe for `push imm32` of known string addresses recovers the
+registration blocks.  The addresses below are VAs (image base 0x400000, so the loader's
+config wants VA - 0x400000):
+
+    Application.resource_package = 0x4BAA10   name string 'resource_package' @0x749B90
+    ResourcePackage.load         = 0x4EE6C0
+    ResourcePackage.flush        = 0x4EDD50
+    ResourcePackage.has_loaded   = 0x4EDD90
+    ResourcePackage.unload       = 0x4EFCA0
+    ResourcePackage.size_in_bytes= 0x4EEE50
+    ResourcePackage.loaded_bytes = 0x4EE670
+
+Method-name strings sit in .rdata at 0x74DF5C ('flush'), 0x74DF64 ('unload'),
+0x74DF6C ('has_loaded'), 0x74DF78 ('size_in_bytes'), 0x74DF88 ('loaded_bytes'),
+0x749B90 ('resource_package').
+
+This independently confirms the loader's own hard-won value:
+LuaCApplicationResourcePackage=0xBAA10 IS Application.resource_package - the method-name
+string pushed alongside 0x4BAA10 in the same registration run is 'resource_package'.
+Note the loader config takes RVAs (a value below the image size is read as one), so a
+VA from this table must have 0x400000 subtracted.
+
+The instrument this enables: the loader's [ResourceHooks] hooks any configured address
+and logs both the entry and the return, so hooking load/flush/has_loaded during a
+bundle-boot hang shows WHICH call is entered and never returns.  That converts the
+open question from "why does the engine stall" into "which function stalls", which is a
+decompilation of one function rather than a hunt.
+
+CONFIRMED: why the loader never brings a bundle's package online
+----------------------------------------------------------------
+Three gaps, each confirmed from logs, that together leave a bundle's package resolved
+but never loaded.  This is the state the engine waits on (above).
+
+1. The package-load pass is switched off by an unset global.
+   mods/bootstrap.lua:
+       if rawget(_G, "MODLOADER_ENABLE_BULK_BUNDLE_AUTOLOAD") == true then
+           Mods.registerPostInitCallback(load_registered_bundles)
+       else
+           print("[ModLoader] Bulk registered bundle autoload disabled (diagnostic mode).")
+   Nothing anywhere in the loader (Lua, C++, config, ini - all grepped) ever sets that
+   global, so the else-branch always runs and load_registered_bundles never executes.
+   Confirmed by the log line "[ModLoader] Bulk registered bundle autoload disabled
+   (diagnostic mode)." whenever a bundle is deployed.
+
+2. Even enabled, the pass runs before there is anything to load.  With the global
+   defaulted on, the pass reports "Loading 0 registered bundle(s)..." - because the C++
+   defers bundle registration to the boot chunk
+   ("Running preflight transaction from boot chunk execution"), which the log shows
+   happening AFTER the post-init pass:
+
+       95  [Bindings] Registered callback for key: lua/states/state_splash.lua (ref: 3)
+      115  [ModLoader] Registered bundle load pass complete.            <- 0 bundles
+      220  [ResourceHooks] Running preflight transaction from boot chunk execution
+      230  [ResourceHooks] Installed boot overlay with 1 item(s).       <- 1 exists now
+      240  resource_package("resource_packages/custom/room_edit_test")  <- engine asks here
+
+3. Re-arming the pass on a later chunk does NOT work: Mods.registerFileLoadCallback
+   reports success ("Registered callback for key: ... (ref: 3/4)") for both
+   "lua/states/state_splash.lua" and "@lua/states/state_splash.lua", and neither
+   callback ever fires, while the loader's own FileHooks log proves it sees that chunk
+   ("luaL_loadbuffer called for: @lua/states/state_splash.lua").  The registration
+   succeeds and the dispatch does not happen - a loader bug in its own right.
+
+Also confirmed: Mods.Assets.get_registered_bundles() returns 0 with or without a
+[BootOverlay] section in bundle.ini, even though the C++ side logs "Bundle refresh
+complete: 1 bundle(s) registered" and its GetRegisteredBundles() is what the Lua
+binding calls.  So the Lua view of the list is empty while the C++ view is not.
+
+RECOMMENDED FIX, by timing rather than by preference
+----------------------------------------------------
+Load the packages in the C++ preflight, immediately after the overlay is installed -
+that is the last moment that is still before the engine asks for the resources (230 vs
+240 in the log above, same second).  The loader already has the function for it:
+TryGameLoadPackage in src/lua_bindings.cpp calls Game:load_package(path, sync), which is
+exactly the engine's resolve/load/flush path; it has no call site anywhere, so it is
+dead code waiting for this.  Loop the registered bundles and call it with sync=true
+after "Installed boot overlay", and the package will be online before the engine needs
+it.
+
+The package API addresses needed for a lower-level implementation are in the section
+above (ResourcePackage.load = 0x4EE6C0, flush = 0x4EDD50), and the loader's
+[ResourceHooks] already hooks Application.resource_package (0x4BAA10) successfully, so
+those two can be observed without any new C++.
+
+Session state at the time of writing: the two bootstrap.lua edits (flag default +
+splash-armed pass) are in the dev tree AND deployed to the game; the loader.conf gained
+two [ResourceHooks] keys that the loader ignores (it knows only
+LuaCApplicationResourcePackage and LuaCApplicationCanGetResource).  All reversible.
+
+================================================================================
 GAUNTLET SLAYER EDITION - BUNDLE AND RESOURCE FORMAT FINDINGS
 ================================================================================
 Last Updated: July 5, 2026 - * CUSTOM ASSETS SOLVED * (full custom chain confirmed
@@ -9894,3 +10142,2556 @@ safe to add to a group, and what a layout's group names are describing.
       builder reported placing, which may mean some sections kept shipped pieces
       alongside ours.  Unreconciled.
 
+9H.11 THE BUNDLE-LOAD HANG, MEASURED  *** SUPERSEDES 9H.10 ***
+  The 9H.10 conclusion - "the loader registers bundle packages but never loads them, so a
+  level-carrying bundle hangs the boot" - is WRONG.  It was inferred from log ordering.
+  Instrumented, the truth is the opposite: the loader hands the package to the engine
+  correctly and THE PACKAGE ITSELF NEVER FINISHES LOADING.
+
+  HOW IT WAS MEASURED
+    mods/functions/PkgTrace/script_main.lua hooks the game's own PackageManager (Lua only,
+    no rebuild) and reports state only on change, capped at 12 lines - an earlier version
+    logged on every frame and wrote 2487 lines, because PackageManager.update runs per
+    frame.  Needle: "room_edit_test".
+
+    The full journey of the RoomEditTest bundle's package, from one boot:
+
+      [Bundles] Found bundle: RoomEditTest (pkg: resource_packages/custom/room_edit_test,
+                hash: 75b743117d313683, resources: 9)
+      [Bundles] Copied bundle -> contents/75b743117d313683
+      [ResourceHooks] Bundle DB structure OK (version=2, entries=14564)
+      [ResourceHooks] Patched bundle_database.data: 9 row(s) inserted for 1 bundle(s).
+
+      [PkgTrace] load_package(resource_packages/custom/room_edit_test, flush=nil)
+      [PkgTrace] state: has_loaded=false online=false still_loading=true
+        ... 1237 more times, one per frame, 07:56:48 -> 07:57:08 (~62 fps)
+      has_loaded=true   : 0 occurrences
+
+    So, definitively:
+      - the loader DOES register the bundle, copy it to contents/<hash>, and patch the DB;
+      - Application.resource_package(<path>) DOES resolve it (hook logged "1 result");
+      - the game's own PackageManager DOES ask for it: load_package(path, flush=nil);
+      - the game loop is ALIVE at ~62 fps and calling update() the whole time;
+      - ResourcePackage.has_loaded(package) NEVER returns true.
+    The game waits for it forever: game_client.lua:398 and state_load_game.lua:131 call
+    Game:are_all_packages_online(_G.COMMON_GAME_PACKAGES), which gates on that predicate.
+    THAT is the hang.  It is not a loader timing problem, and no C++ change to the
+    preflight would fix it - the package is already being asked for.
+
+  WHY THE EARLIER LUA/TEXTURE BUNDLES "WORKED" AND A LEVEL BUNDLE HANGS
+    Unresolved, but now bounded: a texture/lua bundle's package goes through this same
+    queue, so either its contents load fast enough to satisfy has_loaded, or its resources
+    are not streamed.  A level is the type that may carry streamed data - see below.
+
+  CORRECTIONS TO EARLIER ASSUMPTIONS, ALL MEASURED
+    - bundle_database.data is NOT a resource-name index.  All 14564 rows are
+      { u32 flags | u32 len | "<16-hex bundle hash>" | u32 len | "<same>.stream" | 0x00 }
+      i.e. a registry of content FILES (14564 rows over 89 shipped bundles ~= one row per
+      resource, in TOC order).  No resource name appears in the DB at all - names resolve
+      by hash through each bundle's TOC.  bundle_control.py's "rows per bundle" therefore
+      counts file-rows, not name matches.
+    - Duplicate (type, name) across bundles is NORMAL, not fatal.  Scanning shipped TOCs
+      with a TOC-only scan (decompressing just the TOC region, not the payloads) shows the
+      game ships the same level in up to three bundles at once:
+        modules/d01_crypt/room_crypt_floor_01_adventure_template
+            owners: 0164ad48615ba9ed
+        modules/d01_crypt/prefabs/gate_exit/prefab_crypt_gate_exit_02
+            owners: 0164ad48615ba9ed, 0f07a1cb5132485b, 3ee1f740a8e57e21
+        modules/d01_crypt/prefabs/door_walls/prefab_crypt_door_wall_6c
+            owners: 0164ad48615ba9ed, 0f07a1cb5132485b, 3ee1f740a8e57e21
+      All 8 level resources in RoomEditTest are shipped names being overridden.  Precedence
+      between bundles is therefore already a solved problem in this engine.
+    - bundle_inspect.py CANNOT convict a bundle of being malformed.  It reports "TOC says
+      X but the header says Y" for shipped bundles too - e.g. 11a95e9c862b533e (89
+      resources) and 0bd097fa120382fe - so its payload-walk alignment model does not hold
+      for all real bundles.  It parsed the 42-resource 2366c0121dc7d2de and the 1341-
+      resource 3ee1f740a8e57e21 cleanly, but that is not a property we can rely on for a
+      verdict.  Do not use its PROBLEM lines as evidence.
+    - Shipped `level` resources inspected so far carry stream 0 (not streamed), yet their
+      owning bundles DO ship .stream companions (0164ad48615ba9ed: 22.5 MB) - so streams
+      exist for some resource types but not visibly for these levels.
+    - The bundle is built with HasStream=false and a 0-byte .stream file.
+
+  NEXT STEP (cheap, offline, one launch to answer)
+    Fork it with one variable: build a minimal bundle carrying ONE level resource under a
+    NEW name (a verbatim copy of a shipped level, no edit), so nothing is overridden.
+      - if it comes ONLINE      -> the mechanism works; the defect is in overriding a
+                                  shipped name or in the patched blob's size/records
+      - if it also never loads  -> a level resource cannot be shipped in a mod bundle by
+                                  this builder at all, and the container format needs work
+    A second, independent probe: for the 8 names above, compare the owning shipped
+    bundle's record dataSize against what RoomEditTest declares (manifest says 47,728 for
+    room_crypt_floor_01_adventure and 396,608 for ..._template).  The DB carries no sizes,
+    so this must come from the TOC/headers of the owning bundle - and the payload walk for
+    that has to be solved properly first (see bundle_inspect above).
+
+  TEST HYGIENE (unchanged, still holds)
+    - steam -applaunch focuses an existing instance instead of starting a new one;
+      kill with pkill -x gauntlet.exe first.
+    - the loader rewrites modloader.log each run, so read it immediately after a run.
+    - never log per frame from a hooked update(); cap and dedupe by state.
+
+
+9H.12 THE CONTAINER LAYOUT WAS THE ROOT CAUSE  *** SOLVED, PROVEN IN GAME ***
+  §9H.11 established that a `level` bundle's package never finishes loading.  This section
+  is why, and the fix.  The bundle container the builder wrote was not in the engine's
+  format at all: the engine could not read a single resource out of it.  The package's
+  async load therefore never completed, ResourcePackage.has_loaded() stayed false forever,
+  and the game hung on Game:are_all_packages_online(_G.COMMON_GAME_PACKAGES).
+
+  THREE DEFECTS, ALL IN mod_bundle_builder.py's _build_bundle
+    1. TOC had (N+1) entries - a repeated "sentinel" of entry[0].  The engine's table is
+       exactly resource_count*16 and the payloads start immediately after it, so the extra
+       16 bytes shifted every resource header.  The repair drops the sentinel.
+    2. Resource 0 got a 20-byte header with NO type and name.  Every resource carries the
+       same 36-byte header {u64 type, u64 name, u32 flags, u64 stream_size, u32 data_size,
+       u32 unknown}, the first included.  With the 20-byte form the engine read resource 0's
+       flags and sizes as its type and name and then walked off the end.
+    3. Payloads were padded to a 4-byte boundary.  The engine advances to
+       data_start + data_size with no alignment padding, so each pad byte shifted the next
+       header.
+  Each is silent - the sizes stay plausible and nothing reports an error.
+
+  HOW IT WAS FOUND: THE REPO'S OWN DECODER, USED AS AN ORACLE
+    analyze_package_dependencies.py already parses shipped packages correctly (13/13 on
+    contents/b22560b172a4cff8), so it is ground truth that costs nothing to run:
+
+      SHIPPED b22560b172a4cff8 : count=13 off=0x104 parsed=13 packages=13
+      MINE (before)            : count=2  off=0x14  parsed=2  packages=0   <-- fell back
+      MINE (after the fix)     : count=2  off=0x104 parsed=2  packages=1
+
+    Before the fix its first candidate (0x104) yielded nothing and it fell back to a
+    nonsense candidate, which is exactly what the engine was doing.  After, ours reads
+    identically to a shipped bundle:
+      [0] type 0xAD9C6D9ED1E5E77A name 0x169133D4E2CF14AD flags 1 main 25    (package)
+      [1] type 0x2A690FD348FE9AC5 name 0xBD54B2FDE04C820A flags 1 main 1104  (level)
+    Validate any future bundle change this way BEFORE launching the game.
+
+  PROOF IN GAME (PkgTrace, mods/functions/PkgTrace/script_main.lua)
+    LevelProbe, one 1,104-byte leaf level, NEW name, nothing overridden:
+      [08:08:24] load_package(resource_packages/custom/level_probe, flush=nil)
+      [08:08:24] state: has_loaded=false online=false still_loading=true
+      [08:08:27] state: has_loaded=true  online=true  still_loading=false
+    RoomEditTest, 9 resources, the Blender-edited room overriding shipped names:
+      [08:09:33] load_package(resource_packages/custom/room_edit_test, flush=nil)
+      [08:09:36] state: has_loaded=true  online=true  still_loading=false
+    Both online.  The rebuilt RoomEditTest is 119,440 bytes against the old 119,456 - the
+    difference is exactly the 16-byte sentinel that is no longer written.
+
+  THE PACKAGE BLOB HAD A SECOND, INDEPENDENT DEFECT
+    Package entries are {u64 type, u64 name, u32 dependencyCount, u32 deps[dependencyCount]}
+    (analyze_package_dependencies.py:184, struct "<QQI" then dep_count*4).  The builder
+    emitted a fixed "2, 0, name_hi32" triple - the same 28 bytes, so the sizes matched and
+    nothing looked wrong - but the engine read it as dependencyCount=2 with dep[0] =
+    0x00000000, a dependency on a resource hash that does not exist.  It now emits the real
+    count.  Shipped entries all use 2, where dep[1] is the entry name's high 32 bits and
+    dep[0] is a per-package constant (e.g. 0x82DE0B1B within contents/b22560b172a4cff8);
+    custom bundles emit 0 dependencies for now, which the decoder accepts (status=ok).
+    Whether the engine wants the two-dependency form for a resource with real dependencies
+    is NOT settled - a unit referencing a material is the test that would settle it.
+
+  THE TOOLING MODELS ARE WRONG AND MUST BE CORRECTED
+    Both bundle_inspect.py and the loader's src/bundle_diagnostics.cpp assume
+      - resource 0 has a 20-byte header with no type/name,
+      - the TOC has (N+1) entries with a sentinel,
+      - payloads are 4-byte aligned.
+    All three are wrong, and that is why the loader reported our bundle as having "no
+    structural problems" while the engine could not read it.  Until they are corrected they
+    will keep clearing malformed bundles, so a bundle that passes them is not evidence.
+    The correct model is in analyze_package_dependencies.py:parse_bundle.
+
+  ALSO FIXED ALONG THE WAY
+    bundle_control.py's strip filter was inverted (it kept the rows of the bundles being
+    stripped and would have dropped the kept one's), so it printed "stripped: 0 row(s)"
+    while leaving dangling rows pointing at content files it had just deleted.  It now
+    strips by the hashes of the KNOWN bundles that are not wanted, and a --none/--only
+    cycle moves the database cleanly (14564 -> 14553 -> ...).
+
+  TOOLS THAT CAME OUT OF THIS
+    - mods/functions/PkgTrace/script_main.lua - Lua-only trace of one package through the
+      game's own PackageManager.  Reports state CHANGES only, capped, because
+      PackageManager.update runs per frame; an uncapped version wrote 2487 lines.
+    - scripts/level_probe_mod/mod.json - the minimal one-resource probe bundle.
+    - scripts/bundle_control.py -now also the way to guarantee a single-variable test.
+
+9H.13 THE MOD BUNDLE PATH WORKS END TO END  *** CONFIRMED IN GAME ***
+    An edit to a shipped resource, shipped inside a mod bundle, IS what the engine uses.
+    That was the last unknown: precedence over the games own copy of the same resource.
+
+  THE PROOF
+    A position patch to room_crypt_floor_01_adventure - every `gameobjects/gold/pile_small`
+    entity raised 1.5 m - built into the RoomEditTest bundle and confirmed visible in the
+    campaign's crypt floor 01.  The room ships inside contents/0164ad48615ba9ed, so this is
+    an override winning, not a new resource appearing.
+
+    The patch, for reference, since the axis is easy to get wrong: the .level file is Z-up
+    and `up` is the THIRD float of the record's position (OFF_POSITION = 48, so +8).  The
+    GLB exporter is what converts Z-up to Y-up; do not "raise in Y" in the level file.
+    371 entities in that file, 152 matched, size unchanged, md5 1d34b622... -> dcda67a3...
+
+  THE SECOND SILENT FAILURE: AN EDIT THAT IS NOT AN EDIT
+    The first attempt changed nothing in game because the file listed as the edited level
+    was BYTE-IDENTICAL to the pristine export - same md5, 0 bytes differing.  Everything
+    downstream was happy: the container parsed, the package came online, the room rendered.
+    It just rendered the original.
+
+    So scripts/check_mod_sources.py now compares every resource a mod.json lists against
+    the game's own copy of the same resource and reports which are unchanged:
+
+        check_mod_sources.py room_edit_mod/mod.json
+
+    Exit status 1 when the mod overrides shipped resources and none of them differ, i.e. it
+    cannot change anything.  A mod of new names only is reported as nothing-to-compare.
+
+  THE VERIFICATION CHAIN - run all three before any deploy
+    1. check_mod_sources.py <mod.json>          -> at least one resource must differ
+    2. analyze_package_dependencies.py <bundle> -> off must be 0x104, parse_status ok
+    3. compare the md5 of the bundle's blob for the edited resource against the edited
+       source file; it must match, and must differ from the pristine export
+    Skipping step 1 cost a month.  Skipping step 3 is how a bundle ships the original.
+
+  THE QUILTEXTRAS SCOPE BUG THIS SURFACED  (loader repo, mods/functions/QuiltExtras)
+    QuiltExtras serves our own dungeon layout files in place of the game's, so shipped but
+    unused quilt pieces can be exercised.  Its OVERRIDES table listed 63 layouts - and 39 of
+    them are SCRIPTED floors, `fixed_modules` layouts whose whole purpose is to name the
+    rooms they must contain.  Serving a quilt in their place DELETES those rooms:
+
+      crypt_floor_01            room_crypt_floor_01_adventure   (the campaign's first room)
+      crypt_floor_04 / 07       room_crypt_floor_02 / 05_adventure
+      crypt_floor_10            room_crypt_floor_06_boss
+      caves_floor_10            room_caves_floor_10_boss
+      every colosseum arena     18 layouts (crypt, caves and lava x 6)
+
+    Symptom: the campaign floor generated as a quilt with no adventure room, and no arena
+    could appear, which also blocks the CustomColosseums mod - its arena layout is not the
+    one that loads.  crypt_floor_01.lua is moreover the ONLY shipped layout that names
+    room_crypt_floor_01_adventure, so overriding it removes the room from the whole game.
+
+    Now restricted to the 15 endless layouts (crypt_endless_*, crypt_endless_start_*,
+    caves_endless_*, lava_endless_*) - floors that exist to be procedurally generated, so a
+    different quilt table changes their layout without removing anything the game needs.
+    crypt_floor_02, 05 and 08 are quilt-built with no fixed_modules and are safe to add
+    deliberately, but they are campaign floors and are out by default.
+
+9H.14 CUSTOM GEOMETRY, AND THE PLAYER SPAWN  *** SPAWN MECHANISM SETTLED ***
+    Two things came out of building a level of our own: how the engine places a player, and
+    that loading a level into the live MENU world crashes this engine.
+
+  THERE IS NO SPAWN-MARKER ENTITY
+    A level cannot say where the player starts, because nothing reads such a marker.  The
+    player is placed by a downward RAYCAST onto static geometry filtered "floor":
+
+      lua/states/game_client.lua   local spawn_position = QueryManager:query_floor_enter_position(position)
+                                   ... EntityAux.command_immediately(unit, "motion", "force_set_position", spawn_position)
+                                       Unit.teleport_local_position(unit, 0, spawn_position)
+
+      lua/managers/query_manager.lua:74
+        QueryManager.query_floor_enter_position = function (self, position)
+            local ray_position = position + Vector3.up() * 5
+            local ray_direction = Vector3.down()
+            local ray_length = 10
+            local physics_world = self.world_proxy:get_physics_world()
+            local any_hit, hit_position = PhysicsWorld.immediate_raycast(physics_world,
+                ray_position, ray_direction, ray_length, "closest", "types", "statics",
+                "collision_filter", "floor")
+            return any_hit and hit_position or position
+        end
+
+    So the "spawn marker" is FLOOR-FILTERED COLLISION at the spot you want, and the only way
+    to spawn at a chosen point is Lua (Unit.teleport_local_position - what the game itself
+    uses).  A placed marker entity would spawn nothing.
+    Practical consequence: a plane authored as floor collision IS a spawn surface.  The
+    FlatPlaneTest plane (walked on, confirmed in game) is one, because the template's
+    collision came along in the trailer.  Whether the raycast's "floor" filter accepts it
+    is the one thing still untested, and it decides whether Lua is needed at all.
+    The trailer carries `a_collision` but no filter NAME, so the filter is an enum and
+    cannot be read offline.
+
+  BUILDING OUR OWN LEVEL  (tools, all offline-verified)
+    scripts/make_plane_glb.py        writes a flat quad as GLB in ENGINE space (XY plane,
+                                     +Z normal) - glb_to_template_unit.py does no axis
+                                     change, so a Blender export arrives standing on edge
+    scripts/glb_to_template_unit.py  (existing) splices the mesh into a native unit and
+                                     keeps that unit's TRAILER, which is what carries
+                                     collision/physics (CUSTOM_ASSET_LOADING_FINDINGS 10.2).
+                                     Our plane: 2568 B = 434 B mesh + 2134 B trailer.
+    scripts/level_set_entities.py    replaces a level's entity table, keeping the header,
+                                     config, lighting and every other section intact, and
+                                     verifies that NOTHING else changed.  --replace-at N
+                                     swaps one entity (keeps a room's props and its
+                                     load-bearing encounter doors); --zero-sublevels drops
+                                     the 56-byte sub-level placement records, which is how
+                                     "no crypt shell" is built.
+    mod_bundle_builder.py            now ships a prebuilt .unit AS-IS (rs["raw"] or a
+                                     .unit source) - re-encoding dropped the trailer.
+
+  PROVEN IN GAME (FlatPlaneTest, mods/bundles/FlatPlaneTest)
+    A 40 m quad spliced into the ham template, replacing ONE entity in
+    room_crypt_floor_01_adventure.  It loads, renders, and THE PLAYER CAN WALK ON IT - so
+    the spliced unit's collision survives the whole path.  It renders with the template's
+    own material (m_ham), which is expected: patch the unit footer hash to bind our own
+    (10.3), no format work needed.
+
+  LOADING A LEVEL INTO A LIVE WORLD CRASHES THE ENGINE - AND WHY THE BUTTON VANISHED
+    The engine dies inside world:load_level.  Established by elimination, each a separate
+    launch, all with step-by-step logging so the last log line names the call that did not
+    return:
+      - into the menu's own world (menu_level_world)          CRASH
+      - into a brand-new world proxy of our own, the way the game's
+        menu daemon creates one (new_world_proxy + create_viewport)   CRASH
+      - our minimal one-entity level, and a pristine SHIPPED level    CRASH both
+      - at frame 300 (menu long settled), not just during construction  CRASH
+      - with viewport:set_shading_environment() added, as the daemon does  (untested)
+    Four variables eliminated, so this is not the level, not the world, and not early
+    timing.  A shipped, unmodified level dying there is the decisive one.
+
+    THE MISSING BUTTON, separately: CustomLevels hooked ScreenMainMenu.rebuild_ui, but the
+    menu had already built its UI by then, so add_button never ran - no error, no log, no
+    button.  And the menu ACTIVATES that button by itself while booting (nothing clicks it),
+    which fired the load and killed the boot.  Both are now handled: add_button also runs
+    from a ScreenMainMenu.update hook (proven: "'Custom Levels' button added to the main
+    menu"), and the first activation only ARMS - the load needs a second, real click.
+    So the boot is stable with the mod deployed; what remains broken is the load itself.
+
+    Note rebuild_ui calls GUI:destroy_widget(self.widget) and rebuilds the tree, so any
+    child added to it is discarded on every rebuild - it has to be re-added, which is why
+    the update hook matters and why "it appeared once and then vanished" is expected.
+
+  NEVER CHANGE A LEVEL'S ENTITY COUNT
+    Replacing a level's whole entity table crashes the level load when the CAMPAIGN loads
+    it - a different crash from the load_level one below, and it cost one launch:
+
+      room_crypt_floor_01_adventure            371 entities -> 371 (one replaced)   loads
+      room_crypt_floor_01_adventure_template  4247 entities -> 1  (whole table)     CRASH
+
+    The level's other structures still reference the original number of entities, so a
+    table that no longer matches them is inconsistent and the load dies.  The safe form
+    keeps the count EXACTLY: replace the entity you want with yours and move the rest out
+    of the way instead of deleting them.  Specifically, for the shell:
+
+      entity 0            -> our plane (position 57,52,10; scale 4 -> 160 m)
+      entities 1..4246    -> position.z += 100000   (hidden, still present)
+      count               4247 -> 4247, header[0] untouched
+
+    Verified as: size unchanged, count field unchanged, 0 bytes differing outside the
+    entity table - the same safety profile as the working room override.
+
+  A CUSTOM UNIT'S PHYSICS COMES FROM ITS TEMPLATE'S TRAILER
+    glb_to_template_unit.py keeps the template's trailing sections, and those carry the
+    physics ACTOR.  Splice into a loose physics prop and your geometry becomes a dynamic
+    body: the 400 m plane sliced into ham_plate fell and tumbled, which presented as "still
+    far away" (it had fallen) and "rotated 30-45 degrees" (it had spun on the way down).
+    Both symptoms, one cause, and nothing in the log said anything.
+
+    So pick a template whose physics matches what the thing IS:
+      a floor    -> gameobjects/procedural_floors/entrance_blocker  (trailer 2547 B)
+      the ham_plate we started with is a dynamic prop                (trailer 2134 B)
+
+    Trailer size is a decent tell that you got a different template; the actor type inside
+    it is not readable offline, so pick by what the template IS in game.
+
+    Related: this is the second symptom this session whose cause was a plausible-looking
+    choice rather than a measured one (the first was centring the plane on the props' median
+    instead of the room's origin).  The donor's own values are the ones to copy.
+
+9H.15 WHERE STATIC COLLISION LIVES  *** OPEN - the map, and what is not known ***
+    The question: a plane of our own that the player stands on and that does not move.
+
+  SETTLED: UNITS DO NOT CARRY STATIC COLLISION
+    Only 23 of the 582 extracted units contain an `a_collision` actor, and every one of them
+    is a thing that MOVES: ham_plate, turkey_plate, carry/elemental_*, carry/carry_barrel_*,
+    spawners/spawner_*.  A solid crypt WALL unit (props/d01_crypt/crypt_brick_02) has NO
+    physics actor and no collision strings - only a shader name.  So walls are solid because
+    the LEVEL says so, not because the unit does.  Hence a unit-based plane is inherently a
+    simulated body, and there is no static template to borrow.
+
+  THE HAM'S TRAILER EXPLAINS BOTH SYMPTOMS
+      a_collision, angular_velocity, angular_velocity_random, apply_velocity,
+      ham_plate, linear_velocity, linear_velocity_random
+    A flow that applies RANDOM linear and angular velocity.  That is the tumbling, on top of
+    the fall: not merely a dynamic body, one given a random shove and spin.
+
+  AND WHY THE FLOOR UNIT WAS WORSE
+    gameobjects/procedural_floors/entrance_blocker looked ideal and CRASHED the level load.
+    All 23 collidable units carry flow data; that one's is procedural-floor logic and our unit
+    inherited it.  Splicing into a collidable template imports its BEHAVIOUR, not just physics.
+
+  THE SECTION MAP OF A .level  (16 offset/count pairs at the head)
+    *** THE HEADER MODEL BELOW IS WRONG - see 9H.16: the 128 bytes are 32 uint32 fields,
+        counts interleaved with offsets.  The section offsets in this map are still the
+        real offsets; the (field_a, field_b) pairing is not. ***
+    ROOM  room_crypt_floor_01_adventure (47,728 B, 371 entities) - DECORATION, no geometry:
+      @0x80     entity table                371 x 72
+      @0x7AD0   120 B   layer/shading config   'default', 'modules/d01_crypt/shading_environment'
+      @0x7B48   8864 B  FlowCallbacks          'ability_name', 'encounter_node_disable'
+      @0x9DE8   2292 B  flow-ish               'activate', a character path
+      @0xAD00   392 B   the PLACEMENT table    7 x 56 - the records retargeted for our plane
+      @0xAE88   2968 B  offset table           entries repeat a single offset
+    SHELL  room_crypt_floor_01_adventure_template (396,608 B, 4247 entities) - SOLID:
+      @0x80     entity table                4247 x 72 (~305,936 B)
+      @0x4F8D0   120 B  layer/shading config   same shape as the room's
+      @0x4F948  10944 B ?
+      @0x52408    320 B all zeros
+      @0x52548    528 B floats 1.0 / 0.0 - matrices?
+      @0x52758    184 B zeros and small counts
+      @0x52810    616 B 11 x 56-byte records, floats inside the room's own x range (-35..139)
+      @0x52A78  23824 B NOT float data (read as float it spans 8e5)
+      @0x58788      8 B two offsets
+      @0x58790    112 B hashes, incl. 0x8bc6fb931657cc30 (gate_exit prefab)
+      @0x58800  33976 B table of repeated self-referencing offsets
+      @0x60CB8    136 B offsets
+    The room being flows-and-placements only is consistent with it having no collision; the
+    shell carries the bulk geometry, so the collision is one of its sections.
+
+  WHAT IS NOT KNOWN
+    WHICH section.  A float-span heuristic is not enough: several sections appear to span the
+    room once read as floats, and 0x52A78's 8e5 span is garbage, i.e. not floats at all.  The
+    next step is structural rather than statistical - find vertex/face structure (a vertex
+    stride, a face count, a bbox per shape) and then TEST a candidate by locating this room's
+    walls inside it, rather than by range alone.
+
+  READY AND WAITING
+    plane_mod/level_flat_plane.level - 1 entity, no sub-levels, donor header/config/lighting:
+    a level containing nothing but our plane.  Its 3-resource package
+    (resource_packages/custom/flat_plane_level) builds and validates offline (parse_status
+    ok, 4911 B).  It needs a load route that does not crash, which currently means the
+    campaign - i.e. overriding a shipped level - rather than a standalone world.
+
+================================================================================
+9H.16 THE LEVEL FILE, PROPERLY  *** Oct 2026 - the header model above was WRONG ***
+================================================================================
+
+9H.15 called the head "16 offset/count pairs".  It is not.  The 128 bytes are 32 uint32
+fields: counts interleaved with offsets.  The old reading fitted the bytes and explained
+nothing, which is why the section map could not be finished.
+
+WHAT SETTLED IT
+  reference/filediver/stingray/level/level.go  -  `RawLevel`, a sibling Stingray game's
+  (Helldivers 2) level header: the same struct with 64 slots.  Its loader reads a count,
+  SEEKS to an offset, and reads that many records; the file is a memory image with every
+  pointer rebased to a file offset.  reference/filediver/patterns/level.hexpat is the same
+  layout declaratively.  Gauntlet's build is older and has 32 slots, not 64.
+
+  Everything below was then measured against three real levels:
+    room_crypt_floor_01_adventure                47,728 B    371 units
+    room_crypt_floor_01_adventure_template      396,608 B   4247 units
+    level_24abcdf4b1fb4d4a (sample)               1,136 B      6 units
+
+FIELD MAP  (verified fields only; the rest are unnamed offsets, not guesses)
+  u32[0]  = 128        constant in the whole corpus - the unit table starts here
+  u32[1]  = unit count  371 / 4247 / 6
+  u32[2]  = data count  always 1
+  u32[3]  = offset      24 bytes past the unit table
+  u32[10] = offset      a 12-byte-record array
+  u32[11] = count       its count (42 in the room, 14 in the shell)
+  u32[14] = offset      the METADATA list
+  u32[15] = count       a 56-byte-record array's count (11 in the shell)
+  u32[16] = offset      that array
+  u32[24] = offset      a PER-UNIT array: exactly 8 bytes per unit (371*8, 4247*8)
+  u32[28] = file size - 8
+  u32[29] = count       the PLACEMENT table's count (7 in the room, 2 in the shell)
+  u32[30] = offset      that table, 56-byte records
+  The three invariants that must hold - unit table at 128, it fits, data count is 1 - pass
+  on all 11 .level files in this repo.
+
+METADATA, FULLY DECODED  (at u32[14]; this was 9H.3's "resource config section")
+  u32 count, then per entry:  u32 hashCount, u32 thinHash[hashCount], u32 type, value
+  type 1 = uint32, 2 = float32, 3 = string (u32 length INCLUDING the null, then the bytes,
+  padded to a 4-byte boundary).  It is `parseMetadataEntry` from filediver, exactly.
+  Every level here carries 4 entries; the room's are
+      0xf01676fc float32 1.0
+      0xfe73c7dc string  'modules/d01_crypt/shading_environment'
+      0xd8b27864 string  ''
+      0xfe379225 string  'default'
+  So 9H.3's "resource path / layer name config section" was the metadata list all along, and
+  the padding rule it noted (strings padded to 4) is what a naive parse desyncs on: the
+  empty string is 1 byte of payload padded to 4, and without the pad the next entry is read
+  from the wrong place.
+
+A UNIT RECORD, 72 bytes at u32[0], u32[1] of them - unchanged from 9H.2, re-verified
+  +0 float flag, +4 scale xyz, +16 unused, +24 entity id, +32 template hash,
+  +40 material override, +48 position xyz, +60 rotation xyz.
+
+THE TOOL
+  scripts/level_decode.py  - reads only; prints the header, the units, the metadata, the
+  placements and every section with its size and content profile.  It asserts the three
+  invariants, so a file that stops fitting the model says so instead of printing a
+  confident wrong answer.  resource_tools/level_tools.py keeps encode/decode for editing.
+
+--------------------------------------------------------------------------------
+9H.16.1 THE UNIT TRAILER, DECODED - and what it does NOT contain
+--------------------------------------------------------------------------------
+
+  A unit is [header][mesh][materials][TRAILER][footer].  The trailer is a byte-packed data
+  table, and its records are the same shape as the metadata's:
+      { u32 key_thin_hash, u32 offset, u32 type, u32 size, value }
+  Read off two real units (extracted from bundle 0164ad48615ba9ed):
+
+    blocks/common/invisible_wall_2c   (the collision wall)
+      nav_grid_type_auto     = 'blocker'        (8-byte string)
+      nav_grid_type_override = 'blocker'
+      walkable / unwalkable  = arrays (type -1)
+      material               = 'm_invisible_wall'
+      footer                 = its own path hash
+    blocks/d01_crypt/floors/cryptsmooth_floor_4c_4c   (a floor block)
+      nav_grid_type_auto     = 'floor'
+      nav_grid_type_override = 'floor'
+      material               = 'm_cryptsmooth_floor_01'
+      footer                 = blocks/d01_crypt/d01_crypt_swatch
+
+  `nav_grid_type_auto` is the key lua/dungeon/nav_grid.lua reads -
+  `Unit.get_data(unit, "nav_grid_type_auto") or "ignore"` - and nav_grid returns 'blocker'
+  and 'ignore' as its own type names, so the decode is confirmed against shipped Lua, not
+  merely self-consistent.  These are AI NAVIGATION values: "floor" here means "AI may walk
+  on it", not "the player's floor raycast hits it".
+
+  NEITHER UNIT HAS A PHYSICS ACTOR.  Neither does any structural block.  Of the 691
+  extracted .unit files exactly 24 contain `a_collision`, and every one is a gameobject that
+  MOVES: spawners/spawner_*, carry/carry_barrel_*, carry/elemental_*, food/ham_plate,
+  food/turkey_plate.  A crypt wall, floor, border, pillar, stair, railing or rock has none.
+
+      *** THIS PARAGRAPH IS WRONG - CORRECTED IN 9H.19.  A crypt wall, floor and pillar DO
+      have physics actors, and 9H.19 proves it from the game's own build script.  What the
+      search above actually found is a FLOW parameter: `a_collision` is a string inside the
+      unit's flow data (it names an actor for FlowCallbacks.create_actor), which is why only
+      the gameobjects that MOVE carry it.  The physics actors store no name strings, so no
+      string search could ever find them.  Read 9H.19 before using anything in this
+      subsection. ***
+
+--------------------------------------------------------------------------------
+9H.16.2 WHERE THAT LEAVES THE COLLISION QUESTION
+--------------------------------------------------------------------------------
+
+  `blocks/common/invisible_wall_2c` is a COLLISION unit by name and by purpose - the shell
+  places 93 of them - and its unit carries no actor at all.  So an invisible collision wall
+  exists in a level without any unit-side physics definition, which means the engine must be
+  building it.  Two engine strings agree:
+
+    "Dynamic physics enabled for an object that is linked in the scene graph. This does not
+     make sense. Unit: %s, Actor: %s"
+    "Invalid actor \"%s\" in %s: Collision is not supported for dynamic triangle meshes,
+     height fields or planes. Make the shape static or disable collision for it."
+
+  i.e. level-linked units are expected to carry STATIC physics, and triangle meshes and
+  height fields are named as real shapes.  The working hypothesis is therefore:
+
+    a level-placed unit gets a STATIC collider from its MESH, and a unit that ALSO defines
+    an actor (ham_plate and friends) gets that actor too - which is why the ham-templated
+    plane tumbles while a wall stands still.
+
+  That is testable, and it is the cheap test: splice the plane into a BLOCK unit - one with
+  no actor definitions, e.g. blocks/d01_crypt/floors/cryptsmooth_floor_4c_4c - instead of
+  ham_plate.  If the plane comes out static and walkable, 9H.15's "there is no static
+  template to borrow" is answered by its inverse: the static templates are the ones with no
+  actors.
+
+  NOT established: that EVERY level unit is solid.  props/d01_common/fog_volume and
+  gameobjects/level_editor/unwalkable are placed units that should not be, so a per-unit or
+  per-mesh marker probably exists as well.  The block-versus-ham test settles the mechanism
+  either way; the marker question is what to look at if the plane is solid but something
+  else is unexpectedly solid too.
+
+  RULED OUT, each with evidence:
+    * actors in unit trailers      - the whole block family has none (9H.16.1)
+    * flow in the level            - neither level contains 'create_actor', 'a_collision'
+                                     or 'physics'; only the room has flow node names
+    * a level 'physics' resource   - the type exists, but no name in the 147,168-entry name
+                                     database is a physics resource belonging to a level
+    * a baked collision mesh       - no section of either level holds a long run of
+                                     coordinate-like floats (the longest run that is not
+                                     zeros is 49 floats, in a 44%-zero section)
+
+================================================================================
+9H.17 THE BINARY SIDE  *** Oct 2026 - gauntlet.exe, via Ghidra ***
+================================================================================
+
+  Read with Ghidra 12.1.4 (tools/ghidra_12.1.4_PUBLIC + tools/jdk) against the existing
+  ~/tools/ghproj/Gauntlet.gpr project.  Scripts live in scripts/ghidra/ and are run
+  headless; see that directory's README-style headers for the exact command line.  Note
+  that Ghidra 12 runs .py through PyGhidra, so either install the Jython extension (it
+  ships as an uninstalled zip under Extensions/Ghidra/) or launch through
+  Ghidra/Features/PyGhidra/support/pyghidra_launcher.py -H.
+
+THE LEVEL PARSER, LOCATED
+    World.load_level binding       FUN_004f2520   thin: builds a pose, calls ->
+    FUN_00428a50                   allocates 0x208 (520 B) and calls ->
+    FUN_0042b6b0                   *** the level loader ***
+  FUN_0042b6b0 builds the Level object: it reads the resource, sizes arrays from the
+  counts, copies the unit table, then walks the placement table.  It is also its own
+  caller - a placed sub-level is loaded by recursing into it.
+
+  This is where the header model stops being an inference.  The loader reads:
+      +4        the unit count, used to size an array
+      +0x1c     u32[7]  - a pointer to a structure
+      +0x28     u32[10] - a pointer to a structure
+      +0x34     u32[13] - a pointer/offset
+      +0x74     u32[29] - THE PLACEMENT COUNT
+      +0x78     u32[30] - THE PLACEMENT TABLE OFFSET
+  and the sub-level loop advances by 0x38 = 56 bytes, reads the record's own resource id
+  from +8, and builds a matrix from +16, +28 and +44.
+
+9H.17.1 THE PLACEMENT RECORD, NOW FULLY DECODED (56 bytes)
+
+    +0    8   instance id
+    +8    8   resource id  = { MurmurHash64A of the name, type hash }
+    +16  12   position     (3 floats)
+    +28  16   rotation     (4 floats - a real quaternion, w included)
+    +44  12   scale        (3 floats)
+
+  The loader XORs +0 with the level's own id (two u32s) to make a unique instance id, so
+  the raw value in the file is not the runtime one.
+
+  VERIFIED on the room's own 7 records - all 7 resolve to real names, and the transforms
+  are clean:
+    [0..5]  modules/d01_crypt/prefabs/door_walls/prefab_crypt_door_wall_{10c,6c,10c,16c,6c,8c}
+            at (56,-6,10) (48,6,10) (40,34,10) (128,94,4) (72,-6,10) (84,60,7)
+            rotation (0,0,0.707107,-0.707107) = 90 deg, or (0,0,0,1) = identity
+    [6]     modules/d01_crypt/room_crypt_floor_01_adventure_template   <- THE SHELL
+            at the origin, identity, scale 1 - exactly what 9H.5 said the room places.
+  So the room-to-shell link is now readable AND writable by name.  level_decode.py prints
+  it in this shape; its earlier "u64 hash + 6 floats" reading was wrong (the floats it
+  showed, e.g. -8.47e35, were the resource id's type hash being read as a float).
+
+9H.17.2 THE LOADER CREATES NO PHYSICS  (this is a real negative)
+
+  FUN_0042b6b0's callees are FUN_00402e10, FUN_0040a350, FUN_00453840, FUN_00453a20,
+  FUN_00457bd0, FUN_005fea30, FUN_005ff140, FUN_0062a040, FUN_00636330, FUN_00642b00,
+  FUN_006880e0 and itself.  No physics factory, no actor creation, no collision setup.
+  Consistent with 9H.16.2: the file has no collision to load.
+
+9H.17.3 HOW AN ACTOR IS INSTANTIATED - and why blocks never get one
+
+    Unit.create_actor (Lua)     FUN_004e7ed0   thin: hashes the name, calls ->
+    FUN_0045a890                looks up an actor by index in the unit's own array
+        actor array   at [unit_resource + 0xc4]
+        actor count   at [unit_resource + 0xbc]
+    if the slot is empty it instantiates either from the resource's actor table
+    (FUN_0045a6d0) or through a virtual call into a "spawn from package" fallback.  Returns
+    0 when the index is out of range, which means a unit with no actor table can never
+    produce an actor from this path.
+
+  So actors come from the UNIT resource's own table, and every structural unit's table is
+  empty (9H.16.1).  Physics for crypt geometry therefore does NOT travel this path either.
+  The actor-definition fields the engine names in its own strings (CollisionTriangles,
+  CollisionPlanes, CollisionConvexMasks, CollisionSpheres, SelfCollision,
+  SelfCollisionIndices) do not appear as thin hashes in any of the 691 units, so the actor
+  table is a compiled struct, not a key/value store.
+
+STILL UNKNOWN, NOW NARROWED
+    Which of the remaining header fields is read by whoever creates the collision for a
+    placed unit, and what it points at.  The candidates are the fields no decompiled
+    function has yet been seen reading: u32[3], u32[4], u32[5]/u32[7], u32[8]/u32[9],
+    u32[12]/u32[13], u32[15]/u32[16], u32[18]/u32[19], u32[20]/u32[21], u32[22], and
+    u32[24] (the per-unit 8-byte array).  The way to find it: decompile the READERS of
+    those fields - i.e. whoever consumes the level resource besides the loader - rather
+    than reading the file for the nth time.
+
+================================================================================
+9H.20 THE COLLIDER IS THE DONOR'S 8x8 PATCH, AND IT DOES NOT SCALE
+================================================================================
+
+  MEASURED IN GAME, by mapping the collider instead of looking at the plane.  ActorProbe
+  casts a 5x5 grid of downward, floor-filtered raycasts over +/-10 around the unit and
+  records the surface height at each point.  Our plane (a 40 m quad, entity scale 10, so
+  400 m of VISIBLE geometry) gave:
+
+        -      -      -      -      -          rows are y = -10, -5, 0, +5, +10
+        -      -      -      -      -          cols are x = -10, -5, 0, +5, +10
+        -      -  +0.02  +0.02      -
+        -      -  +0.02  +0.02      -
+        -      -      -      -      -
+
+  So the collider spans roughly x,y in [0, +8) - an 8x8 patch anchored at the UNIT'S OWN
+  ORIGIN, which is exactly the donor mesh's extent (blocks/d01_crypt/floors/
+  cryptsmooth_floor_4c_4c is 9 verts spanning 0..8, all at z=0).
+
+  *** CORRECTION, from the next run.  The line here used to say "and it does not scale with
+  the entity".  That was an over-read of the scale-10 measurement above.  Scaling the tile to
+  0.2 collapsed the footprint to a SINGLE point - roughly 1.6 units, i.e. 8 * 0.2 - so the
+  collider DOES follow the entity scale, and 625 tiles at 8 spacing with 1.6-unit patches left
+  gaps, which made the player fall through MORE, not less.  What the two measurements together
+  say: the collider tracks the entity scale downward, and at scale 1 and scale 10 it reads
+  ~8 units.  The safe rule is the one the real floor follows - author the block at its own 8
+  units, corner-origin, and place it at scale 1. ***
+
+  WHAT THAT MEANS FOR THE PLAYER, and it matches the report exactly ("near the middle I
+  DON'T fall through, but moving outwards I do"): they spawn on the unit's origin, which is
+  a CORNER of the collider, and can walk about 8 units before stepping off it.  The 400 m
+  plane they are looking at has almost no collision under it.
+
+  WHY A REAL FLOOR WORKS: it is TILED.  The same probe on a real floor block
+  (unit 423, one of the shell's own) shows the identical signature - one actor, one shape,
+  type=3, a hit 0.02 above its own origin - and its raycast hits a DIFFERENT unit id, i.e.
+  its neighbour, because the crypt lays hundreds of 8x8 blocks side by side and the patches
+  tile into a continuous floor.  A single block is 8x8 of collision too; there are just
+  hundreds of them.
+
+  CONSEQUENCE FOR plane_mod: one plane instance can never cover the room.  Either
+    1. TILE it - many instances of our unit, each carrying its own 8x8 patch, which is
+       exactly how the game builds floors; the visible mesh must then be corner-origin
+       (matching the patch) and small (scale ~0.2 so the 40 m quad becomes 8), or
+    2. replace the trailer's collision data with a bigger shape - the collider is carried
+       in the trailer, our splice copies it verbatim, and its layout is not yet decoded
+       (the one thing 9H.19's "the physics is in the trailer" turned out to mean in
+       practice: a baked copy of the donor's collision geometry, not a parametric shape).
+  Note that templating the SAME unit family differently does not help - the patch comes
+  from the template, not from the level or the entity transform.
+
+  *** RESOLVED, AND IT WORKS.  Option 1.  plane_tile.unit is now the donor's equal - 1437
+  bytes, 9 verts, x 0..8, y 0..8, z 0, corner-origin, placed at scale 1 - and
+  make_room_levels.py lays 625 of them at 8-unit spacing (25x25, reaching +/-96 around the
+  spawn).  Confirmed in game: the player spawns on it and walks across it.  Confirmed by
+  measurement: the footprint around a tile went from a SINGLE POINT to a filled 3x3 block,
+  because the tile's own 8x8 patch now has neighbours filling the rest -
+
+        before (40 m quad, scale 0.2)        after (8 m corner-origin tile, scale 1, tiled)
+        -      -      -      -      -        -      -      -      -      -
+        -      -      -      -      -        -      -      -      -      -
+        -      -  +0.02      -      -        -      -  +0.02  +0.02  +0.02
+        -      -      -      -      -        -      -  +0.02  +0.02  +0.02
+        -      -      -      -      -        -      -  +0.02  +0.02  +0.02
+
+  So a floor of our own, in a room of our own, in the campaign, with the player spawning on
+  it - the thing this whole thread was for. ***
+
+  DEPLOY NOTE, because it wasted a test round: the game's own mods/bundles/<Name>/ copy is
+  what the loader re-places into contents/<hash>, and a stale bundle there is served with no
+  error at all.  bundle_control.py reported STATE MATCHES REQUEST while the game still had the
+  previous build (md5 43910d7a vs 47a1ba93), so two rounds of geometry feedback were about
+  files that were never deployed.  Verify three md5s: dev, game mods/bundles, game contents.
+
+9H.17.4 THE OBJECT-SET ACTIVATION PASS - the one place a unit becomes real
+
+    load_level -> FUN_00428a50 -> FUN_0042b6b0 (build Level)
+                                  -> FUN_0042f3a0 (0,0) at the tail
+                                     -> FUN_0042c620  *** per-unit activation ***
+
+  FUN_0042c620 walks two arrays on the unit and creates each item only when its
+  OBJECT-SET id matches, destroying the ones that do not:
+
+      count at [unit + 0x14c]   MESHES,  created with FUN_0045db50(mesh, object_set, 0xff)
+      count at [unit + 0x18c]   ACTORS,  created with FUN_0045a890(actor, 0)
+                                          destroyed with FUN_0045ba60(actor)
+      actor array at [unit + 0x194]; each actor's object-set id is at [actor_def + 8]
+
+  This is what "object sets" means (World.load_level_with_object_sets, and
+  Level.set_data(level, "object_sets", ...) in world_proxy.lua) and it is the pass that
+  turns a placed unit into a live thing.  It creates meshes and actors - and nothing else.
+
+  The mesh path does not build collision either: FUN_0045db50 fetches the mesh and calls
+  FUN_0043fbf0 only when [world + 0x420] is non-zero, and FUN_0043fbf0 turns out to be a
+  lookup in a 0x14-byte-stride table keyed on (mesh, object_set) - a per-object-set
+  variant/override table, not a physics call.  So a placed unit's mesh is brought in for
+  RENDERING and its actor (if its resource has one) for PHYSICS, and a unit with neither an
+  actor nor a matching object set gets nothing.
+
+  RULED OUT so far, cumulatively:
+    1. actors inside the unit resource   - the whole block family has an empty actor table
+    2. flow in the level                 - no create_actor / a_collision / physics strings
+    3. the level loader                  - its callees contain no physics factory
+    4. the object-set activation pass    - meshes and actors only, no collider built
+    5. a level 'physics' resource        - no such name in the 147,168-entry database
+    6. a packet-format physics blob      - the level files contain none of the packet magics
+                                           (TAG0 / SDKV / DATA / TYPES / TBODY / THSH ...)
+    7. a baked triangle-mesh collider    - no long run of coordinate-like floats in any
+                                           section of either level
+
+  Which leaves the scene/physics commit path - static geometry extracted for the physics
+  world rather than attached to a unit - as the remaining candidate, and the physics module
+  is where to look next.  The cheap way to settle it first, without touching the binary:
+  raycast down onto the crypt floor IN GAME and log Actor.unit(hit_actor)'s type.  That
+  names the collider directly, and it decides whether the plane wants a block template
+  (9H.16.2) or something else entirely.
+
+--------------------------------------------------------------------------------
+9H.17.5 WHAT A UNIT SAYS ABOUT ITSELF: nav_grid_type_auto
+--------------------------------------------------------------------------------
+
+  (See also 9H.19: the game's own build script generates this field, and because
+  "no physics actors -> ignore" is tested FIRST, a value of blocker/floor/slope proves the
+  unit has physics actors.  That is what turned this from a curiosity into the answer.)
+
+  A unit's trailer carries a data value `nav_grid_type_auto`, and it is the cleanest
+  classification of a unit the data has.  Read out of all 691 extracted .unit files:
+
+      value      meaning in the game                     examples
+      -------    -------------------------------------   --------------------------------
+      blocker    solid - blocks the AI                   crypt_wall_4c, cryptsmooth_wall_4c/2c,
+                                                         pillars, railings, crypt_rock_01,
+                                                         crypt_brick_02, big_sarcophagus,
+                                                         blackbox_2c_2c, plank_thick, spawners
+      floor      walkable surface                       cryptsmooth_floor_4c_4c,
+                                                         caverock_floor_4c_4c, brazier_floor_02
+      slope      stairs                                 crypt_stairs_low_4c
+      ignore     not part of navigation                 borders, corner pieces, skulldoors,
+                                                         rockpiles, stalagmites, cobwebs,
+                                                         mushroom trees, banners, torches,
+                                                         chains, cloth, fog_volume
+      (absent)   nothing of its own                     characters, equipment, effects, decals,
+                                                         lights, most gameobjects (gold, food,
+                                                         carryables, potions, keys)
+
+  The vocabulary is `lua/dungeon/nav_grid.lua`'s - `Unit.get_data(unit, "nav_grid_type_auto")
+  or "ignore"`, and nav_grid returns "blocker" / "ignore" as its own type names, so this is
+  AI NAVIGATION, not the player's physics.  That is exactly the trap: `blocker` correlates
+  with solidity (walls yes, cobwebs no) but it is consumed by Lua for pathfinding, and it is
+  NOT what makes the engine collide with a wall.
+
+      BUT IT IS THE EVIDENCE.  9H.19 found the build script that WRITES this field, and it
+      tests "no physics actors -> ignore" before every other rule - so a value of
+      blocker/floor/slope is a fingerprint that the unit HAS physics actors.  The field does
+      not cause collision; it records whether the unit has anything to collide with.  Used
+      that way it settles the crypt: walls and floors have physics, cobwebs and torches do
+      not.
+
+  A second, stronger correlation exists in the level file itself: the 24 units that carry
+  `a_collision` are 24 of the 24 gameobjects that MOVE, and the `blocker` units carry none
+  (9H.16.1).  Two independent signals, neither of which is the collider.
+
+================================================================================
+9H.18 A REAL BUG: THE ENTITY ROTATION WAS READ WITH z AND w SWAPPED
+================================================================================
+
+  Found while cross-checking 9H.6 against the data, and it matters because it silently
+  corrupted every level we AUTHORED.
+
+  THE BUG.  resource_tools/level_tools.py read the record as
+
+      rot_z = data[0]    rot_x = data[60]    rot_y = data[64]    rot_w = data[68]
+      "rotation": [rot_x, rot_y, rot_z, rot_w]
+
+  i.e. it took z from offset 0 and w from offset 68.  The engine-verified layout is the
+  vector part at 60/64/68 with w reconstructed (9H.6, level_to_glb.py both say so; the
+  module contradicted its own sibling).  So `rotation` was really (x, y, <not a rotation
+  component>, z) wearing the label (x, y, z, w).
+
+  WHY NOTHING CAUGHT IT.  decode -> encode is self-consistent, so the module kept its
+  byte-exact guarantee: level_tools.py selftest still PASSES 255/255 on the corrected code.
+  The damage is only in AUTHORING: level_set_entities.py writes the rotation through this
+  encoder, so every entity built for plane_mod went in with its w in the z slot and its z
+  in offset 0.  A spec of [0,0,0,-1] - identity - therefore wrote a 180-degree Z rotation
+  (harmless for the flat plane, whose normal is Z, which is why it looked fine, and it is
+  the origin of the "(0,0,0,-1) identical to (0,0,0,1)" note in 9H.15).
+
+  THE MEASUREMENT.  Counts how many of a level's cryptsmooth_wall_4c records decode to one
+  of the four orientations the ENGINE actually uses for that template (Data/runtime_units/
+  modules_d01_crypt_room_crypt_floor_01_adventure.json, 338 instances):
+
+      engine: (0,0,1,0) x99   (0,0,0.70711,-0.70711) x89
+              (0,0,-0.70711,-0.70711) x77   (0,0,0,-1) x73
+
+      329 cryptsmooth_wall_4c records of the crypt shell:
+          (x,y,z,w) = (f60,f64,f68, -sqrt(1-x*x-y*y-z*z))     100.0%   <- correct
+          w read from offset 0 instead (x,y,z,f0)              63.5%
+          level_tools.py as it was (x,y,f0,z)                  63.5%
+
+  Sign-insensitive on purpose: q and -q are the same rotation, and both reconstruction
+  branches therefore score 100%.  Offset 0 correlates with w (it is -1.0 on identity walls,
+  -0.7071 on 90-degree ones, 0.0 on 180-degree ones) but is NOT reliably w - reading it as w
+  reproduces only 63.5% - so it stays a raw pass-through field named `flag`.
+
+  THE FIX (applied).  level_tools.py now reads the vector part at 60/64/68, reconstructs
+  w as the negative branch, keeps offset 0 verbatim as `flag` for a byte-exact re-encode,
+  and on a NEW entity writes the negative-branch w to offset 0 (which is what every
+  measured wall record holds).  A spec of [0,0,0,-1] now writes offsets 60/64/68 = 0 and
+  offset 0 = -1.0, which is exactly the identity wall.  Verified: selftest still 255/255
+  byte-exact, and the tool's own decode now scores 329/329 = 100.0% against the engine.
+
+  CONSEQUENCE FOR plane_mod.  The level files already built (our_level.level,
+  room_retarget.level, ...) carry the old, wrong rotation.  Nothing needs re-running for the
+  plane - a Z-axis rotation of a Z-normal quad is invisible - but any future level with a
+  rotated entity should be regenerated with make_room_levels.py now that the encoder is
+  right.
+
+================================================================================
+9H.19 THE COLLISION QUESTION, ANSWERED  *** 9H.16.1 WAS WRONG ***
+================================================================================
+
+  A unit collides if and only if it has PHYSICS ACTORS, and the game says so itself - in a
+  build script that ships in the source tree:
+
+      foundation/scripts/generate_nav_grid_script_data.lua
+
+          local physics_path = file:gsub(".unit", ".physics")
+          if common.exists(physics_path) then
+              physics_actors = common.sjson_from_file(physics_path).actors
+          else
+              physics_actors = {}
+          end
+          local collides_with_anything = #physics_actors > 0
+          local nav_grid_type_auto = get_nav_grid_type(path, collides_with_anything)
+
+  So: each unit may have a SIBLING `.physics` SJSON file, its actors are the colliders, and
+  `#physics_actors > 0` is the definition of "collides with anything".  That file is not
+  shipped separately - it is compiled INTO the .unit - which is exactly what 9I found when
+  the `physics` type turned up in no bundle.
+
+  THE SCRIPT ALSO WROTE THE FIELD I DECODED.  It generates the unit's data section:
+
+      sjson.data.walkable, sjson.data.unwalkable, sjson.data.shadow_meshes,
+      sjson.data.nav_grid_type_auto, sjson.data.nav_grid_type_override
+
+  which is precisely the data table read out of the compiled units in 9H.16.1 (the
+  walkable/unwalkable mesh arrays and `nav_grid_type_auto = "blocker" | "floor" | ...`).
+  So `nav_grid_type_auto` is generated build metadata - and because
+  `if not collides_with_anything then return "ignore"` comes BEFORE every name rule,
+  the value is a FINGERPRINT of whether the unit has physics:
+
+      "blocker" | "floor" | "slope"   =>  the unit HAS physics actors  =>  it is a collider
+      "ignore"                        =>  either no physics, OR the name rule fired first
+                                          (sandpile, carry, border, debug_whitecube, ...)
+
+  Applied to the crypt shell (the 9H.17.5 census): cryptsmooth_wall_4c/2c, the pillars and
+  the railings are "blocker", the floors are "floor", the stairs are "slope" - so THE
+  CRYPT'S WALLS AND FLOORS DO HAVE PHYSICS ACTORS - while caves_cobweb_01, fog_volume,
+  torch_01 and the banners are "ignore", i.e. no physics, i.e. walk-through decoration.
+  That is exactly how the room behaves in game.
+
+9H.19.1 THE CORRECTION: `a_collision` IS A FLOW PARAMETER
+
+  What made 9H.16.1 conclude "structural units have an empty actor table" was a string search
+  for `a_collision`, and it was reading the wrong thing.  Walk a unit's sections (FINDINGS
+  9.2) and print what follows the materials section, and the strings are:
+
+      ham_plate         'gameobjects/food/ham_plate' 'FlowCallbacks' 'apply_velocity'
+                        'linear_velocity' 'actor' 'angular_velocity_random' 'unit' ...
+      crypt floor       'floor'          and nothing else
+      invisible wall    'blocker'        and nothing else
+
+  `a_collision` sits in that flow data - it is the NAME of an actor that a flow node creates
+  (FlowCallbacks.create_actor -> Unit.create_actor(unit, name), 9H.17.3), which is why only
+  the gameobjects that MOVE mention it.  The physics actors store no name strings here, so a
+  string search could never have found them.
+
+  Nothing else in 9H.16.2 was wrong: actors in the level, flow in the level, the loader, the
+  activation pass, a standalone physics resource, packet blobs and baked float triangles are
+  all still ruled out, each on its own evidence.  The mistake was ruling out the ONE path
+  that was left, on the strength of a string that belonged to flow.
+
+9H.19.2 WHY THE BINARY ALREADY FITTED
+
+  With the mechanism known, the functions found in 9H.17 are the whole story and nothing is
+  missing:
+
+      the unit resource carries an actor table   count at [unit + 0xbc], array at [unit + 0xc4]
+      FUN_0045a890 instantiates one actor        index -> the actor, or 0 if out of range
+      FUN_0042c620 the activation pass           per unit: meshes (+0x14c) and actors (+0x18c),
+                                                 each created only when its object-set id
+                                                 matches - and `param_3 == 0`, i.e. a level
+                                                 loaded WITHOUT object sets, creates them all
+                                                 (World.load_level vs
+                                                  load_level_with_object_sets)
+
+  So a placed unit's collider is created by the object-set activation pass, out of the unit's
+  own compiled physics, for every level that does not ask for object-set filtering.  No
+  engine-side "level geometry collision" concept is needed, which is why hunting for one kept
+  failing.
+
+9H.19.3 THE FIX, AND IT IS ALREADY BUILT
+
+  plane_mod/plane_block.unit is the 40 m quad spliced into
+  `blocks/d01_crypt/floors/cryptsmooth_floor_4c_4c` - a unit whose nav type is "floor", so by
+  9H.19 it has physics actors - and glb_to_template_unit.py carries the template's trailer
+  over VERBATIM.  Measured:
+
+      template  cryptsmooth_floor_4c_4c   1437 B    mesh 767    trailer 670
+      plane_block.unit                   1104 B    mesh 434    trailer 670
+      trailer carried over byte-identically: True   md5 c4146b949aa8381f020f469460f085c5
+
+      plane.unit (deployed now, ham)     2568 B    mesh 434    trailer 2134
+      its trailer strings: FlowCallbacks, apply_velocity, linear_velocity,
+                           angular_velocity_random
+
+  The deployed plane therefore carries ham_plate's FLOW (velocity and random spin) and
+  nothing else; plane_block.unit carries the floor block's physics instead.  That is the whole
+  difference between a plane that tumbles and a plane that stands still - and it is why
+  9H.16.2's "swap the template" was right for the wrong reason.
+
+  Two things to expect from the test, stated in advance so the result is informative either
+  way: the plane should be STATIC, and it should be walkable.  If it is static but not solid,
+  the trailer is not being read the way this says and the compiled-physics layout is the next
+  thing to decode (it is byte-packed, and it starts, in every unit, with a small header whose
+  second word is a count - 2 for the floor block and the invisible wall, 4 for crypt_brick_02,
+  5 for ham_plate).
+================================================================================
+9H.22 THE LEVEL'S AXIS IS TWO QUESTIONS, AND THE TOOL ANSWERED ONE  *** Oct 2026 ***
+================================================================================
+
+  WHAT WAS WRONG.  level_from_glb.py asked "is this GLB Y-up?" once - by looking at the axis
+  the floor tiles share - and then used that single answer for the positions AND the
+  rotations.  A Blender export can answer the two halves differently, and the export that
+  built every custom level so far did:
+
+      layout (node POSITIONS)   flat on Z   - an engine-space arrangement
+      meshes (unit GEOMETRY)    thin on Y   - the engine's own mesh turned on its side
+
+  The engine applies the record's rotation to ITS OWN unit mesh (engine Z-up), so a record
+  built from that file needs one extra composition that the single flag never applied.  Every
+  placed unit went in rotated 90 degrees about X: floors standing up, walls lying down.
+
+  THE TWO EXPORTS, MEASURED (the same layout, one corrected)
+
+    Base.glb            (trashed; built crypt_arena01/02/03_custom, hub_custom,
+                         custom_duckomp_room)
+        layout   flat on Z
+        meshes   124 floor meshes, averaged vertex NORMAL (0, -1, 0)   ->  -Y
+        rotations  q_old = q_new * R_x(-90)   for all 204 nodes present in both files
+    test_arena_03.glb   (the corrected export)
+        layout   flat on Z
+        meshes   48 floor meshes, averaged vertex NORMAL (0, 0, 1)     ->  +Z
+        rotations  yaw about Z - the engine's own convention for structural blocks
+
+  The corrected export is engine-space in every respect, and that was checked against the
+  .blend it came from rather than assumed: Blender's +Y-up export applies R_x(-90) to the
+  whole scene, so all 208 objects match `R_x(-90) * (Blender scene)` - positions, rotations
+  and mesh extents.  q_new is therefore the ground truth the old file's rotations were
+  compared against, and 204 of 204 agree.
+
+  THE RULE THE TOOL NOW USES.  With F the frame change between the file's world and the
+  engine's, and F' the one between the file's MESH frame and the engine's:
+
+      R_record = F^-1 * R_node * F'
+
+  F is measured from the WORLD up (the floor normal R_node * mesh_up), F' from the MESH up
+  (the averaged normal of the flat meshes' vertices).  Both are rotations about X by a
+  multiple of 90 degrees, both are read out of the file's own data - the normals are the one
+  measurement that separates the two exports above - and for a self-consistent export F == F'
+  so the rule is the conjugation it should be.  Positions use F^-1 alone.
+
+  WHAT SHIPPED WRONG (non-yaw records; the bodies' own counts in brackets)
+
+      crypt_arena01_custom.level   1029 of 1570   (the body has 94)
+      hub_custom.level              446 of  468   (the body has 6)
+      custom_duckomp_room.level    1400 of 4247   (the body has 450)
+
+  They are rebuilt with the corrected tool; see 9H.22.1 for the current build.
+
+9H.22.1 THE CRASH, AND WHAT THE LEVEL IT CRASHED ON LOOKS LIKE
+
+  exception 0xC0000005 at 00488344, access read at 0xEB64DF50
+    #0 00488344  FUN_00488340, which is `return *param_1`
+    #1 00428ad8  inside FUN_00428a50, the World.load_level delegate (the call at 0x428ad3)
+    #2 0059c1f1  the Lua VM running the dungeon generator
+
+  FUN_00488340 is a getter, so the fault is its ARGUMENT.  The call site is inside
+  FUN_0042f3a0 - the per-level activation pass - at 0x4300fe:
+
+      MOV EDX,[ECX+0x80]        ; ECX = the level object being activated
+      LEA EAX,[EDX+ECX]         ; a SELF-RELATIVE offset field
+      CALL 0x00488340           ; read [EAX]  <- faults
+
+  and the branch is guarded by `[placement_table + 0x38] != 0`, i.e. by the level having a
+  SECOND placement record: this is the SUB-LEVEL path.  (The earlier crash in the same
+  function, 0x430224, is the byte store into FUN_0042f120's NULL result - the material-lookup
+  failure documented in 9H.21.)
+
+  The level it crashed on, custom_duckomp_room.level, was built on the crypt SHELL's body
+  (room_crypt_floor_01_adventure_template, 4247 units) and shipped at
+  modules/d01_hub_room/custom_duckomp_room, i.e. loaded as a HUB room.  So it carried
+
+      metadata  'modules/d01_crypt/shading_environment'   (the hub's own level says
+                'modules/d01_hub_room/shading_environment')
+      sub-levels  modules/d01_crypt/prefabs/gate_exit/prefab_crypt_gate_exit_02 and
+                  modules/d01_crypt/prefabs/floor_details/prefab_crypt_floor_detail_pit_round_01
+      spawns  none - a shell has no player_spawn_marker, so the tool had nothing to align our
+              floor to and printed "no marker has one of our floors within 8 units"
+
+  The hub's own level (hub_pristine.level, 468 units, the body of hub_custom) has 0
+  placements and 4 player_spawn_markers.  Rebuilt on THAT body the level keeps the hub's own
+  shading environment, has no sub-level for the activation pass to walk, and aligns our floor
+  to the hub's spawn markers (-2.68 here).  That is the build shipped for the test.
+
+  STILL OPEN: whether the sub-level path is what took the process down.  The fixed build has
+  to be run; if it still faults at 0x430106, the field is [obj+0x80] of a sub-level object
+  and the next step is to find what writes it (FUN_0042b6b0 builds those objects).
+
+
+
+
+
+9H.22.2 THE TEST: IT LOADS  *** Oct 2026 - first custom level that does ***
+================================================================================
+
+  WHAT WAS SHIPPED AND RUN.  custom_duckomp_room.level built from test_arena_03.glb (the
+  corrected export) on the HUB's own body (hub_pristine.level, 468 units): 204 placements,
+  20 logic entities kept bit-for-bit, 242 decorations moved aside, the floor aligned to the
+  hub's spawn markers (-2.68), 0 bytes changed outside the entity table.
+
+  THE RESULT (modloader.log 05:59, crash_trace.log 05:58)
+
+    * NO CRASH.  crash_trace.log carries only the benign LightFX first-chance exception
+      (0xE06D7363).  The 0xC0000005 at 0x488344 that killed the previous build is gone, and
+      the run went on into the level's flow.
+    * the level came up: `level from World.load_level: 463 unit(s)`, and ActorProbe's floor
+      probe found a REAL static collider on unit 146 - a box with half_extents
+      (4.025, 4.025, 0.025), a floor-filtered raycast hitting it at z=2.14 - so the placed
+      units have physics and the player has something to stand on.
+    * placement and rotation: "most things were in the right place and very few rotation
+      misalignments" (the author's reading of the run).  That is the two-frame fix doing its
+      job; what is left are the 6 genuinely tilted props in the export itself.
+    * THE PROBLEM: the level also carried the hub's own flow - the CustomRun guard logged
+      `flow callback adjust_light_intensity skipped: unit has no light 'omni'` - and the room
+      read as "a bit messy".  A donor body brings the donor's flow, volumes and markers with
+      it, and moving the donor's ENTITIES out of the way does not touch any of that.
+
+  So the next step is a level with no donor at all: our entity table, our metadata, and
+  nothing else - see 9H.23.
+
+9H.22.3 THE RE-EXPORT, AND WHAT IT BREAKS
+
+  test_arena_03.glb was re-exported (2.5 MB, 206 nodes): the author rotated the scene,
+  applied scale/rotation/location, and reports it is still Y-up.  The file now has NO node
+  transforms at all - every node is `{"name": ..., "mesh": N}`, each object's transform baked
+  into its mesh vertices, and each node carrying its own copy of the mesh (206 nodes, 206
+  meshes, 0 materials).
+
+  What that does to the tool, and why it cannot be left silent:
+
+    * POSITION: `node['translation']` is absent for every node, so a build from this file
+      places all 203 units at the origin.  The frame report shows it ("ours x 0..0 y -0..-0")
+      but nothing refuses.
+    * ROTATION: baked into the vertices.  There is no quaternion left to convert, and the
+      engine needs one rotation per entity - it rotates ITS OWN unit mesh by the record's
+      rotation, so the baked copy in the file cannot stand in for it.
+
+  Both halves are recoverable against a reference that still holds the canonical meshes: the
+  world bounding box of the baked mesh gives the position once the canonical mesh's own box
+  is known, and a vertex-to-vertex fit gives the rotation exactly when the two meshes are the
+  same mesh rigidly moved (the correspondence is by index).  Not from bounding boxes alone -
+  a box is symmetric, so its yaw comes back only up to the box's own symmetry.
+
+
+================================================================================
+9H.23 A LEVEL THAT IS ONLY OURS  *** Oct 2026 ***
+================================================================================
+
+  WHY.  Every custom level so far was a DONOR's body with our entities patched into its slots,
+  so it arrived carrying the donor's flow, volumes and markers: the hub's light-fade callbacks
+  ran on our level (9H.22.2) and the room read as "a bit messy".  A level of our own has our
+  entity table, our metadata, and nothing else.
+
+  THE SKELETON, AND WHAT IS CONSTANT IN IT.  The smallest level in the corpus is 1,136 bytes
+  with 6 units and no logic at all
+  (assets/exports-samples/samples/level_24abcdf4b1fb4d4a.level).  Compared field by field
+  against the hub (468 units), the arena (1,570) and the shell (4,247), everything that does
+  NOT scale with the unit count is a constant:
+
+      24 bytes after the unit table   four 1.0 floats, then 8 zero bytes   same in all four
+      the u32[8] section              24 zero bytes                        zero in all four
+      the per-unit array              8 bytes per unit, every entry {0, its own offset}
+                                                                           same in all four
+      the 12-byte-record array        count u32[11]                        0 in the sample
+      the {offset, 253} pair          points at the render block           rewritten per build
+      u32[29], the placement count    0                                    no sub-levels
+
+  Everything else that moves is an offset, so a level of any size is the same sections in the
+  same order with the offsets recomputed.  u32[29] = 0 is the field that matters for the crash
+  in 9H.22.1: no placement table means the activation pass never enters the sub-level branch
+  that faulted.
+
+  ENTITY IDS.  The shipped ids are random 64-bit values, unique within the file and not
+  sequential (checked on the sample, the hub and the arena), so any unique value will do.  The
+  tool derives them from the unit and its index, so a rebuild reproduces the same file.
+
+  WHAT IT WRITES.  `level_from_glb.py --scratch` writes
+    * one record per placement, with the material taken from the shipped CORPUS - the material
+      the game's own levels pair with that kind most often (9H.21) - never from a donor;
+    * our own player_spawn_marker, on our floor: a donor body supplies one, a level of our own
+      has to place its own or the player starts in the air;
+    * the skeleton's skydome, the one thing in a level that is neither ours nor the
+      encounter's;
+  and nothing else - no volumes, no markers, no leftover scenery, no encounter logic.
+
+  VERIFIED WITHOUT THE ENGINE: level_decode.py's invariants pass, and decode -> encode
+  round-trips BYTE-EXACT - the same check level_tools passes on 255 shipped levels, and the
+  strongest structural statement available offline.
+
+9H.23.1 RECOVERING A BAKED EXPORT
+
+  The re-export (9H.22.3) has no node transforms at all, so the tool now
+    * REFUSES by default and says what to do - re-export without applying the transforms,
+      which is the path everything else is verified on - because reading such a file as TRS
+      writes every unit at the origin;
+    * with `--reference <a level export .glb>`, recovers (position, rotation) from the
+      geometry itself:
+        EXACT  the baked mesh has the same vertex count as one of the reference's parts, so
+               the two are the same mesh rigidly moved and a Kabsch fit is exact - the
+               correspondence is by vertex index, which is what makes it exact;
+        BOX    the counts differ, so the bounding box decides: the canonical box under each
+               axis-aligned orientation, against the baked box.  A box is symmetric, so its
+               yaw comes back only up to that symmetry - as much as the engine's own mesh can
+               tell apart.
+
+  Measured on the author's file against crypt_arena01.glb (2.9 MB): 201 of 206 nodes recovered
+  - 153 exact, 48 from boxes (coffin x19, crypt_wall_4c x13, crypt_wall_convex x6,
+  coffin_broken x4, brazier_floor_02 x2, crypt_wall_2c x2), 5 unknown kind, 0 unmatched.  The
+  5 unknown-kind nodes are DROPPED and named, never written at the origin - which is the whole
+  point of the check.
+
+  MESH PARTS ARE NOT UNITS.  An exported unit arrives as one node per mesh part (a coffin is a
+  body and a lid, a brazier is two pieces) while the engine's unit already contains all of
+  them.  Placing every part put two complete units on one spot, and with baked geometry the two
+  fits disagreed and the pair faced opposite ways.  Parts of one unit sit within a fraction of
+  a unit of each other, so they are merged into one entity, preferring a part recovered
+  exactly: 31 nodes merged on the author's file, 206 nodes -> 170 entities.
+
+  SHIPPED: modules/d01_hub_room/custom_duckomp_room, 15,080 bytes, 172 records = 170 placements
+  + our spawn marker + the skydome, no donor content, no sub-level placements (the first
+  version of this file crashed on load - see 9H.23.2 for why, and what fixed it).  The metadata
+  is the skeleton's own ('core/rendering/default_outdoor'), because that string and the render
+  block that follows it are a matched pair - `--shading` can name another environment, and then
+  only the string is ours while the render block stays the skeleton's.
+
+
+9H.23.2 THE FIRST SCRATCH LEVEL CRASHED, AND WHY
+
+  exception 0xC0000005 at 005fea5a, read at 2be60000 - a page boundary
+    #0 005fea5a   inside FUN_005fea30, which is MEMCPY/MEMOVE (the alignment-switch copy
+                  loop Ghidra decompiles with its switch table)
+  and the stack carried return addresses inside FUN_00430440, which FUN_0042f3a0 calls as
+  FUN_00430440(0, unit_count - 1, ...) - once per unit, during the load.
+
+  FUN_00430440's per-unit loop, disassembled:
+
+      MOV ECX,[EBX+8]            ; ECX = the header
+      MOV EAX,[ECX+0xc]          ; u32[3]
+      ADD EAX,EDX                ; + this unit's index
+      MOV EAX,[EAX+ECX]          ; value = *(header + u32[3] + index)
+      TEST EAX,EAX / JZ skip     ; 0 means "no data for this unit"
+      LEA ESI,[EAX+ECX]          ; the data is at header + value (self-relative)
+      CALL memmove(dst, ESI, 4)
+
+  So the section u32[3] names STARTS WITH A 4-BYTES-PER-UNIT POINTER TABLE: one entry per
+  unit, each a self-relative pointer to that unit's data, zero for none.  That is why the
+  sample's section is 24 bytes - 6 units x 4.
+
+  THE BUG.  The scratch writer copied that section from the 6-unit skeleton and never resized
+  it.  At 172 units the loader walked 172 entries, ran off the end of the 24 bytes into the
+  metadata and the render block, took THOSE bytes as pointers, and copied 4 bytes from a
+  garbage address.  A 1,136-byte sample cannot expose this: it is exactly as long as its own
+  unit count needs, so the copy stays inside the file.
+
+  THE FIX.  The section is now 4 x N zero bytes and everything after it shifts.  Verified by
+  construction rather than by inspection: writing the skeleton's OWN six entities back through
+  the writer reproduces the 1,136-byte file BYTE-FOR-BYTE (entity ids included), and the 4 x 6
+  = 24 bytes it generates are exactly the section the sample ships.  The same test also caught
+  a second, smaller bug - u32[30] was being written as the {offset,253} pair's offset instead
+  of the per-unit array's, one byte wrong in that reproduction.
+
+  LESSON FOR THE NEXT SECTION: every section that is "a constant" in the sample is only a
+  constant because the sample has six units.  The two that scale are the entity table (72N)
+  and this pointer table (4N) - plus the per-unit array (8N) - and the byte-exact reproduction
+  of a shipped level is the test that tells the three apart.
+
+
+9H.23.3 THE SECOND SCRATCH CRASH, AND THE FIELD NO SHIPPED LEVEL EVER SETS
+
+  exception 0xC0000005 at 00430224 - access WRITE at 00000000
+    #0 00430224   MOV byte ptr [ESI + ECX*1 - 1], AL
+    #1 00428ad8   inside FUN_00428a50 (World.load_level)
+    #2 0059c1f1   the Lua VM running the dungeon generator
+
+  The block that faults, in FUN_0042f3a0:
+
+      MOV EDX,[ECX+0x80]     ; ECX = the level object; +0x80 is the unit table's file offset,
+                             ; 128 in every level
+      ... guard ...
+      LEA EAX,[EDX+ECX]      ; = level + 128 = THE FIRST ENTITY RECORD
+      CALL the getter        ; EAX = *(level+128) = the first record's OFFSET-0 FIELD
+      MOV [ESP+0xc],EAX      ; ...read as a COUNT
+      ... allocate max(count,4) bytes, then store one byte per item ...
+
+  So the engine reads the four bytes at the unit table's own start - the first record's
+  offset-0 field, the rotation flag - AS A COUNT, allocates that many bytes and writes one
+  byte per item.  A flag of -0.7071 is 0xBF3504EF = 3,207,922,927: the allocation fails, the
+  pointer stays NULL, and the byte store faults.
+
+  MEASURED, and this is the whole case: of the 255 .level files in the export, ALL 255 have 0
+  in that field.  And on the builds whose outcome is known:
+
+      sample (shipped)         first offset-0 =  0.0000   loads
+      hub_pristine (shipped)   first offset-0 =  0.0000   loads
+      hub-body build           first offset-0 =  0.0000   LOADED (9H.22.2)
+      scratch build            first offset-0 = -0.7071   CRASHED (this section)
+      crypt_arena01_custom     first offset-0 = -0.7071   CRASHED (the 0x430224 dump from the
+                                                          earlier session)
+      crypt template (shipped) first offset-0 =  0.0000   -
+
+  THE FIX, in both writers.  The scratch writer sets records[0]['flag'] = 0.0.  The donor path
+  sets ents[0]['flag'] = 0.0 UNCONDITIONALLY - and the unconditional part is the lesson: a
+  record the tool builds carries no 'flag' key at all, so the encoder derives the negative
+  branch (-|w|) for it, and a conditional guard reading `.get('flag', 0.0)` sees 0.0 and does
+  nothing.  That is exactly what happened on the first attempt: the arena levels came out with
+  -0.7071 in slot 0 again and the tool reported no change.
+
+  WHAT IT MEANS FOR THE EARLIER CRASH: the write-to-NULL at 0x430224 that an earlier session
+
+9H.23.4 THE FIRST BUILD THAT LOOKED RIGHT, AND THE TWO RECOVERY GAPS IT SHOWED
+
+  THE RESULT, in the author's words: the level loads and "for the most part it's working
+  great" - a level with no donor content, its own spawn marker, units where they were authored.
+  Out of place: the bottom stair, a few of the walls, and a few of the railings.
+
+  Those are exactly the recovery's two weak spots, and both are now closed.
+
+  1. A KIND WITH NO REFERENCE MESH CANNOT BE RECOVERED.  Five nodes came back "unknown kind"
+     and were dropped - crypt_railing_end, crypt_rock_01 (x2), coffin_open and one more -
+     because crypt_arena01.glb simply does not contain those units.  --reference is now
+     repeatable and merges several exports, and with crypt_arena01 + 02 + 03 +
+     room_crypt_floor_01:
+
+         recovered 206 of 206 mesh nodes, 158 exact, 48 from boxes, 0 unknown, 0 unmatched
+         176 placed (was 170), 22 kinds (was 19), level 15,584 bytes (was 15,080)
+
+  2. THE BOUNDING BOX CANNOT PICK A YAW.  A wall is symmetric along its length and through its
+     thickness, so four of the twenty-four candidate orientations fit its extents equally well
+     and the first one won - which is why every wall faced the same way.  The box now only
+     SHORTLISTS (candidates within 5% of the best extent fit, at most 12) and the vertex cloud
+     decides: the orientation whose vertices land closest to the baked ones.  Measured per kind
+     on the author's file:
+
+         crypt_wall_4c       2 -> 4 distinct orientations, and 12 -> 13 records (one had been
+                             merged away)
+         crypt_wall_convex   2 -> 4
+         crypt_wall_2c       1 -> 2
+         crypt_rock_01       (newly recovered) 3 distinct
+
+     The EXACT route is untouched - it was already right - and a box-recovered node's position
+     now comes from the vertex centroid rather than the box centre.
+
+
+9H.23.5 THE QUATERNION BRANCH, AGAIN - AND IT WAS THE RECOVERED PATH THIS TIME
+
+  The author's report, node by node, was the perfect test case:
+
+      cryptsmooth_floor_4c_4c#289   moved to the right one tile
+      crypt_railing_straight_4c#60  rotated maybe 70-80 degrees on the height axis
+      coffin_open#957               rotated by 90 degrees on the height axis
+      crypt_wall_4c#245, 246, 248   mirrored, and out of place a bit
+
+  THE BUG.  A record stores only xyz and the engine derives w = -|w| (9H.6/9H.18), so q and -q
+  are NOT interchangeable in a record: a quaternion with w > 0 must have its xyz negated, or the
+  engine builds the MIRROR of it.  to_engine_rotation has done that since 9H.18 - but the
+  RECOVERY path (9H.23.1) writes _mat_to_quat's result straight into the record, and a Kabsch or
+  candidate fit returns whichever sign falls out.  Measured, with the encoder and the engine's
+  own reconstruction:
+
+      recovered q = (0, 0, -0.7071,  0.7071)  ->  engine sees (0, 0, -0.7071, -0.7071)  MIRROR
+      recovered q = (0, 0,  0.7071,  0.7071)  ->  engine sees (0, 0,  0.7071, -0.7071)  MIRROR
+      recovered q = (0, 0,  1.0,     0.0)     ->  engine sees (0, 0,  1.0,     0.0)     ok (w = 0)
+      recovered q = (0, 0,  0.0,    -1.0)     ->  engine sees (0, 0,  0.0,    -1.0)     ok
+
+  A mirror of a yaw is a yaw the other way, which is a wall facing backwards and a coffin 90
+  degrees out - exactly what was reported.  Any rotation whose w is 0 is unaffected, which is
+  why some units were fine and others were not.
+
+  THE FIX.  _record_branch(q) negates all four components when w > 0, and the recovered path
+  uses it.  The geometry is unchanged (q and -q are the same rotation); what changes is what the
+  ENGINE derives from the record.
+
+  VERIFIED END TO END, not by inspection: for every one of the 206 recovered nodes, the level's
+  own record was read back and its effective rotation - the xyz it stores with the engine's
+  w = -|w| - compared against the fitted one:
+
+9H.23.6 THE STATE AFTER THE BRANCH FIX, AND WHAT IT NARROWS TO
+
+  THE AUTHOR'S READING OF THE TWO BUILDS, which is the whole dataset:
+
+      no branch rule   (9H.23.4)  walls MIRRORED, coffin 90 deg off, railing 70-80 deg off,
+                                  floor tile moved one tile
+      with the rule    (9H.23.5)  the three walls FIXED, and "the others are rotated the same
+                                  in the other direction now"
+
+  So the rule is right for the walls and wrong for the coffins and their neighbours.  That is a
+  clean split along the RECOVERY ROUTE, which is the only systematic difference between them:
+
+      walls                    BOX-recovered  (the author's mesh is a proxy, not the game's)
+      coffins, borders, stairs EXACT-recovered (the author's mesh IS the game's, vertex for
+                                               vertex)
+
+  and it is not a data difference in the level: the two builds differ in 82 of 178 records, all
+  of them exactly the records the rule touches, and `--no-branch` reproduces the earlier build
+  BYTE-FOR-BYTE (md5 2083a28f...), so the A/B the author has already run IS the A/B.
+
+  WHAT THE DATA SAYS, for the record: every one of the 206 recovered nodes' records was read
+  back and its effective rotation - the stored xyz with the engine's w = -|w| - matches the
+  fitted rotation (187 matched, 0 mismatches), and placing the canonical mesh with it reproduces
+  the baked geometry to the millimetre (0.000 mean vertex error for the railing, the coffin and
+  the floor tile; 0.02 for the box-recovered walls).  The canonical meshes were also checked
+  against the units' OWN exports (view/glb/named/...), not just the level exports: coffin_open
+
+9H.23.7 THE ROTATION RULER - the experiment that ends the guessing
+
+  THE AUTHOR'S THIRD REPORT: crypt_stairs_low_4c#170, crypt_railing_straight_4c#60 and
+  crypt_border_straight_4c#57 are "off by about 70-80 degrees", and coffin_open#957 is "still
+  off by 90 degrees".
+
+  WHAT THE LEVEL HOLDS for those four, read back out of the shipped file:
+
+      crypt_stairs_low_4c#170        record (0, 0, -1, -0)      yaw 180   off-axis 0.0
+      crypt_railing_straight_4c#60   record (0, 0, -1, -0)      yaw 180   off-axis 0.0
+      crypt_border_straight_4c#57    record (0, 0, -1, -0)      yaw 180   off-axis 0.0
+      coffin_open#957                record (0, 0, -0.707, -0.707)  yaw 90   off-axis 0.0
+
+  Every one is a PURE yaw at a multiple of 90, and every kind's rotations in the level are
+  rotations the shipped corpus itself uses for that kind.  A 70-80 degree angle cannot come out
+  of a record like that: whatever produces it is either the unit's own mesh frame or the engine
+  composing something the export does not show.  Off-axis rotation is 0.0 for all four, so it is
+  not a tilt either.
+
+  So: STOP READING RECORDS, RUN THE EXPERIMENT.  `--rotation-ruler` adds four copies of each
+  reported kind at 0/90/180/270 degrees - one ROW per kind, one COLUMN per yaw, 10 units apart,
+  anchored in the layout's own -x/-y corner so it stands on the floor and can be walked to -
+  and ships it with the level.  Reading the four columns of one row says which yaw the engine
+  draws the way it should; the difference between that and what was written is the offset, and
+  it is the same offset for every kind if the cause is the unit frame and different per kind if
+  it is not.
+
+  (The ruler also caught the branch bug a second time on the way in: its own quaternions were
+  built in place and went into records unbranched, so the 90 and 270 columns came out swapped.
+  write_scratch's record builder now runs EVERY quaternion through _record_branch, whatever it
+  came from - a rule that has to hold at every door into the format, not just the one it was
+
+9H.23.8 THE LEVEL UNIT LOGGER, TURNED ON - AND WHAT THE EXISTING CAPTURES ALREADY SHOWED
+
+  The author asked for the level unit logger, which is the right instrument: it records the
+  ENGINE's own per-unit transforms, so it settles what the engine does with a record instead of
+  what a decoder thinks it does.  It was OFF in the deployed config (`[LevelMining] Enabled=0`,
+  AutoWrap=0, AutoSweep=0); it is now Enabled=1 / AutoWrap=1 / AutoSweep=1 in both the game's
+  copy and the repo's, so loading a level is enough and one .json per level lands in
+  binaries/levels/ next to runtime_units.tsv.
+
+  BEFORE ASKING FOR A RUN, the captures already in Data/runtime_units/ answer a lot.  Joining
+  the engine's units to the records of the level they came from, by position with the level's
+  own world offset (the arena sits at (4,4,0), which is why a raw position join failed and an
+  index join looked plausible for 680 records and then drifted - the engine omits some kinds
+  from its unit list entirely, player_spawn_marker among them):
+
+      arena records joined: 1557 of 1570
+      STRUCTURAL BLOCKS: floors, walls, borders, railings, stairs, pillars, braziers,
+                         encounter doors, spawn fields - 100% of them match the record
+      SCATTER PROPS:     skeleton_var01..06 9-38 of 143 mismatch, coffin 7 of 44,
+                         decal 6 of 8, chest 3 of 7, skulls, boxes, urns, corpses
+
+  So the record's rotation IS what the engine uses for a structural block - the
+  (x,y,z,-sqrt(1-|v|^2)) reading holds there, 100% over 1557 units, which is a far stronger
+  statement than the wall-only check in 9H.6 - and for the scatter props the engine does
+  something else: it re-rolls them.  That is the engine's own behaviour on its own levels (the
+  corpus carries 180 distinct coffin rotations, and the shipped arena shows the same 10-27%
+  disagreement), not a property of our file.
+
+  CONSEQUENCE FOR THE AUTHOR'S REPORTS: a "scattered" prop is not something a level file
+  controls, and a railing, border or stair IS - the engine will place those exactly as written.
+  The next run captures OUR level, and the rotation ruler (9H.23.7) puts four known yaws of each
+  reported kind in one row, so the engine's answer for each of them is a direct read.
+
+  found at.)
+
+  373 verts, identical bbox and orientation; crypt_railing_straight_4c 1354 (the unit's 2708 is
+  two coincident parts); crypt_wall_4c 565 (the unit's 1130, likewise).
+
+  So the transform cannot be shown wrong from here, and the two things left that it could be
+  are (a) the engine's own unit carrying geometry or an internal transform the exports do not
+  show, or (b) the author's baseline for "right" differing from the file.  The cheapest way to
+  tell them apart is a RIGHT/WRONG PAIR OF THE SAME KIND - the trick that pinned 9H.23.5 in one
+  round, when "crypt_wall_4c#245 is mirrored" and the three names beside it pointed straight at
+  the branch.  One name that looks right and one that looks wrong, of one kind, is a diff.
+
+
+      187 records matched (the rest are the merged mesh parts)   rotation MISMATCHES: 0
+
+  and per node, placing the canonical mesh with the record's effective rotation reproduces the
+  baked geometry to the millimetre:
+
+      cryptsmooth_floor_4c_4c#289    mean vertex error 0.000   placed bbox == baked bbox
+      crypt_railing_straight_4c#60   mean vertex error 0.000
+      coffin_open#957                mean vertex error 0.000
+      crypt_wall_4c#245/246/248      bbox-extent error 0.000, placed bbox within 0.02 of baked
+                                     (box-recovered: the mesh is not the game's own)
+
+  So three of the four reported nodes are now exact and the three walls are within 2 cm.  If the
+  floor tile or the railing STILL look wrong in game, note that their records were already
+  geometrically exact before this fix (both had w = 0): the next thing to look at would be the
+  engine's unit for that kind carrying geometry the reference export does not show, not the
+  transform.
+
+  SHIPPED: 15,584 bytes, 178 records, 176 placements, 22 kinds, first record's offset-0 field 0.
+
+  STILL OPEN: the bottom stair.  Its data looks right: all six crypt_stairs_low_4c nodes carry
+  the same mesh (102 vertices, extents 8 x 2.56 x 1 in engine space), come through the EXACT
+  route, and land with one shared orientation and positions stepping cleanly along -y and +z -
+  which is what the source has.  So what "out of place" means for it is the next question:
+  rotated, moved, or missing.  That separates a recovery error from a level-format one, and it
+  is the difference between more recovery work and none.
+
+  recorded as "a zeroed material" is this field, not a material.  Every override build that
+  put one of our units in slot 0 hit it; the hub-body build survived only because the hub's own
+  slot 0 is a logic entity, and logic entities have 0 there.
+
+================================================================================
+9H.24 THE CAPTURE OF OUR OWN LEVEL, AND THE ONE THING IT FOUND  *** Oct 2026 ***
+================================================================================
+
+  The level unit logger (9H.23.8) was turned on and the hub-room build loaded.  It wrote
+  binaries/levels/modules_d01_hub_room_custom_duckomp_room.json - 192 units of OUR level, with
+  the engine's own position and quaternion for each.  scripts/compare_level_capture.py joins it
+  to our 194 records; the join is (rounded world position, template hash) TOGETHER, because
+  with 24 distinct kinds the hash alone pairs the wrong instances, and 192 of 194 join uniquely.
+
+  FIRST: THE CAPTURE IS FAITHFUL.  The capture's rot array is (x, y, z, w) - reading it that way
+  reproduces our record's rotation for the majority of units, and the other order scores 31/446
+  against 236/446 on the shipped arena.  The pipeline (LevelProbe -> Mods.Level.put ->
+  WriteLevelJson) stores pos and rot from the same unit under the same index, so there is no
+  pos/rot mixing.  Positions agree to 0.01 for 192 of 194 records: THE LAYOUT IS RIGHT.
+
+  SECOND: THE ENGINE DOES NOT ALWAYS USE THE RECORD'S ROTATION.
+
+      hub-room build (ours, --scratch)          192 joined    153 exact    39 different  (20%)
+      edited crypt room (ours, donor body)      185 joined    177 exact     8 different (4.3%)
+
+  and the differing deltas are not arbitrary - they come in mirrored pairs:
+
+      +90 x9   -70.5 x8   +19.5 x6   +70.5 x5   -90 x4   -19.5 x3   (plus 4 singletons)
+
+  19.47 = arcsin(1/3) and 70.53 = arccos(1/3) are the angles of a rotation pushed through a
+  tilted frame, not of a record read straight out.  Every IDENTITY record survives: all 75
+  units whose record is 0 degrees come back exactly as written, whatever their kind.
+
+  THIRD: IT IS NOT A FUNCTION OF THE RECORD.  Two units of the same kind whose records are
+  byte-identical (checked: the same w and z bit patterns, bf3504ef / 3f3504f7) come back one
+  exact and one at 250.5 degrees.  Whatever decides this lives OUTSIDE the entity record.  The
+  record is not the problem: it is a well-formed unit quaternion, the layout is the shipped
+  layout field for field (w at 0, scale at 4, entity id at 24, template hash at 32, material at
+  40, position at 48, rotation xyz at 60/64/68), the metadata is the same four keys, and the
+  material hashes are the shipped corpus's own (the cache is built from the game's export tree,
+  not from our output).
+
+  FOURTH, AND THIS IS THE FINDING: THE DIFFERENCE BETWEEN THE TWO BUILDS IS THE SECTIONS.
+
+  The two rows above are the same kinds, the same recovery, the same writer.  The only
+  difference is the level body they were written into: the crypt-room build carries a shipped
+  room's sections, the --scratch build carries the 6-unit sample's.  Measured on the files:
+
+      section                  sample (our skeleton)   crypt room (donor body)
+      u32[10]/u32[11]          0 records               42 records of 12 bytes
+      u32[15]/u32[16]          0 records               present
+      u32[18]/u32[19]          0 records               3 records
+      u32[29]/u32[30]          placement table absent  7 placements, 56 bytes each
+
+  So the engine re-derives the transform of a fifth of our units when the level has no room
+  sections, and almost none of them when it does.  A 12-byte record is three floats - a cell,
+  a run, a size - and the crypt rooms are assembled from blocks, so the reading that fits is
+  that the engine places the BLOCK kinds (walls, railings, borders, stairs, pillars, floors)
+  from the room's own definition, and that the shipped levels' records are the RESULT of that
+  placement rather than an input to it.  That is why a shipped level agrees with its capture
+  unit for unit, and why our level does not: we wrote a rotation the engine was about to
+  compute for itself.
+
+  WHAT THIS MEANS FOR THE TWO OPEN REPORTS
+    * the reported kinds (crypt_stairs_low_4c, crypt_railing_straight_4c,
+      crypt_border_straight_4c, coffin_open) are exactly the worst hit - 5 of 15, 8 of 16,
+      5 of 12 and 3 of 5 units respectively - and the rotation ruler's three non-zero columns
+      are all in the differing set.  The engine replaces any non-identity rotation for them.
+    * the "scattered" units are the same effect on the prop kinds (coffin 5 of 19, brazier,
+      rock, light), which the engine also re-places.
+
+  NEXT, IN ORDER
+    1. the author's visual read of the rotation ruler (which of the 0/90/180/270 columns of
+       each row looks right) - it says whether what is SEEN is the engine's derived value
+       (then the sections are the fix) or our written one (then the capture is measuring
+       something else and the level is already right);
+    2. a second capture of the same level, to tell a deterministic rule from a re-roll;
+    3. carry the donor's room sections in --scratch (u32[10]/[11], [15]/[16], [18]/[19]; not
+       the placement table, which is what crashed the activation pass in 9H.22.1) and rebuild.
+       If the 20% drops to the crypt-room build's 4.3%, the sections are the whole story.
+
+
+
+9H.24.1 THE TWO ANSWERS, AND WHAT THEY CHANGE
+
+  DETERMINISM.  The same level was loaded twice, with the capture copied between runs.  All 192
+  units come back with the SAME rotation both times (192 of 192 identical, 0 different), and the
+  same 39 differ from the record.  So the engine's value is a FIXED RULE applied to the level,
+  not a per-load re-roll: the "scattered props" reading of 9H.23.8 does not survive this.
+
+  THE RULER.  The author's read: "the row on the left side of the room looks like it is rotated
+  fine" - and the ruler is four copies of each kind at 0/90/180/270 degrees, one row per kind,
+  isolated, 10 units apart.  The capture says three of its four columns are NOT what was written
+  (the 0-degree column comes back exact; 90, 180 and 270 come back at 180, 250.5 and 289.5).
+
+  THOSE TWO FACTS TOGETHER MEAN THE CAPTURE IS NOT THE RENDERED TRANSFORM - at least not by
+  itself.  If the engine really drew the values the capture reports, three quarters of every
+  ruler row would be visibly wrong, and the author says they are not.  So Unit.local_rotation
+  (unit, 0) is reading a transform that is NOT the one the unit is drawn with for those units -
+  the same caution 9H.6 hit from the other side, where w = f0 managed 65% of a wall's
+  orientations and the reconstruction managed 100%.
+
+  WHAT THAT DOES TO 9H.24's CONCLUSION: the 20%-vs-4.3% difference between the two builds is
+  still real and still points at the room sections, but it can no longer be called "the engine
+  replaces our rotations and that is what the author sees".  The honest state is:
+
+    * positions: right, measured (192 of 194 join to 0.01) - the layout work is done
+    * rotations: the capture disagrees with the record for 20% of units, deterministically,
+      and the engine's own values are what it stores - but the ruler says those values are not
+      what gets drawn, so the capture alone cannot settle the author's report
+    * the one instrument that CAN settle it is a level whose content the author can look at and
+      name: the reported kinds, isolated, at known yaws (done - the ruler - and it looks right),
+      and the same kinds in a RUN, touching, at known yaws (not done yet).  The current room has
+      those kinds in runs; the ruler has them isolated; that is the difference between the two
+      reports, and it is the next thing to test.
+
+  NEXT: a test level with (a) the reported kinds isolated at 0/90/180/270, (b) the same kinds
+  end to end in a run of four at 0 and at 90 degrees, (c) one non-90 yaw (45) of the same kind,
+  and (d) two units copied from the level with their RECOVERED rotations, in a clear area.  That
+  separates value from context in one look, which is what the author offered to build and what
+  the tooling can also generate.
+
+
+================================================================================
+9H.25 THE SYMMETRIC TEST ARENA, AND WHAT SYMMETRY PROVES  *** Oct 2026 ***
+
+================================================================================
+
+================================================================================
+9H.27 THE PROXIES: WHY THE TEST ARENA SCATTERED  *** Oct 2026 ***
+================================================================================
+
+  The author's own diagnosis, and it is right: "every piece named was assigned the full unit,
+  instead of being our own custom geometry... I do want to be able to use native game props,
+  but I think the naming definitely has something to do with it."
+
+  MEASURED, per kind, the node's own extents (sorted) against the game unit's extents that the
+  node's NAME resolves to, over the 858 mesh nodes of test_arena_03.glb:
+
+      kind                        nodes  are the game's unit     author extents      game extents
+      skeleton_var03                424   0                     0.18 x 0.21 x 0.43  0.36 x 1.07 x 2.65
+      crypt_railing_straight_4c     224   0                     0.02 x 0.45 x 0.45  0.68 x 1.15 x 8.34
+      coffin_open                    64   4                     0.11 x 1.24 x 3.15  0.90 x 1.24 x 3.15
+      brazier_floor_02               54   0                     0.25 x 1.78 x 1.79  2.11 x 2.30 x 2.30
+      crypt_border_straight_2c       20   1                     0.83 x 1.12 x 3.95  0.83 x 1.12 x 4.01
+      crypt_rock_01                   9   5                     4.06 x 5.12 x 5.42  4.02 x 4.95 x 5.54
+      cryptsmooth_pillar_01           8   8                     1.59 x 1.60 x 5.97  (same)
+      cryptsmooth_floor_4c_4c        55  55                     0.00 x 8.00 x 8.00  (same)
+
+  779 of 858 nodes are NOT the game unit their name resolves to.  A "railing" that is 0.45 x
+  0.45 x 0.02 is a thin PLATE, not the game's 8.34-long railing; a "brazier" that is 1.78 x
+  1.79 x 0.25 is a flat DISC.  They are the author's own proxy geometry, named after game units
+  so that the level places the real ones.  Only the floors (55/55), the pillars (8/8) and most
+  of the rocks (5/9) are the game's actual meshes.
+
+  WHY THAT SCATTERS THE LEVEL.  The export is BAKED (9H.25: 0 of 858 nodes carry a transform),
+  so the recovery has no transform to read and FITS the reference mesh to the node's geometry
+  instead.  Fitting an 8.34-long railing onto a 0.45 plate is meaningless: the box ties on cube
+  symmetries (which is where the 120 and 180 degree flips of 9H.26 come from) and the position,
+  which is derived from the same fit, inherits the error.  The level then places the REAL units
+  (because the name says so) at those wrong transforms - which is exactly "everything is
+  scattered".  The room that worked was built the other way: 158 of its 206 nodes were the
+  game's own meshes (the exact route), so the fit had something to fit.
+
+  THE FIX IS NOT THE NAMING - the naming is the switch that gives native props, and it is doing
+  what the author wants.  The fix is to NOT BAKE THE EXPORT: export from Blender without
+  applying the transforms (do not Ctrl+A).  Then every node carries its own transform, the tool
+  copies it instead of recovering it, and the proxy geometry only has to EXIST - it never has
+  to match.  The tool now says this itself: recover_baked counts the nodes whose extents do not
+  match the reference (25% per axis) and prints
+
+      *** 779 node(s) ARE NOT THE GAME UNIT ***
+      ... RE-EXPORT WITHOUT APPLYING THE TRANSFORMS (do not Ctrl+A)
+
+  A level of proxies is a legitimate way to author, and a level of the game's own units is the
+  path everything is verified on.  What does NOT work is proxies in a baked export, because the
+  only information left is the geometry, and the geometry is not the unit.
+
+  FOR THE AUTHOR'S OWN GEOMETRY IN GAME: that is a different feature - the level format places
+  UNITS, so custom meshes have to ship as unit resources.  That is already solved and confirmed
+  in game (Data/CUSTOM_ASSET_LOADING_FINDINGS.md #10, the complete working recipe: a custom unit
+  spawned and rendered with a custom material, zero native overrides).  The tool would need to
+  resolve the author's own unit paths for the names to reach them.
+
+9H.26 "EVERYTHING IS SCATTERED" - WHAT IT MEASURED, AND ONE REAL BUG  *** Oct 2026 ***
+================================================================================
+
+  The author loaded the symmetric test arena (9H.25) and reported "super messed up, pretty much
+  everything is scattered".  Measured against that run's capture:
+
+      positions : 222 of 224 records join the engine's units at the offset (4,4,0), to 0.01
+      rotations : 160 exact, 62 different
+      angles between the record and the engine's value, over the 62:
+                  180 deg x133, 120 deg x52, 109 x6, 90 x12, and a tail of props
+      symmetry  : our records mirror 51/51, and the ENGINE'S OWN VALUES mirror 50/51
+
+  180 and 120 are the give-away: those are CUBE SYMMETRIES.  A rectangular box is invariant
+  under them, so a fit that only looks at extents cannot tell them apart, and the engine's
+  value and ours are related by exactly one of them.
+
+  THE BUG THIS FOUND (real, and now fixed).  recover_baked built its candidate orientations as
+  `for axis in x,y,z: for angle in 0,90,180,270`, which yields TEN distinct matrices - identity,
+  90/270 about the three face axes (6), 180 about the three face axes (3).  A cube's proper
+  rotation group has TWENTY-FOUR; the missing fourteen are the 120/240 about the four body
+  diagonals (8) and the 180 about the six edge axes (6) - exactly the angles measured above.
+  The code's own comment claimed "twenty-four candidate orientations".  Fixed: the candidates
+  are now generated as the 24 proper signed-permutation matrices.
+
+  AND A SECOND ONE.  The vertex check that was supposed to out-vote the box ran per PART of a
+  kind while a baked node carries ALL of them, so for the multi-part kinds (a railing is two
+  coincident parts, a skeleton a dozen) it scored noise and the box decided.  It now unions the
+  kind's parts and compares the node's whole cloud against the whole unit, over all 24
+  candidates, with the clouds subsampled to 256 points so the O(n^2) distance stays cheap.
+
+  WHAT THE FIX DID, HONESTLY: it changed the placement set (206 -> 220) and the file, but for
+  the units present in both builds the recovered ROTATIONS did not change, and the match rate
+  against the capture did not move (72% before and after).  So the tilt problem is NOT closed
+  by these two fixes - they remove two ways for the fit to be wrong, but something else still
+  decides the tilt.
+
+  WHAT IS STILL OPEN, AND THE ONE QUESTION THAT SEPARATES THE CASES
+
+    * the capture cannot be the oracle on its own: 9H.24.1 already showed the engine's stored
+      value and what the author SEES disagree (the rotation ruler's three non-zero columns).
+    * the ruler's rotations are CONSTRUCTED by the tool, not recovered, and they look right.
+      Every reported problem has been on a RECOVERED unit.  That is the strongest signal in
+      the whole file: the writer and the format are fine, the recovery is what is wrong.
+    * a character (skeleton_var03) is ASYMMETRIC, so its tilt is visible: if the skeletons in
+      the arena are standing up, the tilt is being applied correctly and "scattered" is
+      something else; if they are lying on their sides, the tilt is being lost, and that is
+      the classic single-frame bug of 9H.22 coming back for the box route.
+    * the minimal test that settles it in one look: ONE kind, eight units, nothing else -
+      four lying flat at yaw 0/90/180/270, four rotated 90 degrees about a horizontal axis.
+      If the standing ones come back flat (or the flat ones standing), the tilt is lost.
+
+================================================================================
+
+  The author re-exported the test arena with deliberate symmetry in it.  It is 858 nodes,
+  still a BAKED export (0 of 858 nodes carry a transform), so the build is the recovery route:
+
+      python3 scripts/level_from_glb.py test_arena_03.glb <sample> out.level \\
+          --scratch --rotation-ruler --reference crypt_arena01.glb --reference
+          crypt_arena02.glb --reference crypt_arena03.glb --reference
+          room_crypt_floor_01_adventure.glb
+
+      858 mesh nodes -> 206 placed, 0 dropped, 8 kinds, 652 mesh parts merged away
+      68 recovered vertex-for-vertex, 790 from bounding boxes
+      yaw-only (a box cannot say more): skeleton_var03 x424, crypt_railing_straight_4c x224,
+      coffin_open x64, brazier_floor_02 x54, crypt_border_straight_2c x20, crypt_rock_01 x4
+      224 records = 206 placements + 16 ruler + spawn + skydome, 19,448 bytes
+
+  SYMMETRY IS A GROUND TRUTH WE CAN CHECK OFFLINE, and that is the point of the export.  If a
+  layout mirrors in the plane x = c, a reflection takes a yaw t to -t, so every mirrored pair
+  must come back with mirrored yaws.  scripts/check_level_symmetry.py finds the centre that
+  pairs the most placements (x = 0.30 here) and tests each pair:
+
+      51 mirrored pairs, 51 correctly mirrored, 0 not.
+
+  So the recovery's HANDEDNESS is right, on every pair the author built - which is a much
+  stronger statement than "the level loads".  It also means the axis composition F^-1 * R_node
+  * F' does not break a mirror relationship, so the two-frame handling (9H.22) is doing its job.
+
+  The one apparent exception in the first run was a rotation-ruler fixture (a diagnostic row at
+  the -x edge) pairing with an unrelated unit of the same kind; excluding the fixtures by index
+  rather than by name removed it.  Fixtures are not authored content and must not be counted.
+
+  DEPLOYED through the normal route (mod_bundle_builder.py --flat into the loader's
+  mods/bundles/CustomRunLevel), manifest size 19,448 - the new level, not the old 16,928 one.
+
+  WHAT THE AUTHOR'S LOOK WILL SETTLE
+    * if the two halves mirror in game, then the records are right in the engine's frame too,
+      and the "wrong units" reports belong to the earlier builds (9H.23.6's mirror bug and the
+      pre-branch builds), not to this one;
+    * if they do not, the mirror breaks at named units, and those are the recovery's remaining
+      error sites - which is exactly the list to hand back.
+    * the rotation ruler's three non-zero columns are still the open question from 9H.24.1: the
+      capture says the engine stores 180/250.5/289.5 for what we wrote as 90/180/270.
+
+================================================================================
+9H.28 THE AUTHOR'S OWN UNITS: A LEVEL PLACES UNITS, SO THE MESH HAS TO BE ONE
+  *** Oct 2026 ***
+================================================================================
+
+  A .level carries no geometry.  Its 72-byte records hold a template hash, a material hash, a
+  position and a rotation, and the engine resolves that hash to a UNIT resource and
+  instantiates it.  So a level authored from the author's own meshes only works if those meshes
+  SHIP AS UNITS - which is what the game itself does, and what
+  Data/CUSTOM_ASSET_LOADING_FINDINGS.md #10 already proved in game (a custom unit rendered with
+  its own material, no native override).
+
+  THE GROUPING RULE, as the author stated it and the engine agrees: A NODE'S NAME IS THE UNIT.
+  `Floor`, `Floor.001`, ... `Floor.008` are ONE unit resource placed nine times.  Blender's
+  `.001`/`#123` suffixes are stripped exactly as level_from_glb already stripped them for game
+  units, so the two tools group identically.
+
+  scripts/build_own_units.py (new) builds one unit per base name: it takes the mesh from the
+  FIRST node of the group, rotates it into the engine's frame, encodes it with gltf_to_unit.py,
+  and SPLICES it into a native template - keeping the template's trailer (collision actors,
+  flow data, the 32-byte footer whose material hash is the binding).  The template choice is
+  the physics and the material, which is why a floor tile is built from a floor tile.
+
+  THE FRAME IS MEASURED, NOT ASSUMED.  The vertices have to end up in engine space (Z-up)
+  because the record's rotation is applied to them at run time.  The rotation is the one that
+  takes the export's mesh up - the flat meshes' averaged vertex normal - onto engine +Z:
+
+      +Y   (every normalised Blender +Y-up export)   +90 about X   (x, y, z) -> (x, -z, y)
+      -Y   (Y-up but upside down; the old Base.glb)  -90 about X
+      +Z   (the mesh data is already engine-space)     0
+      -Z   (engine-space but upside down)            180
+  `--mesh-frame auto|y-up|engine` overrides the measurement when there is no flat mesh to
+  measure.  It was +90 hard-coded before; on THIS export the measurement picks +90 as well, and
+  the three units rebuild BYTE-FOR-BYTE identical to the shipped ones (1422 / 9582 / 1164296
+  bytes), which is the regression check that the detection is not a behaviour change.
+
+  THE EXPORT AND THE UNITS THAT CAME OUT OF IT (test_arena_03.glb, 12 mesh nodes, no hierarchy)
+
+      node(s)          mesh                          unit resource built from it
+      Floor x9         9 verts, 8 tris, 8 x 0 x 8    units/custom/duckomp_room/floor  1422 B
+      Stair x2         106 verts, 2 prims, 98 tris   units/custom/duckomp_room/stair  9582 B
+      Medieval Crane   19156 verts, 13344 tris       units/custom/duckomp_room/crane  1.16 MB
+
+  Templates, and the material that comes with each (the footer u64 at len-16, named through
+  Data/hash_database.json - all three are the same crypt-stone material, 0x04d8b35043c51085):
+
+      units/custom/duckomp_room/floor  <- 0x6369abda98cf91a5  cryptsmooth_floor_4c_4c
+      units/custom/duckomp_room/stair  <- 0xc512fd67e8213eec  crypt_stairs_low_4c
+      units/custom/duckomp_room/crane  <- 0x432ffd51ba8d0fc3  crypt_pillar_01
+
+  NOTE ON THE TEMPLATE FOOTER: all three footer hashes came out 0x04d8b35043c51085, i.e. the
+  templates' own binding, NOT the author's material.  The engine resolves it, which is what
+  makes the geometry render; the record's own material field is written 0 ("no override",
+  never a NULL lookup) for all 12 placements.
+
+  level_from_glb.py takes `--own-unit BASE=PATH` (repeatable): a node whose base name is BASE
+  resolves to that unit path instead of a game unit, and the path is hashed with the same
+  murmur64 the bundle builder uses, so the level's template hash and the bundle's resource
+  name hash agree by construction - they were checked against each other in the DEPLOYED bundle
+  (9H.30).
+
+  SHIPPED: scripts/arena_mod/custom_run_mod.json now carries the level plus the three units in
+  ONE package (a package onlines only when every resource in it completes, so a level whose
+  units live somewhere else would load to nothing).
+
+================================================================================
+
+================================================================================
+9H.29 THE ROTATION BRANCH, APPLIED TWICE: EVERY NON-YAW PLACEMENT CAME OUT INVERTED
+  *** Oct 2026 ***
+================================================================================
+
+  WHAT WAS SEEN.  The first own-unit build (12 placements, an un-baked export) decoded as:
+
+      Floor x9          quat (0, 0, 0, -1)                 identity        looks right
+      Medieval Crane    quat (0, 0, +0.8108, -0.5853)      251.6 deg about -Z
+      Stair             quat (-0.7071, 0, 0, -0.7071)      +90 deg about X
+      Stair.001         quat (-0.5, -0.5, +0.5, -0.5)      120 deg about (+1, +1, -1)
+
+  and the suspicion was that all twelve should be IDENTITY because "every node in the export has
+  translation only".  MEASURED, that premise is false - this export carries three node
+  rotations, and the build reports them:
+
+      Medieval Crane   (0, +0.8108, 0, +0.5853)    108.36 deg about Y in the file
+      Stair            (-0.7071, 0, 0, +0.7071)    -90 deg about X
+      Stair.001        (-0.5, +0.5, +0.5, +0.5)    120 deg about (-1, +1, +1)/sqrt(3)
+
+  So 9 identity records and 3 rotated ones is the CORRECT shape of the answer, the earlier
+  "translation only" measurement belongs to an older export, and the only question was whether
+  the 3 rotated records hold the right rotation.  They did not.
+
+  THE RULE, and where a record's rotation comes from.  The engine renders the unit's ENGINE mesh
+  M_e transformed by R_record; the file renders its mesh M_file transformed by R_node; and
+  M_e = F * M_file for BOTH a native unit in a Y-up file and an own unit built by
+  build_own_units.py (both are engine-space copies of the same geometry).  So
+
+      R_record = F * R_node * F^-1        (F = the file -> engine change, +90 about X here)
+
+  which is what to_engine_rotation computes from deg_pos = +90 (measured from the layout's world
+  up) and deg_mesh = -90 (measured from the meshes' normals).  Against that rule, the records
+  above are the INVERSE of the authored rotation in all three cases.
+
+  THE BUG.  to_engine_rotation put its result into the engine's branch by negating ONLY xyz and
+  leaving w positive.  That is the right xyz for an engine that rebuilds w = -|w|, but it is NOT
+  a canonical quaternion, and write_scratch then applied the record-branch rule
+  (`_record_branch`: negate ALL FOUR when w > 0) on top of it - so the second application undid
+  the first and put the sign back.  (x, y, z, w) and (-x, -y, -z, w) are NOT the same rotation
+  (the second is the inverse); only the full negation is.
+
+  WHY IT HAD NEVER SHOWN.  Every earlier build was BAKED, so every placement went through
+  recover_baked -> _record_branch exactly ONCE, which is correct.  The rotation ruler builds its
+  own quaternions and gets the same single application - correct (9H.23.7).  The one path that
+  was wrong is the one that had never been used: an UN-BAKED export - which is precisely the
+  export 9H.27 demands.  And it is invisible in the file: the nine floors are correct either way
+  because their node rotation IS the identity, so the branch has nothing to flip.  "The floors
+  look right" was never evidence about this bug.
+
+  THE FIX, and the check that makes it unable to come back.  to_engine_rotation negates ALL FOUR
+  components, so its output is canonical (w < 0) and _record_branch is a no-op on it; the
+  idempotence is now stated in both docstrings, and the verbatim path (which already negated all
+  four) stops being double-flipped with it.  write_scratch also AUDITS every placement before
+  writing - it rebuilds the rotation the engine will construct from the stored branch and
+  compares it with the orientation the node asked for (`_quat_angle_deg`), prints
+
+      rotation: 12 placement(s): 9 identity, 3 rotated; the stored branch reproduces
+                the authored orientation on every one (worst 0.000 deg)
+                1 x quat (-0.0000, -0.0000, -0.8108, -0.5853)  = 108.4 deg about (0, 0, +1)
+                1 x quat (+0.5000, +0.5000, -0.5000, -0.5000)  = 120.0 deg about (-0.577, -0.577, +0.577)
+                1 x quat (+0.7071, -0.0000, -0.0000, -0.7071)  =  90.0 deg about (-1, 0, 0)
+
+  and REFUSES the build if any record is off by more than 1e-3 degrees.
+
+  VERIFIED END-TO-END FROM THE LEVEL FILE - decode the record, rebuild the engine's quaternion
+  q = (x, y, z, -sqrt(1 - |xyz|^2)), compare with the authored rotation:
+
+      Floor x9  0.000 deg    Medieval Crane  0.000 deg    Stair  0.015 deg    Stair.001  0.000 deg
+      worst over the 12 placements: 0.0150 deg  (float32 rounding in the file)
+
+  THE ONE THING STILL OPEN, AND IT IS THE AUTHOR'S CALL.  Those three rotations are the author's
+  own Blender objects: a crane at 108.36 degrees and two stairs at -90 and +120 degrees.  The
+  records now reproduce the FILE exactly.  If a piece still looks rotated oddly in game, the
+  number to change is in Blender, not in the tool.
+
+
+================================================================================
+9H.30 THE SPAWN ON OUR OWN FLOOR, AND THE BUILD THAT SHIPS  *** Oct 2026 ***
+================================================================================
+
+  OPEN ITEM: THE SPAWN MARKER.  The first own-unit build printed
+
+      spawn  : WARNING - no floors/ among our units; the spawn marker goes to the origin
+
+  The test was `'floors/' in path` - the corpus' own directory (blocks/d01_crypt/floors/...).  An
+  own unit is `units/custom/duckomp_room/floor`, which has neither the slash nor the plural, so
+  nothing nominated a spawn and the marker landed at (0, 0, 0).  The nine tiles sit at z = -0.18,
+  so the origin is 0.18 ABOVE the tile surface and on the centre tile - survivable, but an
+  accident rather than a decision.
+
+  THE RULE NOW, measured over all 280 unit kinds the shipped corpus places:
+
+      * `floors/` anywhere in the path      - the old test, kept so no shipped level moves;
+      * a path SEGMENT named `floor`/`floors` - catches units/custom/duckomp_room/floor;
+      * a final segment STARTING WITH `floor`.
+
+      old rule: 21 kinds      new rule: 21 kinds, plus ours      lost: none, gained: none
+
+  so no shipped behaviour moves (including gameobjects/procedural_floors/entrance_blocker, which
+  the substring test caught).  A plain `'floor' in path` was REJECTED: it also catches
+  gameobjects/deathplane/deathfloor, which is a kill volume.
+
+  The marker now goes to the median floor position per axis, which for nine 8-unit tiles is the
+  CENTRE TILE's centre AND its surface height:
+
+      spawn  : our own player_spawn_marker at (0.29, 0.01, -0.18) - the median floor tile's
+               centre, ON the tile surface
+
+  `--spawn-at X,Y,Z` places it by hand when the median is not what is wanted.  The tiles are at
+  x = 8.29 / 0.29 / -7.71 and y = 8.01 / 0.01 / -7.99 (8 apart), so (0.29, 0.01) is the middle
+  tile - and the layout's own symmetry agrees: 8 mirrored pairs, 8 correctly mirrored, 0 not
+  (scripts/check_level_symmetry.py).
+
+  THE BUILD THAT SHIPPED
+
+      scripts/arena_mod/custom_duckomp_room.level      14 records = 12 placements + spawn +
+                                                       skydome, 1808 bytes
+      scripts/arena_mod/units/units_custom_duckomp_room_{floor,stair,crane}.unit
+                                                       1422 / 9582 / 1164296 bytes
+      python3 scripts/mod_bundle_builder.py scripts/arena_mod/custom_run_mod.json --flat \
+          -o <game>/mods/bundles/CustomRunLevel
+
+  manifest.json before -> after: resource_count 2 -> 5; the level resource's size 20624 -> 1808
+  (20624 was the previous donor-body level - a different file entirely); the package resource
+  25 -> 85 bytes; three new unit resources.  bundle.ini ResourceCount agrees with the manifest
+  (5), which the C++ loader requires or it skips the bundle.
+
+  VERIFIED BY DECODING THE DEPLOYED BUNDLE (not the builder's own output): sig 0xF0000004,
+  1,177,713 bytes unpacked / 275,819 compressed, the five payloads packed tight (consumed ==
+  size, no padding), the TOC agreeing with every payload header, and
+
+      all 12 placement template hashes ARE unit resources in this package
+      (0x6892a66dda35e093 floor x9, 0x319ab70e4a95accd crane, 0xb24202c709ee3127 stair x2)
+      the level's other two records are the spawn marker and the skeleton's skydome, both native
+      the three units' footer material is 0x04d8b35043c51085, the templates' crypt-stone
+
+  That agreement is the one that matters: the level places units BY HASH, so a hash that is not
+  in the loaded package is a unit that does not exist.
+
+  DEPLOYED to <game>/mods/bundles/CustomRunLevel (the previous folder backed up to
+  /tmp/CustomRunLevel.backup-<time>).  The CustomRun Lua that exposes the level
+  (mods/functions/CustomRun: the custom_run menu button -> layouts/custom_duckomp.lua ->
+  modules/d01_hub_room/custom_duckomp_room) is already in the game dir and byte-identical to the
+  repo copy.
+
+  WHAT ONLY THE AUTHOR CAN SETTLE: whether the crane and the two stairs stand and face the way
+  they were built - they carry the export's own rotations (9H.29) - and whether the geometry
+  renders with the templates' crypt-stone material, which is what the spliced trailers bring.
+
+  AFTER THE FIRST LOAD there is a second, independent check available: the engine writes its own
+  capture of every level it loads to <game>/binaries/levels/<level path>.json, so
+
+      python3 scripts/compare_level_capture.py scripts/arena_mod/custom_duckomp_room.level \
+          <game>/binaries/levels/modules_d01_hub_room_custom_duckomp_room.json
+
+  joins the engine's own unit transforms to our records on (rounded position, template hash) and
+  says whether the positions and the rotations agree.  The capture is NOT the last word on what
+  is RENDERED (9H.24.1: it reported 180/250.5/289.5 for what was written as 90/180/270), so it is
+  corroboration - the author's eyes decide.
+
+
+
+
+9H.31 A UNIT BODY MUST DECLARE AS MANY MESHES AS THE TRAILER IT WEARS  *** Oct 2026 ***
+     --- the load crash, the two mesh bugs behind it, and the whole level -> unit path ---
+
+THE CRASH.  access read at 00000008, fault RVA 0x00270259 (`push [eax+ecx+8]`, eax =
+[[ebp+0x2c]+0x1e4], which is NULL), reached from 0x004309f3 (the per-unit pass FUN_00430440) and
+0x00429e90 / 0x00429d83 (the World.load_level region).  Deterministic: every load of our
+12-placement level with our own units died there, and the engine never even wrote its own level
+capture - so the crash is BEFORE the capture, not after the menu.
+
+THE BISECT (four game launches, driven by a temporary AutoLoadTest harness that hooks
+ScreenMainMenu.update and calls Game:create_network_game + Game:change_state_to_game):
+
+  1. the same 14 records with the three kinds resolving to NATIVE crypt units
+     (cryptsmooth_floor_4c_4c / crypt_stairs_low_4c / crypt_pillar_01)     -> LOADS
+  2. OUR floor unit placed 9 times, native stair + native pillar           -> LOADS
+  3. OUR crane unit placed once, native floor + native stair               -> CRASHES (same RVA)
+  4. OUR crane MESH wearing the FLOOR template's trailer                   -> LOADS
+
+Run 1 cleared the level file itself (records, rotations, spawn, skydome, the bundle plumbing:
+a level whose 3 kinds are native units loads out of OUR package).  Run 2 cleared our floor.  Run
+3 named the crane.  Run 4 named the CAUSE: the body and the crane's own template differed in
+nothing but the trailer, and the trailer that loaded came from a ONE-mesh template.
+
+WHAT THE FILES SAY.  A .unit body is
+
+      u32 0x00010090
+      u32 mesh_count
+      mesh_count x [ vertex buffer | 8 bytes | count/stride/elements | elements | 12 bytes |
+                     index count/size | indices | shapes | bbox | material list ]
+      trailer      (collision actors, flow data, the 32-byte footer whose material hash is the
+                    unit's material binding)
+
+and THE TRAILER IS SERIALIZED FOR THE MESH LIST OF THE UNIT IT WAS TAKEN FROM.  Our builder
+splices a generated ONE-mesh body onto a template's trailer, and the three templates differ:
+
+      0x6369abda98cf91a5  blocks/d01_crypt/floors/cryptsmooth_floor_4c_4c  1 mesh    670 B trailer
+      0xc512fd67e8213eec  blocks/d01_crypt/stairs/crypt_stairs_low_4c      5 meshes 2858 B trailer
+      0x432ffd51ba8d0fc3  blocks/d01_crypt/pillars/crypt_pillar_01         2 meshes 11287 B trailer
+
+  136 of the 582 native units in scripts/.unit orig are multi-mesh (up to 36), so this is not an
+  edge case: the floor (1) loaded, the stair (5) and the crane (2) could not.
+
+THE CODE, OUT OF THE BINARY (Ghidra 12.1.4, project ~/tools/ghproj, script in
+/tmp/dump345/unit_path.py):
+
+  FUN_00422760  the .unit deserializer - it is the function that writes/checks 0x00010090 and
+                then reads the fields in file order.
+  FUN_00422fd0  the constructor that ZEROES the mesh list: [x+0x1dc] count, [x+0x1e0],
+                [x+0x1e4] array - three more arrays are zeroed the same way (0x1b0, 0x1ec).
+  FUN_004272b0  the append into that array (reads [x+0x1e4], writes it back, pushes the count).
+  FUN_00430440  the per-unit pass: the 4-byte-per-unit pointer table, the 72-byte records, the
+                transform/render/lighting block.
+  FUN_00670190  THE FAULT.  It is the mesh -> material resolver, and its own strings say so:
+                    "MeshObject"
+                    "Failed looking up material: '%s' in material manager for mesh '%s' in
+                     unit '%s'"
+                Body:  uVar1 = [X+0x1dc]                    (the mesh COUNT)
+                       resize/grow the instance's material array to uVar1
+                       for i in 0..uVar1:
+                           FUN_00629fe0(*(int *)([X+0x1e4] + 8 + i*0x10))
+                                                            (the mesh object at +8 of the
+                                                             16-byte element)
+                With a body that declared ONE mesh and a trailer written for two or five, that
+                list is left size-non-zero / array-NULL, so the first element read is
+                [NULL+8] = access read at 00000008, RVA 0x00270259.  Exactly the signature.
+
+THE FIX.  splice_into_template() in scripts/glb_to_template_unit.py keeps the counts EQUAL: when
+the generated body has fewer mesh blocks than the template, the block is REPLICATED to the
+template's count - a mesh block is self-contained (its own vertex buffer, elements, indices,
+shapes, bbox and material list), so N copies parse exactly like one, and N is what the trailer
+was serialized against.  `--no-duplicate-meshes` refuses instead, which forces a template that
+is already one mesh.  build_own_units.py prints both numbers, e.g.
+
+    template : 0xc512fd67e8213eec.unit (24253 bytes, 5 mesh(es), trailer 2858 bytes)
+    Stair    -> units/custom/duckomp_room/stair  2 placement(s)  166 verts  158 tris
+                55046 bytes  (5 mesh block(s), 2 primitive(s): 106+98 60+60)
+
+  Rebuilt: floor 1422 B - BYTE-IDENTICAL to the crashing build, because a one-mesh template
+  needs no replication.  That is the regression check.  Stair 36446 -> 55046 B, crane 2,317,297
+  B.  Deployed, launched, and the level loads: 12 units in the engine's capture, no exception.
+
+THE SECOND BUG, FOUND WHILE AUDITING THE MESH.  build_own_units.py read
+`meshes[node.mesh].primitives[0]` and dropped every other primitive.  A glTF mesh with N
+primitives is N MATERIAL GROUPS over one surface - the engine's own model is one material group
+per mesh block, which is why native units are multi-mesh at all - and the stair's mesh is 2
+(106 verts / 98 tris + 60 verts / 60 tris, two materials).  A third of the stair was missing from
+the unit.  All primitives are now concatenated with their index offsets and the build reports
+the breakdown.  Floors (1 primitive) and crane (1) are unaffected.
+
+HOW A LEVEL PLACES A UNIT - the whole path, so the next custom unit does not have to be
+re-derived (this is the answer to "find out everything about levels and loading their units"):
+
+  World.load_level(path, position, rotation)      the Lua binding, FUN_004f2520
+      -> FUN_00428a50   the delegate: allocates 0x208, calls the loader with the path, then
+                        pushes the Level onto the world's level list (FUN_0042f3a0 follows)
+      -> FUN_0042b6b0   the loader proper: builds the Level, walks the unit table - ONE 72-BYTE
+                        RECORD PER PLACEMENT, template hash + position + rotation - and recurses
+                        per sub-level.  It creates no physics.
+      -> per placement: the record's hash is looked up as a RESOURCE, so the unit must come from
+                        a package that is loaded (that is what our bundle registers, 9H.28)
+      -> FUN_00430440   the per-unit pass: the 4-byte-per-unit pointer table (its entries are
+                        SELF-RELATIVE and memcopied - getting the count wrong is the 0x5FEA5A
+                        crash of 9H.23), the transform, the render/lighting block
+      -> FUN_00670190   mesh -> material resolution, once per mesh of the unit's mesh list
+                        (this is the function that dies when the list is inconsistent)
+      -> FUN_004e7ed0 / FUN_0045a890  actor instantiation from the trailer's actor table
+                        ([unit+0xbc] count, [unit+0xc4] array): this is what gives a placed unit
+                        its collision - a level never carries physics of its own
+
+  A record carries NO GEOMETRY.  Hash, position, rotation, and the unit resource does the rest -
+  which is why the body/trailer agreement above is load-critical and why the units must ship
+  beside the level.
+
+THE PLACEMENT ORIENTATION, MEASURED.  For every mesh node of the author's export the tool's rule
+is (engine and Blender are both Z-up, so the frame change is R_x(90) from glTF's Y-up):
+
+      engine position P  = R_x(+90) . t_file
+      engine rotation R  = R_x(+90) . R_node . R_x(-90)
+      our unit mesh      = R_x(+90) . v_file
+
+so the rendered world W = P + R . v_engine reproduces the node's own world placement, which is
+what level_from_glb.build() audits per placement (ORIENT_TOL_DEG = 0.5) and what the rotation
+ruler proved.  The numbers for THIS level (floor tile surface at z = -0.185):
+
+  Floor x9        identity            nine tiles, flat, at z = -0.185
+  Medieval Crane  108.35 about -Z     local Z (9.977 tall) -> +Z; stands on the floor
+  Stair           90 about -X         run (2.558) -> +Y, width (1.0) -> +Z: FLAT, bottom
+                                      z = -0.163, i.e. 0.022 ABOVE the tile surface
+  Stair.001       120 about (-1,-1,1) run (2.558) -> -X, width (1.0) -> +Z: FLAT, but YAWED 90
+                                      against Stair - its 4-unit length runs along +Y instead
+                                      of +X, and it climbs towards -X
+
+  THE AUTHOR'S EXPORT SAYS THAT, AND ONLY THAT.  Stair.001's node rotation is (-0.5, 0.5, 0.5,
+  0.5) - 120 degrees about the (-1,1,1) DIAGONAL - where Stair carries the clean (-0.7071, 0, 0,
+  0.7071), i.e. -90 about X.  The two stairs are not parallel in the file, and the tool copies
+  what the file says on purpose (worst orientation error 0.000 deg over all 12 placements).  A
+  diagonal-axis rotation of exactly 120 degrees is the signature of a trackball/gizmo drag or of
+  two typed Euler fields; the fix belongs in Blender (set Stair.001's rotation, e.g. -90 about X
+  like Stair, plus whatever yaw is wanted), not in the level file.
+
+  THE ENGINE'S CAPTURE IS NOT EVIDENCE FOR THIS.  binaries/levels/<level>.json reports different
+  rotations for exactly the three rotated placements - 109.47 where the stair is written as 90,
+  97.9 where the crane is written as 108.35, 81.79 where the stair is written as 120 - while the
+  nine identity floors agree.  9H.24.1 already recorded that artifact (180 / 250.5 / 289.5 for
+  what was written as 90 / 180 / 270).  The author's eyes settle it: the crane and the first
+  stair stand exactly as authored, so the capture holds a derived value, not the render
+  transform.  Use it to corroborate POSITIONS and unit hashes, never rotations.
+
+STATE AND TOOLING.  scripts/build_own_units.py (--mesh-frame auto|y-up|engine,
+--no-duplicate-meshes), its splice helper in glb_to_template_unit.py, scripts/check_rotation_rule.py
+(15 cases), scripts/check_level_symmetry.py, scripts/level_decode.py, scripts/compare_level_capture.py,
+and scripts/check_deployed_bundle.py (new): it unpacks the DEPLOYED blob, checks the TOC against
+every payload header, checks the resource count against manifest.json AND bundle.ini, checks that
+every placement hash in the level is a unit in the package, and checks every unit's mesh_count
+against the native template whose trailer it wears - the invariant whose violation was this
+crash.  On the shipped bundle it reports:
+
+    sig 0xF0000004, 5 resources, 2,376,178 bytes unpacked, the walk ending exactly at the end
+    units/custom/duckomp_room/crane  mesh_count 2  trailer 11287 B  (template declares 2)
+    units/custom/duckomp_room/floor  mesh_count 1  trailer   670 B  (template declares 1)
+    units/custom/duckomp_room/stair  mesh_count 5  trailer  2858 B  (template declares 5)
+    the level payload is 1808 bytes, 14 records (12 of them our units, 2 native)
+
+The deployed bundle is <game>/mods/bundles/CustomRunLevel (5 resources, crane 2,317,297 B, file
+545,799 B) and the level captures are the engine's own.  The temporary harness
+<game>/mods/functions/AutoLoadTest/ (arms ScreenMainMenu.update, calls Game:create_network_game +
+change_state_to_game at frame 240) is what made four launches into four experiments - REMOVE IT
+(delete or rename that folder) before the shipped state is called clean.
+
+9H.32 THE ROTATION'S TWO HALVES, AND WHY THE CAPTURE CANNOT SETTLE IT  *** Oct 2026 ***
+     --- the author's "w 0.5 -> 1.0", the record's dual-purpose first float, four test builds ---
+
+WHAT THE AUTHOR FOUND, AND WHAT IT IS.  "Stair.001's W is changed from 0.5 to 1.0 by the engine;
+when I put 1.0 in Blender it matches what the game shows."  The 72-byte unit record stores the
+rotation in TWO places:
+
+    offset  0   a float that is the quaternion's w   - and, in record 0 ONLY, the load's COUNT
+    offset 60   the rotation vector, 3 floats (xyz)
+    offset 72   (the next record) - see below for why this matters
+
+  write_scratch (scripts/level_from_glb.py) says it plainly: "the record holds xyz of the branch
+  the engine rebuilds w=-|w| from", and it forces `records[0]['flag'] = 0.0` because the loader
+  reads the unit table's own start - record 0's offset-0 field - as a byte COUNT, allocates that
+  many bytes and writes one byte per item.  A float there is read as a count: 0.5 becomes
+  1,056,964,608.  BOTH false trails of this session were that mistake: two test builds that wrote
+  a w into record 0 crashed at RVA 0x88344 (FUN_00488340, a bare `return *param_1` on a garbage
+  pointer) - not a floor bug, not a spawn bug, the count.
+
+WHAT THE FOUR TEST BUILDS SHOWED (each one game launch, level patched directly):
+  * four floor tiles given four unit quaternions about Z (60/120/180/240)   -> four DIFFERENT
+    rotations in game, i.e. the engine uses each record's own data, NOT one forced value.
+  * three stair records encoding +90 about X (A), and -90 about X twice with different
+    (vector, w) pairs (B, C) -> "all rotated weirdly and differently" per the author.
+
+WHY THE ENGINE'S CAPTURE CANNOT DECIDE IT.  For A/B/C the capture reported A and B as the SAME
+rotation (0.00 deg apart) and C 70.53 deg away - normalize(vector, w=1.0) exactly.  That pattern
+is not consistent with the engine honouring (vector, w) (which would make B and C identical, the
+two encodings of -90 about X, and A their mirror).  9H.24.1 recorded the same class of artifact
+(180 / 250.5 / 289.5 for records written as 90 / 180 / 270), and the capture's numbers for the
+other three placements each equal normalize(record.xyz, the NEXT record's first float) exactly -
+i.e. the capture's rotation is a DERIVED value, one foot in the next record.  Use the capture for
+POSITIONS and unit hashes; never for rotations.  The author's eyes are the instrument.
+
+PRACTICAL ANSWERS.
+  * Blender's rotation MODE does not matter: the glTF exporter writes node rotations as
+    quaternions whatever the object's rotation_mode is, so switching the N-panel to XYZ changes
+    nothing in the file.  What the pipeline copies is the resulting ORIENTATION.
+  * The crane "just works" because its node rotation is a clean single-axis yaw (108.35 about +Y
+    in the file = 108.35 about +Z in the engine).  Stair is a clean -90 about X.  Stair.001 is
+    120 degrees about the (-1,-1,1) DIAGONAL - flat, but yawed 90 against Stair, and the
+    signature of a trackball drag or two typed Euler fields.
+  * If a node's authored rotation is wrong, the fix is in Blender.  A level-side override is the
+    alternative (a --set-rotation flag), and if the engine turns out to force the w slot, the
+    writer compensates by pre-scaling the vector (v' = tan(theta/2) * axis) - neither is built
+    yet because the A/B/C observation decides which one is needed.
+
+9H.33 [RETRACTED - see 9H.34] "THE RECORD'S ROTATION IS A ROTATION VECTOR"
+     *** This section was WRONG.  It was written from an in-game A/B test that could not
+     distinguish the two readings on a symmetric mesh.  The decompile in 9H.34 shows the engine
+     builds a NORMALISED QUATERNION (x,y,z,w) from four floats, and the corpus agrees with it and
+     not with this.  Kept only so the wrong turn is on record. ***
+
+     --- what was believed, briefly: the 3 floats as axis*tan(theta/2), q = normalize(v, 1.0) ---
+
+THE RULE.  A 72-byte unit record holds THREE floats for its rotation (offsets 60/64/68), and the
+engine builds the quaternion as
+
+        q = normalize(vector, 1.0)
+
+so the three floats are a ROTATION VECTOR, axis * tan(theta/2) - not a quaternion's vector part.
+For a unit quaternion (x, y, z, w) a record therefore wants (x, y, z) / w.  Under this encoding a
+90-degree rotation is a unit vector, 120 degrees is sqrt(3) long, 108.35 is 1.3854, and 180 is
+infinite.  The offset-0 float plays no part in the rotation; on the first record it is the byte
+count the loader allocates, which write_scratch pins to 0.0 (9H.23.3).
+
+WHAT WE WERE WRITING, AND WHAT IT LOOKED LIKE.  We stored the quaternion's vector part, which the
+engine then read as tan(theta/2): every rotation rendered at 2*atan(sin(theta/2)) - a SHRUNKEN
+angle about the SAME axis.  scripts/check_rotation_encoding.py prints the table:
+
+        90 degrees as written  ->  70.53   (19.47 off)
+       108.35 (the crane)      ->  78.07   (30.28 off)
+       120 (the author's diagonal stair) -> 81.79 (38.21 off)   <-- the tilt in the screenshot
+       170                     ->  89.78   (80.22 off)
+
+  Identity is the one rotation both encodings agree on (the vector is 0), so nine floors and every
+  unrotated prop were ALWAYS correct - which is why this hid for so long, and why the author's
+  original observation, "the engine changes w from 0.5 to 1.0, and 1.0 in Blender matches the
+  game", was the true description of the bug rather than a symptom of it.
+
+THE PROOF, IN GAME.  Four stair records were written with ONE intended orientation (stair #1's,
+-90 about X) in four encodings:
+
+        a  vector (+0.7071, 0, 0)   offset0 -0.7071   (a quaternion's vector part, canonical)
+        b  vector (-0.7071, 0, 0)   offset0 +0.7071   (the same rotation, the other branch)
+        c  vector (-1.0,     0, 0)  offset0 +1.0      (the rotation vector of -90 about X)
+        d  vector (+1.0,     0, 0)  offset0 +1.0      (the rotation vector of +90 about X)
+
+  The author's verdict: "the back left and back middle planes ... look correctly rotated as stairs"
+  - i.e. c and d (the rotation-vector forms) are right and a and b (the quaternion forms) are not.
+  That rejects "the engine reads (vector, offset0)", rejects "offset0 is the w", and leaves exactly
+  q = normalize(vector, 1.0).  It also explains why the crane - a 108.35 yaw, rendered 30 degrees
+  short - still looked plausible: a big prop with no reference direction.
+
+THE FIX (scripts/resource_tools/level_tools.py).  record_rotation_vector() divides by w; the
+packer _encode_entity() writes that, preferring a decoded record's own three floats when present
+so a round trip stays byte-exact; quat_from_record_vector() is the engine's rebuild, used by
+_parse_entity() so every report now shows the rotation the ENGINE will build; and both build
+audits (write_scratch's per-placement audit and build()'s --scratch orientation check) now measure
+the authored orientation against the ENGINE'S REBUILD of the record's floats - so "the level is
+what the author authored" is verified on the bytes, per placement, on every build (worst 0.000 deg
+on all 12).  Exactly 180 degrees cannot be written in this form (tan 90 is infinite) and gets a
+1e6 escape value, which the engine normalises back to 180.
+
+  The 9H.29 "canonical branch" work is moot under this encoding: q and -q give the same (x,y,z)/w,
+  so there is no branch to canonicalise.  That whole thread was chasing the symptom of this one.
+
+IMPACT.  Every level our tools wrote before today carried shrunken rotations - the tumbling custom
+levels of 9H.22/9H.26 included.  The record vector for the author's level is now
+9H.34 THE TRANSFORM BUILDER, DECOMPILED  *** Oct 2026 ***
+     --- what the engine does with a record's rotation, read out of gauntlet.exe ---
+
+MEASURED IN THE BINARY.  The per-unit pass FUN_00430440 gets its record pointer from the world's
+per-unit instance array and hands the transform builder three of its members:
+
+    iVar13 = *(int *)(param_1 + 8) + i * 0x48 + 0xb0;        ; 0x48 = 72 bytes per unit
+    FUN_0042db10(out, iVar13 + 0xc, iVar13, iVar13 + 0x1c)   ; (out, quaternion, position, scale)
+      -> FUN_0042d7f0(out, quaternion, position, scale)
+
+and FUN_0042d7f0's arithmetic is a NORMALISED QUATERNION to matrix, in the ordinary (x, y, z, w)
+order, with the w read as the FOURTH float:
+
+    fVar5 = x*x + y*y + z*z + w*w;                 if (fVar5 <= eps) -> identity matrix
+    k = 2.0 / fVar5;
+    m00 = 1 - k(y*y + z*z)   m01 = k(x*y + w*z)   m02 = k(x*z - w*y)
+    m10 = k(x*y - w*z)       m11 = 1 - k(x*x + z*z)   m12 = k(y*z + w*x)
+    m20 = k(x*z + w*y)       m21 = k(y*z - w*x)   m22 = 1 - k(x*x + y*y)
+    (then the translation is copied from the position pointer and m33 = 1)
+
+So: FOUR floats, normalised, in (x, y, z, w) order - NOT a rotation vector, NOT a tangent-half
+encoding, NOT three floats with anything derived.  FUN_0042db10 is called from exactly two places:
+FUN_00430440 (the per-unit pass, the 72-byte unit records) and FUN_0042b6b0 (the loader), where the
+same builder is handed a 56-byte placement record's own fields:
+
+    puVar14 = (uint *)(*(int *)(param_1[2] + 0x78) + iStack_104 + param_1[2]);   ; 0x38 stride
+    FUN_0042db10(out, puVar14 + 7, puVar14 + 4, puVar14 + 0xb);                  ; bytes 28, 16, 44
+
+- the SHIPPED 56-byte placement records hold a COMPLETE FOUR-FLOAT QUATERNION at byte 28, with the
+position at 16 and the scale at 44 (which is what level_decode's comment on that table said, and
+what the builder's argument list now confirms).
+
+MEASURED FROM THE CORPUS.  The game's own six-record level (assets/exports-samples/
+samples/level_24abcdf4b1fb4d4a.level) reads as clean grid yaws under (x, y, z, w = offset-0):
+
+    rec 0  w=+0.0000  xyz=(0, 0, 0)         ->   0.00 deg
+    rec 1  w=-1.0000  xyz=(0, 0, +1.0000)   ->  90.00 deg
+    rec 2  w=+0.0000  xyz=(0, 0, -0.7071)   -> 180.00 deg
+    rec 3  w=-0.7071  xyz=(0, 0, -0.7071)   ->  90.00 deg
+    rec 4  w=-0.7071  xyz=(0, 0, -0.7071)   ->  90.00 deg
+    rec 5  w=-0.7071  xyz=(0, 0, 0)         ->   0.00 deg
+
+and as [0, 90, 70.53, 70.53, 70.53, 0] under the rotation-vector reading.  A hand-built crypt
+room has no 70.53-degree walls.  This is the corpus beating the in-game test, exactly as RULE ZERO
+says it must: the four-way stair experiment that produced 9H.33 could not distinguish the two
+readings, because the object it used was symmetric about the axis that differs.
+
+RETRACTED: 9H.33 claimed the record holds axis * tan(theta/2) and that the engine builds
+q = normalize(vector, 1.0).  The code says otherwise.  The tangent writer has been reverted; the
+toolkit is back to writing the quaternion's x/y/z at 60/64/68 and the branch w in the record's
+offset-0 float, and scripts/check_rotation_encoding.py now checks the code's rule against both the
+round trip and the corpus.
+
+WHAT IS STILL OPEN, LABELLED:
+  * INFERRED, NOT YET READ: which FILE fields become the runtime quaternion's four slots.  The
+    file's position at 48 is measured in game (our builds land in the authored grid); the file's
+    offset-0 float as the quaternion's w is the toolkit's long-standing convention and is
+    consistent with the corpus, but the conversion function that builds the runtime instance
+    array ([world+8] + i*0x48 + 0xb0, layout {pos@0, quat@12, scale@28}) has NOT been read yet.
+    That is the next decompile: find it and the layout is settled for good.
+  * OPEN, and the thing the author sees: the stairs.  The crane (a 108.35 yaw, recorded as
+    (0, 0, -0.8108) with w = -0.5853) renders correctly, which fits the quaternion rule.  The two
+    stairs do not, and the difference is NOT in the placement rotation any more - so the next
+    decompile target is the UNIT's mesh path: how a unit's mesh is fetched and framed
+    (FUN_00670190's MeshObject path and the mesh objects the unit's mesh list points at), because
+    the unit's mesh frame is the only other thing that can turn a correctly placed unit.
+
+        crane       (0, 0, 1.385376)      108.35 about Z, exactly as authored
+        stair #1    (-1, 0, 0)            90 about -X, exactly as authored
+        stair #2    (-1, -1, 1)           120 about the diagonal - FLAT and yawed 90 in Blender
+        floors x9   (0, 0, 0)             identity
+    engine does with the record's 3 floats:
+      (H1) q = normalize(vector, w) - the vector is a quaternion's vector part and the w slot is
+           the 4th component.  This is what level_from_glb assumes.  Under it stair #1 renders
+           EXACTLY -90 about X (its run exactly horizontal) and stair #2 renders its authored
+           120 about the (-1,-1,1) diagonal: FLAT, but yawed 90 against stair #1.
+      (H2) q = normalize(vector, 1.0) - the 3 floats are a rotation vector (axis x tan(theta/2)),
+           and the w slot is ignored.  Under it stair #1 renders 70.53 about X (19.5 deg off the
+           horizontal) and stair #2 renders 81.79 about (1,1,-1) - a genuine compound tilt with a
+           corner dipping, which is what the author describes.
+    EVIDENCE FOR H1, FROM A NATIVE LEVEL: assets/exports-samples/samples/level_24abcdf4b1fb4d4a.level
+    (the skeleton, 6 records extracted from the game) holds vector lengths 0, 1.0, 0.7071 x3, 0 -
+    all <= 1, and every one lands on a clean GRID yaw under H1 (90, 90, 90) and on 70.53 under H2.
+    A hand-built crypt room is grid-aligned, so H1 fits the natives; and its records' w slot is
+    NOT the quaternion's w (values 0.0, -1.0, 0.0, -0.7071, -0.7071, -0.7071 - several of which
+    make the pair non-unit), which is why level_decode's comment says "Offset 0 is NOT w".  Our
+    writer puts the w there on purpose (harmless if the engine rebuilds or ignores it).
+    EVIDENCE FOR H2: the author's own eyes on stair #2 ("tilted on x and y independently, front
+    right corner dipping, like with W at 1.0") and their Blender experiment (setting w = 1.0 made
+    Blender agree with the game).
+  * ONE OBSERVATION DECIDES IT (this was the question before the decode; 9H.34 answers it from
+    the code: the record holds a normalised four-float quaternion, so the earlier H1/H2 framing is
+    obsolete and 9H.33 is retracted).
+  * The author's MATERIALS: the units still render with the templates' crypt-stone binding
+    (0x04d8b35043c51085) because a unit's material comes from its spliced trailer, and the mesh
+    block's own material name (m_floor / m_stair / m_medieval_crane) has no resource behind it
+    yet.
+
+
+
+9H.35 THE PIPELINE VERIFIED AGAINST THE GLB, WITH THE ENGINE'S OWN ARITHMETIC  *** Oct 2026 ***
+
+scripts/check_deployed_placement.py answers, on the DEPLOYED bytes and using FUN_0042d7f0's own
+arithmetic, the only question that matters: does the game's content equal the author's GLB?
+
+  1. PLACEMENTS.  For every record of the deployed level: the quaternion the engine will build
+     (from the record's four floats, normalised) against the authored node's
+     R_x(+90) . R_node . R_x(-90).  Result: 0.0000 deg on all 12 placements.
+  2. UNITS.  For every shipped .unit: its mesh vertices against R_x(+90) . (the GLB mesh).
+     Result: 0.000000 worst vertex error on all three (9 / 166 / 19156 verts).
+
+  Both halves pass.  So the game renders exactly the .blend for this content, and the two stairs
+  are 90 degrees apart in the game because they are 90 degrees apart in the FILE
+  (Stair = -90 about X; Stair.001 = 120 about the (-1,-1,1) diagonal, which is flat but yawed 90).
+
+A NOTE ON THE TOOL ITSELF (RULE ZERO applied to my own work).  The first version of this check
+reported 143.29 / 180 / 120 degrees of error on the three rotated placements - and it was the CHECK
+that was wrong, not the pipeline.  The engine's matrix is written in the opposite convention from
+glTF's (FUN_0042d7f0 has m01 = k(xy + wz) and m10 = k(xy - wz), the transpose of the glTF form),
+so comparing a matrix from one convention against a matrix from the other is meaningless: the
+transpose of a rotation is its inverse, which is exactly the 360 - 2*theta pattern those numbers
+showed.  The check now compares ROTATIONS as quaternions, which is convention-free.  Same lesson
+as the rest of today: verify the tool against the code before believing the number it prints.
+
+WHAT IS STILL OPEN, NOT GUESSED:
+  * The author's MATERIALS.  Our mesh blocks name m_floor / m_stair / m_medieval_crane, which do
+    not exist in the material manager, so FUN_00670190's lookup fails and falls back to
+    missing_shader - the magenta.  A material resource per unit is the next workstream.
+  * COLLISION.  A unit's physics comes from its spliced template's trailer, so the stair and the
+    crane currently collide as the crypt props they borrow from, not as their own shape - and
+
+    9H.31's rule (the template's mesh count must equal the blocks we write) constrains the choice.
+
+
+
+9H.36 A UNIT'S TRANSFORM IS 48 BYTES IN A 72-BYTE RECORD - THE OFFSET-0 FLOAT IS THE PREVIOUS
+      UNIT'S W  *** Oct 2026 ***  -- why every rotated placement was built from the wrong w
+      --- code (FUN_00430440 -> FUN_0042db10 -> FUN_0042d7f0) + the engine's own capture ---
+
+STATUS: RESOLVED AND CONFIRMED IN GAME (2026-10-19).  The record's own offset-0 float is the
+PREVIOUS unit's rotation w; the toolkit read and wrote it as its own, so every rotated placement
+was built from its successor's w.  Fixed in resource_tools/level_tools.py + level_from_glb.py, and
+the engine's own post-fix capture of the author's arena reports the authored quaternions exactly.
+
+THE SYMPTOM.  "The quaternions are still messed up for duplicate models": the nine identity floors
+of the author's arena are perfect and every placement that carries a rotation - the crane and the
+two stairs, i.e. the repeated kinds - comes out at the wrong angle, and NONE of it is visible in
+the file: every offline check passed (round trips byte-exact, ids/names/positions equal, both build
+audits 0.000 deg), and the engine's own per-unit capture was dismissed in 9H.32 as "a derived
+value, one foot in the next record".  It was the ground truth.
+
+WHAT THE CODE SAYS.  FUN_00430440 (the per-unit pass) walks the instance array at
+
+    entry_i = *(data + 8) + i*0x48 + 0xb0        and  data + 0x80 is the unit table,
+                                                      so entry_i = record_i + 48
+
+and for every unit that resolves calls
+
+    FUN_0042db10(out, entry_i + 0xc, entry_i + 0, entry_i + 0x1c)
+      -> FUN_0042d7f0(out, quaternion, position, scale)
+
+(dumped: 0x4305b0 pushes esi+0x1c, esi, esi+0xc, out in that order; FUN_0042db10 re-pushes its own
+args as arg4, arg3, arg2, out, so FUN_0042d7f0 gets (out, +0xc, +0x00, +0x1c)).  FUN_0042d7f0
+reads FOUR CONSECUTIVE floats from the quaternion pointer, normalises them (k = 2/|q|^2) into a
+rotation matrix, takes its third argument as the translation and its fourth as the scale.  So, per
+unit, relative to the 128 + i*0x48 record the toolkit knows:
+
+    position   record + 0x30   (48)      - the toolkit agreed
+    rotation   record + 0x3c   (60)      - x, y, z AND the w at 0x48 (72)
+    scale      record + 0x4c   (76)      - THREE floats here, not at record+4
+
+and record+0x48 is, with a 72-byte stride, THE NEXT RECORD'S OFFSET-0 FLOAT.  The same function
+reads id/template/material at entry-0x18/-0x10/-8 = record+0x18/0x20/0x28, so the block it views is
+{id(8), template(8), material(8), pos(12), quat(16), scale(12)} = 64 bytes at record+0x18, with 8
+bytes of padding to the next 72-byte boundary - a 24-byte table prologue in front and 24 bytes
+after the last block (u32[3] = table_end + 24 in every shipped level, holding the last unit's
+{w, scale(3), 8 padding} = 1.0,1.0,1.0,1.0,0,0,0,0).
+
+SO THE FILE IS RIGHT AND THE TOOLKIT WAS ONE RECORD OUT.  A record's own offsets 0 and 4 are the
+PREVIOUS unit's rotation w and scale.  Writing unit i's w into record i's own offset 0 - what
+record_rotation_vector/_encode_entity/write_scratch all did - gives the engine:
+
+    unit 0   w = record 1's offset 0  (unit 1's w)
+    unit i   w = record i+1's offset 0
+    unit N-1 w = the reserved block's first float (1.0)
+
+which is exactly the author's report: "Stair.001's W is changed from 0.5 to 1.0 by the engine" -
+the last stair took the w of the player_spawn_marker appended after the placements, and rendered
+81.79 deg about the (-1,-1,1) diagonal instead of 120 ("tilted on x and y independently, front
+right corner dipping").  The crane took the first stair's w (97.9 instead of 108.35, invisible on
+a big prop), the first stair the second stair's (109.47 instead of 90).  Every identity placement
+is immune (xyz = 0, so any w is the same rotation), which is why nine floors hid it.
+
+MEASURED AGAINST THE ENGINE'S OWN CAPTURES (Data/runtime_units, the loader's LevelResource
+sweep), joining each unit on (template hash, world position + the level's (4,4) offset):
+
+    hub_pristine.level v modules/d01_hub_room/tutorial_room     461 joined
+        w = next record's offset 0   460/461 within 1.0 deg (worst 5.402)
+        w = this record's offset 0   207/461 (worst 168.293)
+    room_crypt_floor_01_adventure_edited.level v crypt_floor_01  177 joined
+        w = next record's offset 0   177/177 (worst 0.110)
+        w = this record's offset 0   133/177 (worst 156.034)
+
+The one hub unit (753f6db2977d8d0c, record 330) is a FILE/CAPTURE disagreement, not a rule: our
+copy of that record holds xyz.x = 0.1029 where the engine's capture says 0.09205 - the same
+record, a different float - so our copy is not the file that was captured.  `--max-bad 1`
+documents it; every other unit is exact.
+
+WHY THE OLD CHECKS COULD NOT SEE IT.  Every one compared the toolkit against itself:
+  * decode_level -> encode_level stayed byte-exact (the field mapping is a bijection either way);
+    21/21 level files still round-trip byte-exactly after the fix;
+  * check_rotation_rule / check_rotation_encoding test the RULE (that the record holds a
+    quaternion with a w) but not WHICH record holds it, and the corpus' own six records read as
+    grid yaws under BOTH readings (0/90/180/90/90/0 or 0/180/90/90/90/0) - so 9H.34's "the corpus
+    settles it" was true about the quaternion and blind to the offset;
+  * the build audits compared the record against the rotation it had just been built FROM, which
+    agrees with itself whatever the layout; check_deployed_placement read the record's own offset
+    0 as the w - the writer's own mistake - so two wrongs agreed;
+  * 9H.32's "use the capture for positions, never for rotations" threw away the only oracle: the
+    capture's "one foot in the next record" was not a decoding artifact, it was the engine.
+
+THE FIX.
+  * resource_tools/level_tools.py: the transform lead is modelled - `unit_transform_lead` (unit
+    i's 24 bytes are at record i+1's start; the last unit's in the reserved block),
+    `table_prologue` (the 24 bytes in front of unit 0, whose first u32 is the load's byte COUNT),
+    `shift_leads_forward` (moves every lead one record on - `encode_level` runs it as its last
+    step, after the raw sections, so it wins over the copy of the old epilogue),
+    `set_record_rotation` (see the second bug), `_parse_entity`/`decode_level` read the lead, and
+    decode keeps `_lead_prologue` so a re-encode stays byte-exact.
+  * level_from_glb.py: write_scratch_level shifts the leads and zeroes the PROLOGUE (not unit 0's
+    flag - that would now zero unit 0's own w).  write_scratch re-reads the four floats it just
+    wrote, where the engine reads them, and REFUSES the build if a placement does not reproduce
+    the authored rotation.
+  * check_level_capture_rotation.py (new): joins a level file to an engine capture and reports
+    BOTH readings side by side, so it cannot pass by accident.
+  * the raw readers updated to record+0x48 for the w: level_decode, compare_level_capture,
+    compare_runtime_units, check_level_symmetry, check_rotation_encoding.
+
+A SECOND BUG, FOUND ON THE WAY (the donor path).  `_parse_entity` keeps a record's original three
+floats as `rotation_vector` so an untouched round trip is byte-exact, and `_encode_entity` prefers
+that key over `rotation` - so the donor path, which set ONLY `e['rotation']` for a replaced slot,
+wrote the DONOR's rotation vector with our derived w.  Every claimed placement in an arena build
+was rotated by the unit it replaced.  Fixed with `level_tools.set_record_rotation`, which sets
+`rotation` and drops `rotation_vector` and `flag` together.
+
+VERIFIED AFTER THE FIX.
+  * 21/21 .level files still decode -> encode byte-exactly.
+  * check_deployed_placement.py (the code's own arithmetic) on the rebuilt arena: 12/12 placements
+    0.0000 deg - on the --scratch build AND on a donor build (468-slot hub body).
+  * the new build audit, reading the written bytes: all 12 placements reproduce the authored
+    rotation (worst 0.021 deg - the export's own float32 rounding of the Stair node).
+  * check_level_capture_rotation.py: the shipped reading is exact on the crypt room (177/177) and
+    on 460/461 hub units; the old reading is wrong on 44/177 and 254/461.
+
+CONFIRMED IN GAME  *** 2026-10-19, the author's own eyes and the engine's own numbers ***
+The rebuilt bundle was deployed to the game (build_level_mod.py --force; see the WORKFLOW note
+below) and loaded.  The loader's LevelResource sweep captured the level again, and the engine now
+reports EXACTLY the authored quaternions - the same oracle that found the bug:
+
+    unit        engine BEFORE (08:45 capture)          engine AFTER (09:13 capture)
+    crane       (0, 0, -0.754, -0.657)   97.82 deg     (0, 0, -0.811, -0.585)  108.35 deg
+    stair #1    (0.816, 0, 0, -0.577)   109.47 deg     (0.707, 0, 0, -0.707)    90.00 deg
+    stair #2    (0.378, 0.378, -0.378, -0.756)  81.79 deg   (0.5, 0.5, -0.5, -0.5)  120.00 deg
+
+check_level_capture_rotation.py on the deployed level and that capture: 12/12 within 1.0 deg,
+WORST 0.000 deg (the old reading would still be wrong on 3, worst 30.28).  The post-fix capture is
+versioned at Data/runtime_units/modules_d01_hub_room_custom_duckomp_room.json so the fix stays
+provable, and the author reports the crane and both stairs standing as in Blender.
+
+NOTE ON THE EXPORT UNDER TEST (2026-10-19).  test_arena_03.glb is not what scripts/blender_export_glb.py
+produces from the same Base.blend: it carries TANGENT (that script sets export_tangents=False), no
+materials, no COLOR_0, and its stair/crane meshes have 176/19159 vertices against 106/19156 (the
+stair is 2 primitives in the export, 1 here).  So a different exporter setting produced it - and
+that is fine: the pipeline copies the mesh verbatim and check_deployed_placement compares it
+vertex-for-vertex at 0.000000.  build_level_mod.py's staleness guard refused on the 1-second
+blend-vs-GLB skew; --force is the right answer when the GLB is the artifact under test.
+
+STILL OPEN, LABELLED:
+  * SCALE.  The engine reads it at record+0x4c - the next record's offset 4 - by the same
+    argument, and the fix shifts it with the w.  The corpus CANNOT confirm it: no capture carries
+    a scale, and the shipped levels' scales ((1,1,1), (1,7.5,1), (0,0,0), ...) are the same
+    multiset under either reading.  What the fix guarantees is that a unit's scale, like its w, is
+    written where the engine's pointer arithmetic reads it.  CODE-MEASURED, not corpus-measured.
+  * The MATERIALS (9H.35) and COLLISION (9H.31) issues are unchanged.

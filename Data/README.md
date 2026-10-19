@@ -18,13 +18,14 @@ it is all versioned here.
 | `resource_name_overlay.json` | recovered resource names (`hash -> name`); the tooling loads this |
 | `bundle_name_overlay.json` | recovered *bundle* names |
 | `bundle_manifest/` | the resource catalogue: `00_file_tree` ... `12_names_by_bundle` |
-| `runtime_units/` | per-level engine capture: one JSON per level - what the running engine reports for each unit's position and rotation. 27 levels, 67,682 units. This is what settled the `.level` rotation decode (FINDINGS §9H.6) and what the manifest is for |
+| `runtime_units/` | per-level engine capture: one JSON per level - what the running engine reports for each unit's position and rotation. 27 shipped levels, 67,682 units, plus `modules_d01_hub_room_custom_duckomp_room.json` - our own arena, captured after the 9H.36 fix, which reports the authored quaternions exactly. This is what settled the `.level` rotation decode (FINDINGS 9H.6, corrected in 9H.36) and what the manifest is for |
 
 ## Documents
 
 | file | what it is |
 | --- | --- |
 | `FINDINGS.txt` | the master document - every format finding, in order (the research log) |
+| `LEVEL_RECORD_LAYOUT.md` | **the authoritative `.level` unit-record field map** - the 72-byte record, which fields belong to which unit, the engine addresses behind it, how to check a level against the engine, and the traps (FINDINGS 9H.36) |
 | `CUSTOM_ASSET_LOADING_FINDINGS.md` | the in-game-proven custom unit / material / texture recipe |
 | `DEP/` | archived, superseded modding docs - see [`DEP/README.md`](DEP/README.md) |
 
