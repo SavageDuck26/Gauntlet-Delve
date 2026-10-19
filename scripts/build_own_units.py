@@ -103,6 +103,112 @@ def base_name(name: str) -> str:
     return name.strip()
 
 
+# PHYSICS BY NAME  (the author's request: `_walkable` / `_collision` in an object's name, and
+# nothing means walk-through).  THE BUILDER CANNOT INVENT A COLLIDER - a unit's physics IS its
+# template's trailer, carried over verbatim - so a role selects WHICH TEMPLATE the mesh is
+# spliced into, and the template's own trailer decides the collider, the nav type and the
+# material binding (FINDINGS 9H.19, 9H.20, 9H.31).  Measured on shipped units, the trailer's
+# SECOND WORD is the physics blob's size and 0 means "no physics":
+#
+#     cryptsmooth_floor_4c_4c   80 B   nav 'floor'     a walkable patch (9H.20 mapped it)
+#     crypt_wall_2c            136 B   nav 'blocker'   solid
+#     crypt_pillar_01          164 B   nav 'blocker'   solid
+#     crypt_stairs_low_4c      220 B   nav 'slope'     walkable slope
+#     decals/decal, fog_volume  80 B   nav 'ignore'    (a name rule forces 'ignore')
+#     lights/light, skydome      0 B   no nav string   NO PHYSICS - walk-through
+#
+# So `--physics-template=walkable=<unit>` and friends point at templates whose trailers carry the
+# physics wanted, and `_walkable`/`_collision` in a name pick between them.
+PHYSICS_ROLES = ('walkable', 'collision', 'none')
+NAME_ROLES = (('_walkable', 'walkable'), ('_collision', 'collision'))
+
+
+def role_of(base: str, per_base: dict) -> str:
+    """Which physics role a base name asks for: the name flag, then the config, then 'none'."""
+    low = base.lower()
+    for needle, role in NAME_ROLES:
+        if needle in low:
+            return role
+    return per_base.get(base, 'none')
+
+
+def physics_of(unit_bytes: bytes) -> str:
+    """What physics a built unit wears, read back out of its own trailer.
+
+    Reported so a build says what each unit actually got instead of what was intended: the
+    physics blob's size (the trailer's second word) and the nav type string.  See PHYSICS_ROLES
+    for the measured reference values.
+    """
+    try:
+        tr = unit_bytes[unit_mesh_end(unit_bytes):]
+        size, = struct.unpack_from('<I', tr, 4)
+        nav = next((w.decode() for w in (b'floor', b'blocker', b'slope', b'ignore') if w in tr),
+                   None)
+        return 'physics %4d B, nav %s' % (size, ('%r' % nav) if nav else '(none)')
+    except Exception as exc:                                     # noqa: BLE001
+        return 'physics UNREADABLE (%s)' % exc
+
+
+def strip_physics(tpl_bytes: bytes) -> bytes:
+    """A copy of a template with its physics section removed: `--physics-template=none=strip:PATH`.
+
+    WHY.  The three shipped units whose trailer declares no physics at all (skydome, light,
+    light_proxies) all have a footer that names the unit itself instead of a MATERIAL SWATCH, so a
+    mesh wearing one loses its material binding - and `lights/light` drags light flow in as well
+    (measured: the trailer carries 'FlowCallbacks' and 'light').  Stripping keeps everything the
+    template had - the swatch, the flow, the nav data - and removes only the collider, which is what
+    "no collision" means.
+
+    THE TRAILER'S LAYOUT, as measured: [16 bytes: {0, physics_size, 0, count}][physics blob
+    (physics_size bytes)][data table][32-byte footer].  The blob's size is what locates the table,
+    so this sets it to 0 and drops the bytes - a sequential parse stays consistent, and the table's
+    records carry their values inline.  The footer (the material binding) is a hash, so moving it is
+    safe.  VERIFIED OFFLINE as far as it can be: the stripped unit's trailer still yields its nav
+    string and its material swatch footer, and reports 0 B of physics.  The engine's own parse is
+    confirmed in game, not here - see FINDINGS 9H.38.
+    """
+    end = unit_mesh_end(tpl_bytes)
+    body, tr = tpl_bytes[:end], tpl_bytes[end:]
+    if len(tr) < 16:
+        raise SystemExit('cannot strip physics: the template has no trailer')
+    size, = struct.unpack_from('<I', tr, 4)
+    if size == 0:
+        return tpl_bytes                       # already no physics
+    if 16 + size > len(tr):
+        raise SystemExit('cannot strip physics: the trailer claims %d bytes and has %d'
+                         % (size, len(tr)))
+    header = bytearray(tr[:16])
+    struct.pack_into('<I', header, 4, 0)
+    rest = bytearray(tr[16 + size:])
+    # The nav type is GENERATED metadata - the game's own builder writes "ignore" when a unit
+    # collides with nothing (FINDINGS 9H.19) - so a stripped unit claims walkable AI nav no more.
+    # The value is an 8-byte padded field, which is why the match includes its NULs (a material
+    # name like m_cryptsmooth_floor_01 must not match).
+    for word, padded in (('floor', b'floor\x00\x00\x00'), ('slope', b'slope\x00\x00\x00'),
+                         ('blocker', b'blocker\x00')):
+        at = rest.find(padded)
+        if at >= 0:
+            rest[at:at + 8] = b'ignore\x00\x00'
+            print('   strip   : nav %s -> ignore' % word)
+            break
+    return body + bytes(header) + bytes(rest)
+
+
+def load_template(spec: Path) -> bytes:
+    """A role's template bytes.  `strip:PATH` means "that template with its physics removed"."""
+    text = str(spec)
+    if text.startswith('strip:'):
+        inner = Path(text.split(':', 1)[1])
+        data = strip_physics(inner.read_bytes())
+        if read_u32(data, 0) != UNIT_SIGNATURE:
+            raise SystemExit('%s is not a unit file' % inner)
+        return data
+    data = spec.read_bytes()
+    if read_u32(data, 0) != UNIT_SIGNATURE:
+        raise SystemExit('%s is not a unit file' % spec)
+    return data
+
+
 def rotate_x(verts, deg):
     """Rotate vertices about X by a multiple of 90 degrees: the file's mesh frame -> engine.
 
@@ -176,6 +282,7 @@ def main():
         return 1
     glb, template = Path(argv[0]), Path(argv[1])
     mapping, out_dir, frame, duplicate_meshes = {}, None, 'auto', True
+    templates, physics_by_base = {}, {}
     for a in argv[2:]:
         if a == '--out':
             continue
@@ -187,11 +294,34 @@ def main():
             frame = a.split('=', 1)[1]
             if frame not in ('auto', 'y-up', 'engine'):
                 raise SystemExit('--mesh-frame wants auto, y-up or engine')
+        elif a.startswith('--physics-template='):
+            # which native unit to splice into for a physics role: the template's trailer IS the
+            # collider, so this is the only lever the builder has (see PHYSICS_ROLES)
+            spec = a.split('=', 1)[1]
+            if '=' not in spec:
+                raise SystemExit('--physics-template wants ROLE=PATH, got %r' % spec)
+            role, path = spec.split('=', 1)
+            if role not in PHYSICS_ROLES:
+                raise SystemExit('--physics-template role must be one of %s'
+                                 % ', '.join(PHYSICS_ROLES))
+            templates[role] = Path(path)
+        elif a.startswith('--physics='):
+            spec = a.split('=', 1)[1]           # BASE=ROLE, the fallback for a name with no flag
+            if '=' not in spec:
+                raise SystemExit('--physics wants BASE=ROLE, got %r' % spec)
+            name, role = spec.split('=', 1)
+            if role not in PHYSICS_ROLES:
+                raise SystemExit('--physics role must be one of %s' % ', '.join(PHYSICS_ROLES))
+            physics_by_base[base_name(name)] = role
         elif '=' in a:
             name, path = a.split('=', 1)
             mapping[base_name(name)] = path
         elif out_dir is None and '/' in a:
             out_dir = Path(a)
+    if templates and set(templates) != set(PHYSICS_ROLES):
+        raise SystemExit('--physics-template must give all of %s (missing: %s)'
+                         % (', '.join(PHYSICS_ROLES),
+                            ', '.join(r for r in PHYSICS_ROLES if r not in templates)))
     if not mapping or out_dir is None:
         print('need <base>=<unit/path> pairs and --out <dir>')
         return 1
@@ -223,22 +353,41 @@ def main():
         if b in mapping:
             groups.setdefault(b, []).append(node)
 
-    tpl = template.read_bytes()
-    if read_u32(tpl, 0) != UNIT_SIGNATURE:
-        raise SystemExit('%s is not a unit file' % template)
-    tpl_meshes = read_u32(tpl, 4)      # the mesh count the trailer was serialized against
+    tpl_bytes: dict = {}
+
+    def template_for(role: str) -> Path:
+        return templates[role] if templates else template
+
+    if not templates:
+        tpl = load_template(template)
+        tpl_bytes[template] = tpl
 
     print('export   : %s (%d nodes)' % (glb.name, len(js['nodes'])))
     print('mesh up  : %s' % why)
     print('           -> vertices rotated %+d degrees about X into engine Z-up%s'
           % (deg, '' if deg else ' (already engine-space, no rotation)'))
+    if templates:
+        print('physics  : by name, from the TEMPLATE each role points at (a trailer carries the'
+              ' collider)')
+        for role in PHYSICS_ROLES:
+            tp = template_for(role)
+            tb = tpl_bytes.get(tp) or load_template(tp)
+            print('           %-9s -> %-44s %s' % (role, tp.name, physics_of(tb)))
+    else:
+        print('template : %s (%d bytes, %d mesh(es), trailer %d bytes, %s)'
+              % (template.name, len(tpl), read_u32(tpl, 4), len(tpl) - unit_mesh_end(tpl),
+                 physics_of(tpl)))
     if ignored:
         print('ignored  : %d node(s) whose name carries %s - no unit is built from them'
               % (len(ignored), '/'.join(repr(s) for s in IGNORE_NAME_SUBSTRINGS)))
-    print('template : %s (%d bytes, %d mesh(es), trailer %d bytes)'
-          % (template.name, len(tpl), tpl_meshes, len(tpl) - unit_mesh_end(tpl)))
     print()
     for base, nodes in sorted(groups.items()):
+        role = role_of(base, physics_by_base)
+        tp = template_for(role)
+        if tp not in tpl_bytes:
+            tpl_bytes[tp] = load_template(tp)
+        tpl = tpl_bytes[tp]
+        tpl_meshes = read_u32(tpl, 4)   # the mesh count the trailer was serialized against
         # EVERY PRIMITIVE, not just the first.  A glTF mesh with N primitives is N material
         # groups over one surface (the stair's mesh is 2: 106 verts + 60 verts, two materials),
         # and the engine's unit model is one material group per mesh block - so dropping the
@@ -280,6 +429,8 @@ def main():
               '(%d mesh block(s), %d primitive(s): %s)'
               % (base, unit_path, len(nodes), len(pos), len(idx) // 3, len(unit), written,
                  len(prim_sizes), ' '.join(prim_sizes)))
+        print('%-16s    role %-9s  %s  <- read back from the built file'
+              % ('', role, physics_of(unit)))
     print()
     print('unit paths (hash these into the level):')
     for base, path in sorted(mapping.items()):

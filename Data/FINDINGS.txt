@@ -12749,3 +12749,80 @@ spiral_road (10.27 MB) and elevator_chains (5.57 MB), both far above the old cra
 nine units wear the floor template as a PLACEHOLDER (physics + material come from the trailer) -
 replace per kind when the real template is chosen.  Extent 65 x 75 x 62 units, which is much larger
 than the hub room module it ships as.
+
+9H.38 PHYSICS BY NAME: A UNIT'S COLLIDER IS ITS TEMPLATE'S TRAILER, SO A ROLE PICKS A TEMPLATE
+      *** Oct 2026 ***  -- the request, what the builder can and cannot do, and the trailer map
+
+THE REQUEST.  "I was unable to walk on any of my custom mesh.  Are we able to add builder flags
+for that - if a name contains _walkable or _collision then the builder makes them that way, and
+without them they are treated without collision?"
+
+WHAT THE BUILDER CANNOT DO.  It cannot invent a collider.  A unit's physics IS its template's
+trailer, carried over verbatim by `splice_into_template` (9H.19.2: the engine creates meshes and
+actors from the compiled unit; 9H.20 measured a spliced plane's collider in game as the DONOR's
+8x8 patch; 9H.31: the collider is the template's, so a stair collides as the crypt stair it
+borrowed).  The physics blob's own layout is still undecoded - 9H.19.3 flagged it as the next
+decode - so there is no way to synthesise a collider from an arbitrary mesh today.  What CAN be
+done, and is now built, is choosing WHICH physics a mesh wears.
+
+THE TRAILER, MEASURED ACROSS 575 EXTRACTED UNITS.  A unit is [header][mesh][materials][trailer]
+[footer].  The trailer begins with 16 bytes {0, PHYSICS_SIZE, 0, count} - the SECOND WORD is the
+size of the physics blob that follows it, and 0 means no physics:
+
+    cryptsmooth_floor_4c_4c    80 B   nav 'floor'      a walkable patch (9H.20 mapped it)
+    crypt_wall_2c             136 B   nav 'blocker'    solid
+    crypt_pillar_01           164 B   nav 'blocker'    solid
+    crypt_stairs_low_4c       220 B   nav 'slope'      walkable slope
+    decals/decal, fog_volume   80 B   nav 'ignore'     (a name rule forces 'ignore')
+    lights/light, skydome,
+      core/rendering/light_proxies  0 B   no nav string   NO PHYSICS - walk-through
+
+After the blob comes a data table whose records are {key_thin_hash, ?, type, size, value-inline}
+(`nav_grid_type_auto`, type 3, 8 bytes padded - 'floor', 'blocker', 'slope', 'ignore'), and the
+last 32 bytes are the footer, which names a MATERIAL SWATCH: the floor's and the pillar's are both
+`blocks/d01_crypt/d01_crypt_swatch`, while every zero-physics unit's footer names ITSELF
+(`lights/light`, the skydome) instead - so wearing one of those loses the material binding, and
+`lights/light` also carries 'FlowCallbacks'/'light' (it would light the level).  That is why the
+`none` role does NOT use them.
+
+THE ROLES, AS BUILT.  `build_own_units.py --physics-template=ROLE=PATH` (repeatable) sets a
+template per role; `--physics BASE=ROLE` sets a per-kind fallback; and a node NAME overrides both
+with `_walkable` / `_collision` (the resolution is name > config > 'none').  The build prints the
+physics it actually got, READ BACK OUT OF THE BUILT FILE:
+
+    walkable   -> cryptsmooth_floor_4c_4c      80 B, nav 'floor'
+    collision  -> crypt_pillar_01             164 B, nav 'blocker'
+    none       -> strip:cryptsmooth_floor_4c_4c   0 B, nav 'ignore'
+
+`strip:PATH` is a template spec: the template with its physics blob REMOVED (header size set to 0,
+the `size` bytes dropped) and its nav type rewritten to 'ignore' - which is what the game's own
+builder writes for a unit that collides with nothing (9H.19).  It keeps the swatch material and
+the rest of the trailer, which the shipped zero-physics units cannot.  OFFLINE it is consistent:
+the floor trailer 1437 B -> 1357 B, physics 80 B -> 0 B, nav 'floor' -> 'ignore', the 32-byte
+swatch footer preserved, and the built unit reads back as 0 B / 'ignore'.  THE ENGINE'S OWN PARSE
+OF A STRIPPED TRAILER IS NOT CONFIRMED HERE - it is the thing to watch in the next game run (a
+unit with `none` should simply be walked through).  If it is not, the fallback is a shipped
+zero-physics template at the cost of its material.
+
+DEPLOYED 2026-10-19 ~11:40.  The 9 kinds: `Floor` -> walkable (the config's per-kind fallback),
+the other 8 -> none (no flag, no override).  Level 1724 B / 13 records, 11 placements, orientation
+check 0.000 deg, bundle 7.95 MB packed.  `check_deployed_bundle.py` reports "template not in
+.unit orig - count unchecked" for the stripped units, which is honest: the mesh count was
+enforced against the stripped template (1 mesh) at splice time, and the verifier simply cannot
+look a synthesised trailer up by name.
+
+WHAT IS STILL OPEN, AND THE ONE THING TO MEASURE NEXT.
+  * WALKING.  The floors already carry a walkable 8x8 patch, and 9H.20 mapped exactly that patch
+    with the ActorProbe raycast grid, so "cannot walk on my mesh" is NOT explained by the missing
+    flags.  Two candidate causes, neither testable offline: (a) the collider is the TEMPLATE's 8x8
+    patch anchored at the unit's origin, so a mesh of another SIZE or SHAPE is never walkable as
+    itself - the game's own answer is to tile a surface with 8x8 floor blocks, which the author's
+    three Floor tiles already are; (b) something about the --scratch level body.  The next run
+    should use ActorProbe (mods/functions/ActorProbe, the 5x5 floor-raycast grid of 9H.20) on a
+    floor placement, and say whether the player fell through everything or stood but could not
+    move.
+  * The mesh-size question the author raised ("something too big covering the screen") is a property
+    of the models, not the pipeline: measured world AABBs of the deployed level - elevator_chains
+    6.3 x 6.3 x 75.2, elevator_shaft 9.6 x 9.6 x 69.7, spiral_road (and _follow) 56.3 x 56.3 x 44.9,
+    start_scaffolding 4.8 x 6.3 x 24.4 (its top 1.6 above the floor, ~5 units from the spawn),
+    floors 8 x 8 x 0.0.

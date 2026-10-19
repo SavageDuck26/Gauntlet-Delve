@@ -137,13 +137,30 @@ def main() -> int:
             return 1
 
     # -- 2. units -------------------------------------------------------------
+    # PHYSICS BY ROLE: the config may name a template per role ("walkable", "collision", "none")
+    # and per kind ("physics": {"Floor": "walkable"}); the object's NAME can override both with
+    # `_walkable` / `_collision`.  A role selects which native unit the mesh is spliced into,
+    # because a unit's collider IS the template's trailer (FINDINGS 9H.19/9H.20/9H.31).
+    templates = spec['build'].get('templates') or {}
+    physics = spec['build'].get('physics') or {}
     for u in own:
         tpl = Path(u['template'])
         tpl = tpl if tpl.is_absolute() else (HERE / tpl)
-        if not run([sys.executable, HERE / 'build_own_units.py', glb, tpl,
-                    '%s=%s' % (u['base'], u['unit']), '--out', unit_dir,
-                    '--mesh-frame=%s' % frame],
-                   'unit %s  (template %s)' % (u['base'], tpl.name)):
+        cmd = [sys.executable, HERE / 'build_own_units.py', glb, tpl,
+               '%s=%s' % (u['base'], u['unit']), '--out', unit_dir,
+               '--mesh-frame=%s' % frame]
+        for role, path in templates.items():
+            # `strip:PATH` is a template spec, not a path: resolve only the inner path
+            if path.startswith('strip:'):
+                inner = Path(path.split(':', 1)[1])
+                spec = 'strip:%s' % (inner if inner.is_absolute() else (HERE / inner))
+            else:
+                rp = Path(path)
+                spec = str(rp if rp.is_absolute() else (HERE / rp))
+            cmd.append('--physics-template=%s=%s' % (role, spec))
+        for base, role in physics.items():
+            cmd.append('--physics=%s=%s' % (base, role))
+        if not run(cmd, 'unit %s  (template %s)' % (u['base'], tpl.name)):
             return 1
 
     # -- 3. level -------------------------------------------------------------
