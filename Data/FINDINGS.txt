@@ -13226,3 +13226,54 @@ that arithmetic permutes too - it was reading the raw node scale.
 WHY IT SURVIVED SO LONG: a uniform scale is a fixed point of the permutation.  It took a scene with
 17 instances at (1.4131, 1.0268, 1.4131) - the first non-uniform entity scale this pipeline ever
 wrote - for the swap to be visible at all.
+
+9H.45 THE COLLISION THE AUTHOR ASKS FOR: _bb, _fc, AND AUTHORED BOXES (planned: needs a blob WRITER)
+
+The author's contract for collision authoring in Blender (2026-10-20), to be resolved at BUILD time:
+
+  * `_bb` on an object - give it a BOX collider fitted to that object's bounding box.  The build
+    writes the box actor itself, so the collision is exactly the box the author sees.
+  * `_fc` on an object - FULL COLLISION on the object's OWN geometry: the collider becomes the mesh's
+    triangles, which is the engine's own CollisionTriangles actor (its name is in the engine's
+    strings - 9H.19).  "What you see is what you collide with."
+  * AUTHORED BOX objects - helper boxes drawn around something and named so the build recognises
+    them, resolved into box actors for the object they surround.  Complex geometry then needs no
+    generated collision at all: the author draws the collision they want.
+
+WHAT THIS NEEDS FIRST: A BLOB WRITER.  Every collider a unit has today is its TEMPLATE's compiled
+blob, carried over verbatim (9H.19/9H.38) - which is why a walkable tile whose faces the author
+removed still gets the template's full patch, and why the game's own walkables only come in fixed
+sizes.  Reading the blob started here; WRITING one is the gate for all three conventions above.
+
+MEASURED ON THE SHIPPED CORPUS (582 native units in scripts/.unit orig, 2026-10-20).  The blob is
+compiled, quantised geometry rather than a shape reference:
+
+    unit                nav      blob   box (x,y,z)    pieces  what it is
+    0x6369abda98cf91a5  floor     80 B  8.00 x 8.00    2       the walkable patch we use today
+    0x1e6b5d722d1e60cc  floor    108 B  8.00 x 8.00    3       a variant of the same tile
+    0xa485071409e8742b  floor    192 B  4.25 x 4.06    6       a 6-faced BOX, not a flat patch
+    0x8713a9c0f2125c06  floor    192 B  2.30 x 2.30    6       likewise - a solid block
+    0x432ffd51ba8d0fc3  blocker  164 B  (pillar)       5       the solid we already splice into
+    0xc512fd67e8213eec  slope    220 B  8.00 x 2.98    7       stairs
+
+The header is [float 0.967][u32 size][u32 0][u16 1][u16 ?], then that many pieces, and each piece
+carries quantised values where 0x7FFF reads as 1.0 and 0xC000 as -0.5 (16-bit fixed point).  So a
+collider is a list of planes/triangles with their normals: a flat walkable patch is 2-3 pieces, a box
+is 6.  A patch is not a box and a box is not a patch - which is why the 4.25x4.06 and 2.3x2.3 "floor"
+units are no substitute for a flat patch on a tile.
+
+CONSEQUENCE FOR TODAY'S BUG: a tile with a corner removed still has an 8x8 BOX, so no template can
+match it - only generated geometry can.  That is exactly what `_fc` (or an authored box) gives us.
+
+9H.38.1.1 THE `strip:` CRASH EXPLAINED: THE TRAILER'S COUNT FIELD
+
+9H.38.1 left one question open - a unit built with `strip:` (physics removed) took the level load
+down with "access write at 0x4 inside FUN_00402e10+0x3C".  FUN_00402e10 is now read: it is a
+GROWABLE CONTAINER with the resize policy `capacity/2 + capacity + 4`, and FUN_0041fe60, its sibling
+used by a unit section's per-element writer, appends through the same machinery.
+
+The 16-byte trailer header is {0, physics_size, 0, COUNT}.  `strip:` zeroed the size and deleted the
+blob's bytes but left the count naming the actors it had just removed, so the loader sized containers
+for physics that was not there.  build_own_units.py now zeroes both fields, which makes the `none`
+role (9H.38's walk-through units) worth retesting in game: the crash was not the route being wrong,
+it was one unzeroed field.

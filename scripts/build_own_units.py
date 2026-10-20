@@ -201,6 +201,14 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
                          % (size, len(tr)))
     header = bytearray(tr[:16])
     struct.pack_into('<I', header, 4, 0)
+    # THE COUNT TOO, NOT JUST THE SIZE (2026-10-20).  The 16-byte header is {0, physics_size, 0,
+    # count} and the loader sizes its actor containers from `count` - FUN_00420390's per-element
+    # helper appends through FUN_00402e10, the growable container whose resize policy is
+    # `capacity/2 + capacity + 4`.  Zeroing only the size left the count naming actors whose bytes
+    # had just been removed, which is exactly the failure 9H.38.1 caught: access write at 0x4 inside
+    # FUN_00402e10+0x3C, a container resize during the level load, with a unit that had a physics
+    # blob of 0 bytes and a trailer that still claimed one.
+    struct.pack_into('<I', header, 12, 0)
     rest = bytearray(tr[16 + size:])
     # The nav type is GENERATED metadata - the game's own builder writes "ignore" when a unit
     # collides with nothing (FINDINGS 9H.19) - so a stripped unit claims walkable AI nav no more.
