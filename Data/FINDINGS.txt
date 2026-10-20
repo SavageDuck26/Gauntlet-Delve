@@ -13351,3 +13351,52 @@ unit's own debug name and hash, because the hash is the engine's murmur64 of the
 ("units/custom/duckomp_room/elevator_floor_metal" -> d28bb523d1d1e4fb, verified against the #ID[...]
 in the log) - with five units watched at once, a shape report alone cannot say which one it came from.
 
+
+9H.47 THE CALIBRATION RUN: TWO NEGATIVES AND A LAW
+
+Ran 2026-10-20 10:41, same five units, same probe.  Read back:
+
+    floor unit (verbatim 80-byte blob)                type=3   (4.0250001, 4.0250001, 0.0250000004)
+    CONTROL, same blob on another kind                type=3   (4.0250001, 4.0250001, 0.0250000004)
+    the blob's distance words SCALED BY HALF          type=3   (4.0250001, 4.0250001, 0.0250000004)
+    the blob's shape word replaced with 4             type=3   (4.0250001, 4.0250001, 0.0250000004)
+
+NEGATIVE 1: `scale` on the blob's distance words (-16384 -> -8192, -16368 -> -8184, verified in the
+built file) changed the collider by NOTHING.  Whatever those words are, they do not size the box.
+
+NEGATIVE 2: writing 4 into the word at blob_tail+6, which 9H.46 read as the shape type because it
+reads 3 on a blob the engine reports as type 3, changed NOTHING either - one byte, no effect.  So that
+word is not what selects the shape kind (and the per-mesh 3/4 seen in 9H.46 has another source).
+
+THE CONTROL DID PASS: the same blob on a different kind reproduced (4.025, 4.025, 0.025) exactly, so
+the splice and the length-preserving edits are transparent, and the numbers are stable run to run.
+
+THE LAW, from three independent measurements: A UNIT'S COLLIDER IS THE TEMPLATE'S BOX, TIMES THE
+PLACEMENT'S SCALE, PLUS A 0.025 SKIN.
+
+  * floor template (native mesh 8x8) spliced with OUR 8x8 tile, scale 1
+        -> (4.025, 4.025, 0.025) = (8, 8, 0)/2 + 0.025   exact
+  * PILLAR template (native mesh 1.4 x 1.4 x 5.85) at a placement scaled (0.92, 0.92, 0.1)
+        -> (0.645, 0.699, 0.292) = (1.4, 1.4, 5.85)/2 * that scale + 0.025   exact to four digits
+  * floor template spliced with our 31 x 31 x 92 Big Spike, scale 1
+        -> (4.025, 4.025, 0.025): the spike's own bounds appear NOWHERE
+
+That last line is the whole bug the level work has been chasing: OUR MESH DOES NOT CONTRIBUTE TO THE
+COLLIDER AT ALL.  The unit carries its own bbox (the 28-byte mesh-block tail, rewritten from our
+geometry by the splice - the spike's says 31 x 31 x 92) and the engine ignores it for collision, and
+the template's blob can be re-scaled and re-typed without effect.  What is left is a template property
+that arrives with the template - its native geometry, its trailer or its 32-byte footer (which is
+template-specific: floor 6/7, pillar 141/142, box 89/90, where 1.41/1.42 is the pillar's own
+dimensions x 100).
+
+WHAT THAT MEANS FOR _bb AND _fc.  A box collider is therefore NOT something to be authored: every unit
+already wears one, sized by its template, which is why a walkable tile whose faces the author deleted
+still presents a full patch and why `_bb` (a box) can be had TODAY by choosing a template - the
+per-kind `templates_by_kind` lever (9H.45) - but `_fc` (the author's own faces) cannot, because no
+amount of editing the blob changes what the engine builds.  The next run isolates the last untested
+variable: the blob has only ever been observed WITH its template, so the spike now wears the PILLAR's
+blob and the elevator wears the game's own 192-byte SOLID SIX-PLANE BOX blob.  If the spike's collider
+takes the pillar's proportions, the template rules end to end and the writer route is dead; if it does
+not, the blob is read and the box blob is the shape to understand.
+
+
