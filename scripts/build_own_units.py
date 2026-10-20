@@ -362,7 +362,7 @@ def main():
         return 1
     glb, template = Path(argv[0]), Path(argv[1])
     mapping, out_dir, frame, duplicate_meshes = {}, None, 'auto', True
-    templates, physics_by_base = {}, {}
+    templates, physics_by_base, templates_by_base = {}, {}, {}
     offsets_out, collider_shift_on = None, True
     for a in argv[2:]:
         if a == '--out':
@@ -379,6 +379,17 @@ def main():
             frame = a.split('=', 1)[1]
             if frame not in ('auto', 'y-up', 'engine'):
                 raise SystemExit('--mesh-frame wants auto, y-up or engine')
+        elif a.startswith('--template='):
+            # A PER-KIND TEMPLATE OVERRIDE: the same lever as a role's template, but for ONE kind.
+            # A role chooses the collider for everything that falls in it, so today a solid prop and
+            # a flat tile share one template - and the game ships both kinds of collider (a flat
+            # patch is 2-3 pieces, a box is 6, see FINDINGS 9H.45).  Until a blob can be WRITTEN,
+            # this is how a kind gets the closest collider the game already has.
+            spec = a.split('=', 1)[1]
+            if '=' not in spec:
+                raise SystemExit('--template wants BASE=SPEC, got %r' % spec)
+            name, spec_path = spec.split('=', 1)
+            templates_by_base[base_name(name)] = spec_path
         elif a.startswith('--physics-template='):
             # which native unit to splice into for a physics role: the template's trailer IS the
             # collider, so this is the only lever the builder has (see PHYSICS_ROLES)
@@ -469,7 +480,8 @@ def main():
     print()
     for base, nodes in sorted(groups.items()):
         role = role_of(base, physics_by_base)
-        tp = template_for(role)
+        # a per-kind override wins over the role's template (see --template)
+        tp = Path(templates_by_base[base]) if base in templates_by_base else template_for(role)
         if tp not in tpl_bytes:
             tpl_bytes[tp] = load_template(tp)
         tpl = tpl_bytes[tp]

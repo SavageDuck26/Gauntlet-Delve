@@ -155,6 +155,15 @@ def main() -> int:
     # because a unit's collider IS the template's trailer (FINDINGS 9H.19/9H.20/9H.31).
     templates = spec['build'].get('templates') or {}
     physics = spec['build'].get('physics') or {}
+    by_kind = spec['build'].get('templates_by_kind') or {}
+
+    def resolve_template(path: str) -> str:
+        """A template spec as build_own_units.py wants it: an absolute path, or strip:ABS."""
+        if path.startswith('strip:'):
+            inner = Path(path.split(':', 1)[1])
+            return 'strip:%s' % (inner if inner.is_absolute() else (HERE / inner))
+        rp = Path(path)
+        return str(rp if rp.is_absolute() else (HERE / rp))
     # THE COLLIDER OFFSET FILE (FINDINGS 9H.41).  A unit's collider is the template's and is
     # anchored on the TEMPLATE's mesh box, so build_own_units.py moves our mesh onto it - and the
     # level has to be told, or the whole level would sit displaced by those vectors.  One file, two
@@ -180,6 +189,11 @@ def main() -> int:
             cmd.append('--physics-template=%s=%s' % (role, spec))
         for base, role in physics.items():
             cmd.append('--physics=%s=%s' % (base, role))
+        # PER-KIND TEMPLATES (FINDINGS 9H.45): a kind can name its own template instead of its
+        # role's, which is how a solid prop gets one of the game's box colliders while the floors
+        # keep the flat patch - until a blob can be written for an exact match.
+        for base, path in by_kind.items():
+            cmd.append('--template=%s=%s' % (base, resolve_template(path)))
         if not run(cmd, 'unit %s  (template %s)' % (u['base'], tpl.name)):
             return 1
 
