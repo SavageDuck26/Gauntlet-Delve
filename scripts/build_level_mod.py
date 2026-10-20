@@ -156,6 +156,12 @@ def main() -> int:
     templates = spec['build'].get('templates') or {}
     physics = spec['build'].get('physics') or {}
     by_kind = spec['build'].get('templates_by_kind') or {}
+    # COLLIDER EDITS (FINDINGS 9H.46): per kind, edit the template's physics blob IN PLACE.  `scale`
+    # resizes the blob's distance words and `type` rewrites the shape word, both length-preserving so
+    # the data table and the footer after the blob never move - which is what makes this safe where
+    # removing bytes (the strip: route) crashed.  Read here, BEFORE the template loop below reuses the
+    # name `spec` for a unit path.
+    edits_by_kind = spec['build'].get('collider_edits') or {}
 
     def resolve_template(path: str) -> str:
         """A template spec as build_own_units.py wants it: an absolute path, or strip:ABS."""
@@ -194,6 +200,10 @@ def main() -> int:
         # keep the flat patch - until a blob can be written for an exact match.
         for base, path in by_kind.items():
             cmd.append('--template=%s=%s' % (base, resolve_template(path)))
+        # ... and the blob edits that turn that template's compiled collider into the one wanted.
+        for base, ops in edits_by_kind.items():
+            cmd.append('--collider-edit=%s=%s'
+                       % (base, ','.join('%s:%s' % (k, v) for k, v in sorted(ops.items()))))
         if not run(cmd, 'unit %s  (template %s)' % (u['base'], tpl.name)):
             return 1
 

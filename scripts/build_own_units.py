@@ -58,6 +58,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE / 'resource_tools'))
+
+from phys_blob import edit_blob                                    # noqa: E402
 
 from gltf_to_unit import encode_unit                       # noqa: E402
 from glb_to_template_unit import (read_u32, splice_into_template,   # noqa: E402
@@ -224,6 +227,35 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
     return body + bytes(header) + bytes(rest)
 
 
+def apply_collider_edits(unit_bytes: bytes, ops: dict) -> bytes:
+    """Rewrite the spliced template's physics blob IN PLACE - `scale` resizes, `type` re-types.
+
+    WHY THIS IS THE SAFE HALF (FINDINGS 9H.46).  A unit's collider is the template's blob, spliced in
+    verbatim, so a walkable tile whose faces the author deleted still presents the template's full
+    8x8 patch - the overextension this work exists to fix.  The blob is quantised geometry (signed
+    16-bit at 1/32768) ending in a shape-type word, and both edits change WORDS, never lengths, so the
+    u32 table and the 32-byte footer after the blob stay exactly where the engine expects them.  The
+    one route that failed, `strip:`, removed bytes and moved the trailer - that is the difference.
+
+    Built for calibration first: the same floor blob on two kinds, one scaled by 0.5 and one by 2.0,
+    reads back from ActorProbe as their half_extents, and the ratio between them IS the unit.
+    """
+    scale = float(ops.get('scale', 1.0))
+    shape = None if ops.get('type') is None else int(ops['type'])
+    end = unit_mesh_end(unit_bytes)
+    trailer = unit_bytes[end:]
+    if len(trailer) < 16:
+        raise SystemExit('collider edit: the unit has no trailer')
+    size, = struct.unpack_from('<I', trailer, 4)
+    if size == 0:
+        raise SystemExit('collider edit: this unit declares no physics to edit (0 B)')
+    if 16 + size > len(trailer):
+        raise SystemExit('collider edit: the trailer claims %d bytes of physics and has %d'
+                         % (size, len(trailer) - 16))
+    edited = edit_blob(trailer[16:16 + size], scale=scale, shape=shape)
+    return unit_bytes[:end] + trailer[:16] + edited + trailer[16 + size:]
+
+
 def load_template(spec: Path) -> bytes:
     """A role's template bytes.  `strip:PATH` means "that template with its physics removed"."""
     text = str(spec)
@@ -363,6 +395,7 @@ def main():
     glb, template = Path(argv[0]), Path(argv[1])
     mapping, out_dir, frame, duplicate_meshes = {}, None, 'auto', True
     templates, physics_by_base, templates_by_base = {}, {}, {}
+    collider_edits = {}                    # BASE -> {'scale': k, 'type': n}, --collider-edit (9H.46)
     offsets_out, collider_shift_on = None, True
     for a in argv[2:]:
         if a == '--out':
@@ -390,6 +423,23 @@ def main():
                 raise SystemExit('--template wants BASE=SPEC, got %r' % spec)
             name, spec_path = spec.split('=', 1)
             templates_by_base[base_name(name)] = spec_path
+        elif a.startswith('--collider-edit='):
+            # EDIT A TEMPLATE'S PHYSICS BLOB IN PLACE (FINDINGS 9H.46): BASE=scale:0.5,type:4.
+            # `scale` multiplies the blob's distance words, `type` replaces its shape word - both
+            # length-preserving, which is what makes them safe where removing bytes crashed the load.
+            spec = a.split('=', 1)[1]
+            if '=' not in spec:
+                raise SystemExit('--collider-edit wants BASE=OPS, got %r' % spec)
+            name, ops_text = spec.split('=', 1)
+            ops = {}
+            for field in ops_text.split(','):
+                if ':' not in field:
+                    raise SystemExit('--collider-edit op wants field:value, got %r' % field)
+                fname2, value = field.split(':', 1)
+                if fname2 not in ('scale', 'type'):
+                    raise SystemExit('--collider-edit field must be scale or type, got %r' % fname2)
+                ops[fname2] = float(value) if fname2 == 'scale' else int(value)
+            collider_edits[base_name(name)] = ops
         elif a.startswith('--physics-template='):
             # which native unit to splice into for a physics role: the template's trailer IS the
             # collider, so this is the only lever the builder has (see PHYSICS_ROLES)
@@ -562,6 +612,16 @@ def main():
             raise SystemExit('%s: %s' % (base, exc))
         unit_path = mapping[base]
         fname = out_dir / (unit_path.replace('/', '_') + '.unit')
+        # THE BLOB EDIT (FINDINGS 9H.46): the spliced template's collider, rewritten in place.  The
+        # config asks for it per kind (--collider-edit=BASE=scale:0.5,type:4) and the blob keeps its
+        # length, so this cannot disturb the trailer the strip: route proved fragile.
+        ops = collider_edits.get(base) or collider_edits.get(base_name(base))
+        if ops:
+            before = len(unit)
+            unit = apply_collider_edits(unit, ops)
+            assert len(unit) == before, 'a collider edit changed the unit length'
+            print('%-16s    collider: %s  (blob edited in place, unit still %d B)'
+                  % (base, ', '.join('%s=%s' % kv for kv in sorted(ops.items())), len(unit)))
         fname.write_bytes(unit)
         print('%-16s -> %-44s %2d placement(s)  %d verts  %d tris  %d bytes  '
               '(%d mesh block(s), %d primitive(s): %s)'

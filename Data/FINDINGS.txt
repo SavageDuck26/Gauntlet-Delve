@@ -13298,3 +13298,56 @@ CONCLUSION: `strip:` needs the WHOLE trailer consistent, which needs the trailer
 same work the collider writer needs (9H.45).  One effort, two payoffs.  Bisect step B
 (`none -> lights/light`, a shipped unit with 0 B of physics) needs no byte surgery at all and is the
 fallback if the parse takes too long, at the cost of the material swatch (9H.19).
+
+
+9H.46 MEASURED IN GAME: WHAT A COLLIDER ACTUALLY IS, IN NUMBERS
+
+ActorProbe was re-pointed from its single test plane at OUR OWN units and each one's shape was read
+back out of the engine after a level load (2026-10-20 10:28).  The floor tile - the 80-byte blob every
+role wears in bisect step A - reports:
+
+    shape[1] type=3   half_extents = Vector3(4.0250001, 4.0250001, 0.0250000004)
+    pose translation  (34.3343925, 80.245697, 6.87514877)
+
+so the collider IS an 8.05 x 8.05 x 0.05 slab centred on the template's mesh box, exactly as 9H.20
+predicted from the raycasts, and 0.025 is the SKIN the engine adds around the geometry it was given.
+A second unit in the same run reported type=3 as well, with half_extents (0.645, 0.699, 0.292), and a
+third reported TWO actors - actor[0] type=3 and actor[1] type=4.  Two actors is two mesh blocks (each
+block carries its own physics blob), so THE SHAPE TYPE IS PER MESH BLOCK AND LIVES IN THE BLOB, not in
+the template.  3 is a box; 4 is the other real type the engine builds, and if 4 means "collide as the
+mesh" then `_fc` (full collision on the object's own geometry) is one word, not a synthesised mesh.
+
+WHAT THE BLOB'S BYTES SAY.  Read as signed 16-bit at 1/32768 (I16_UNIT), the floor's 80 bytes are:
+
+    +0x00  [f32 0.9667][u32 80][u32 0][u32 1]                  header; the float is the same in every
+                                                              blob (29/30), the u32 is the length
+    +0x10   32767  32767   2051 -32736  32767  32767  32767   2051
+    +0x20  -32736 -16384      0   2051 -32736 -16368    966   2051
+    +0x30  -32736 -32768      0  32767  32767  32767 -32752    966
+    +0x40   32767  32767  32767      3      1      0      0      0   tail
+
+Normals land on +/-1.0, the tile's own half-extent on -0.5 x 8 (the tile IS 8 units) = -4.0, the small
+runs on 0.0625, and 966 reads 0.0295 - the only value near the measured 0.025 skin.  The 4th word of
+the tail is 3, which is exactly the type the engine reported for this blob, and a unit whose blob says
+4 reported 4.  So the geometry is NORMALISED fixed point, the engine scales it by the unit's own size
+and adds its skin, and the word that picks the shape kind is the tail's 4th.
+
+THE EDIT THAT IS SAFE, AND WHY.  `--collider-edit=BASE=scale:0.5,type:4` (build_own_units.py, threaded
+from the config by build_level_mod.py) rewrites those words IN PLACE: it never changes the blob's
+length, so the u32 table and the 32-byte footer after it stay exactly where the engine expects them.
+Measured on the built units: the control is byte-identical to the floor blob, scale 0.5 moved exactly
+two words (-16384 -> -8192, -16368 -> -8184), scale 2.0 moved the same two to -32768/-32736, and
+`type:4` changed ONE BYTE in a 53,078-byte unit.  That is the whole difference from `strip:`, which
+REMOVED bytes and moved the trailer (9H.38.1.1/9H.38.1.2) - and it is why the same trick is the
+candidate fix for the `none` role.
+
+THE CALIBRATION RUN DEPLOYED WITH THIS ENTRY.  One launch, three answers: `Elevator Floor Metal` wears
+the blob verbatim (the control - it must read (4.025, 4.025, 0.025) again, proving the splice and the
+edit are transparent), `Elevator Scaffold Entrance Top` wears it scaled by 0.5 and `Elevator Scaffold
+Entrance` by 2.0 (their half_extents solve the units outright, so a box sized to order becomes arithmetic
+instead of guesswork), and `Big Spike` wears it typed 4 (does the engine then collide as the spike's
+own 30-unit-tall mesh?  If yes, `_fc` is done and `_bb` is `scale`).  ActorProbe also now prints each
+unit's own debug name and hash, because the hash is the engine's murmur64 of the unit's RESOURCE PATH
+("units/custom/duckomp_room/elevator_floor_metal" -> d28bb523d1d1e4fb, verified against the #ID[...]
+in the log) - with five units watched at once, a shape report alone cannot say which one it came from.
+

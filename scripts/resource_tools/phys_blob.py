@@ -67,6 +67,127 @@ def blob_size(triangles: int, masks: int, spheres: int, planes: int, pairs: int)
     return 4 * (9 * triangles + masks + 4 * (spheres + planes) + 2 * pairs)
 
 
+# ---------------------------------------------------------------------------------------------------
+# READING A BLOB'S WORDS (2026-10-20, measured in game - FINDINGS 9H.46)
+#
+# ActorProbe was pointed at our own units and each one's shape was read back out of the engine.  Our
+# floor tile - the 80-byte blob below - reports:
+#
+#     shape type 3    half_extents = Vector3(4.0250001, 4.0250001, 0.0250000004)
+#
+# and the blob's own words, as signed 16-bit, line up with exactly that:
+#
+#     +0x00  [f32 0.9667][u32 80][u32 0][u32 1]      <- header: the same float in every blob
+#     +0x10   32767  32767   2051  -32736  32767  32767  32767   2051
+#     +0x20  -32736 -16384      0    2051 -32736 -16368    966   2051
+#     +0x30  -32736 -32768      0   32767  32767  32767 -32752    966
+#     +0x40   32767  32767  32767      3      1      0      0      0   <- tail
+#
+# read at I16_UNIT (1/32768): normals land on +/-1.0, the tile's half-extent on -0.5 x 8 = -4.0 (the
+# tile IS 8 units), the small runs on 0.0625, and 966 = 0.0295 - the only value near the engine's
+# measured 0.025 SKIN, which is added to the box after the normalised extent is scaled.  The 4th word
+# of the tail is 3, and 3 is precisely the shape type the probe measured on this blob.
+#
+# A unit with TWO meshes reported TWO shapes with two types (3 and 4), one blob each - so the shape
+# type is per-mesh and lives in the blob, NOT in the template.  SHAPE_BOX = 3 is measured; the other
+# type seen in game is 4, and what 4 means is what the `_fc` route needs to pin down.
+#
+# THE EDITS BELOW KEEP THE BLOB'S LENGTH.  That is not a detail: the data table and the 32-byte
+# footer sit immediately after the blob, so removing or adding bytes moves them, and the one strip:
+# crash (FINDINGS 9H.38.1.1) is exactly that.  Same length means the only thing that changes is the
+# collision - which is also why these edits are the safe half of the work.
+# ---------------------------------------------------------------------------------------------------
+I16_UNIT = 32768.0        # 0x8000: the geometry words are signed 16-bit fixed point, this is 1.0
+BLOB_HEADER = 16          # float, u32 size (the blob's own length), two u32s
+BLOB_TAIL = 16            # ..., shape type, 1, 0, 0, 0
+SHAPE_BOX = 3             # measured in game: the floor's -0x...3 - blob reports type 3
+
+# Words that are never a distance: unit normals (the +/-1.0 and +/-0.9990 family), zero, the
+# quantiser's own repeated flags (0.0625 reads 2051 and appears in every plane; 966 reads 0.0295 and
+# is the engine's skin, measured as 0.025), and the small counts (1, 3).  What is left in the floor's
+# body is exactly two words - -16384 and -16368, the -0.5 and -0.4995 family - so scaling a blob moves
+# its EXTENTS and nothing else, and one measurement reads the units straight off.  Read off the
+# shipped blobs, not assumed: see the dump in FINDINGS 9H.46.
+STRUCTURAL_ABS = 32720
+STRUCTURAL_WORDS = (0, 1, 3, 966, 2051)
+
+
+def blob_words(blob: bytes) -> List[int]:
+    """The blob as signed 16-bit words (its geometry is fixed point; see I16_UNIT)."""
+    if len(blob) % 2:
+        raise ValueError('a blob is an even number of bytes, got %d' % len(blob))
+    return list(struct.unpack('<%dh' % (len(blob) // 2), blob))
+
+
+def shape_type(blob: bytes) -> int:
+    """The shape type the engine reports for this blob (measured: 3 = the fitted box)."""
+    words = blob_words(blob)
+    if len(words) < (BLOB_HEADER + BLOB_TAIL) // 2:
+        raise ValueError('blob too short for a header and a tail: %d B' % len(blob))
+    return words[-(BLOB_TAIL // 2) + 3]
+
+
+def set_shape_type(blob: bytes, shape: int) -> bytes:
+    """The same blob with its shape type replaced - the `_fc` lever, and length-preserving.
+
+    The engine reads the type per mesh block, so a unit whose blob says 4 collides as whatever 4 is
+    even though the template it was spliced into says 3.  That is the whole experiment: one word.
+    """
+    if not 0 <= shape <= 8:
+        raise ValueError('refusing to call %r a shape type' % shape)
+    out = bytearray(blob)
+    struct.pack_into('<h', out, len(blob) - BLOB_TAIL + 6, shape)
+    return bytes(out)
+
+
+def scale_sizes(blob: bytes, k: float) -> bytes:
+    """The same blob with every DISTANCE word multiplied by k (a box's size knob), length-preserving.
+
+    Skips the structural words (STRUCTURAL_ABS explains which and why), so normals stay unit length
+    and the quantiser's flags stay put while the extents move.  A blob scaled by 0.5 must come back
+    from the engine with half the half_extents; that ratio is what pins the units down.
+    """
+    words = blob_words(blob)
+    first, last = BLOB_HEADER // 2, len(words) - BLOB_TAIL // 2
+    out = list(words)
+    for i in range(first, last):
+        w = words[i]
+        if w == 0 or abs(w) >= STRUCTURAL_ABS or w in STRUCTURAL_WORDS:
+            continue                      # a normal, a flag or a count - never a distance
+        out[i] = max(-32768, min(32767, int(round(w * k))))
+    return struct.pack('<%dh' % len(out), *out)
+
+
+def edit_blob(blob: bytes, scale: float = 1.0, shape: int = None) -> bytes:
+    """Both edits, in place: `scale` resizes the box, `shape` re-types the mesh block.
+
+    This is the single entry point build_own_units.py calls (--collider-edit=KIND=scale:0.5,type:4),
+    and the reason a collider can be changed without any of the byte surgery that crashes the loader.
+    """
+    out = blob
+    if scale != 1.0:
+        out = scale_sizes(out, scale)
+    if shape is not None:
+        out = set_shape_type(out, shape)
+    if len(out) != len(blob):
+        raise AssertionError('an edit changed the blob length (%d -> %d)' % (len(blob), len(out)))
+    return out
+
+
+def describe(blob: bytes) -> str:
+    """A human-readable dump: the words, what they read as, and the tail's shape type."""
+    words = blob_words(blob)
+    lines = ['blob %d B, shape type %d (header float %.4f, declared size %d)'
+             % (len(blob), shape_type(blob), struct.unpack_from('<f', blob, 0)[0],
+                struct.unpack_from('<I', blob, 4)[0])]
+    for i in range(0, len(words), 8):
+        chunk = words[i:i + 8]
+        lines.append('  +0x%02x  i16 %-42s = %s'
+                     % (i * 2, ' '.join('%6d' % w for w in chunk),
+                        ' '.join('%8.4f' % (w / I16_UNIT) for w in chunk)))
+    return '\n'.join(lines)
+
+
 def split_trailer(unit_bytes: bytes) -> Tuple[bytes, int, bytes, bytes]:
     """(header, physics_size, blob, rest) of a .unit's trailer.
 
