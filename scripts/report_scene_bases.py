@@ -39,7 +39,12 @@ BIG_MESH = 15972                 # the largest mesh the game itself ships (9H.39
 
 
 def mesh_stats(js: dict, node: dict):
-    """(vertex count, local bounding-box size) the way the unit builder sees them."""
+    """(vertex count, local bounding-box size, local centre) the way the unit builder sees them.
+
+    The CENTRE is what catches a node whose mesh is the same shape with a different ORIGIN: the unit
+    is built from one node's mesh, so every other node's geometry is drawn with that node's pivot -
+    a centre that differs by half the height lands the whole piece half a height away in game.
+    """
     verts = 0
     lo = [1e30, 1e30, 1e30]
     hi = [-1e30, -1e30, -1e30]
@@ -50,8 +55,10 @@ def mesh_stats(js: dict, node: dict):
             if 'min' in acc and 'max' in acc:
                 lo[k] = min(lo[k], acc['min'][k])
                 hi[k] = max(hi[k], acc['max'][k])
-    size = tuple(round(hi[k] - lo[k], 3) for k in range(3)) if lo[0] < 1e30 else (0.0, 0.0, 0.0)
-    return verts, size
+    if lo[0] >= 1e30:
+        return verts, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
+    return (verts, tuple(round(hi[k] - lo[k], 3) for k in range(3)),
+            tuple(round((hi[k] + lo[k]) / 2.0, 3) for k in range(3)))
 
 
 def main() -> int:
@@ -87,10 +94,10 @@ def main() -> int:
         if L.ignored_node(name):
             groups.setdefault((True, base_name(name)), []).append(None)
             continue
-        verts, size = mesh_stats(js, node)
+        verts, size, centre = mesh_stats(js, node)
         groups.setdefault((False, base_name(name)), []).append(
             (verts, size, tuple(round(v, 3) for v in node.get('translation', [0, 0, 0])),
-             'rotation' in node, name))
+             'rotation' in node, name, node['mesh'], centre))
 
     print('%s: %d node(s), %d with a mesh%s'
           % (a.glb.name, len(js.get('nodes', [])), len(js.get('nodes', [])) - len(no_mesh),
@@ -117,7 +124,15 @@ def main() -> int:
         masters = [v for v in items if v[4][:4].upper() == 'LIB_']
         source = masters[0] if masters else items[0]
         odd = [v for v in items if v[1] != source[1]]
+        other_mesh = [v for v in items if v[5] != source[5]]
         from_what = '  [mesh from %s%s]' % (source[4], ', the LIB_ master' if masters else '')
+        if other_mesh:
+            from_what += '  <-- %d node(s) carry a DIFFERENT MESH (not instances of it)' % len(other_mesh)
+            # HOW FAR their geometry moves when the engine draws them with the source's mesh: the
+            # centre difference IS the pivot difference, in the source's own frame.
+            worst = max(max(abs(v[6][k] - source[6][k]) for k in range(3)) for v in other_mesh)
+            if worst > 0.01:
+                from_what += ' (up to %.2f units of pivot, x their scale)' % worst
         if odd:
             from_what += '  <-- %d node(s) have a DIFFERENT SHAPE' % len(odd)
         if base in own:

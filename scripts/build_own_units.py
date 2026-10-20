@@ -481,6 +481,17 @@ def main():
                   % ('', len(libs), ', '.join(n.get('name', '') for n in libs[:4])))
         src_node = libs[0] if libs else nodes[0]
         src = js['meshes'][src_node['mesh']]
+        # A UNIT IS ONE MESH, AND NOT EVERY NODE OF A KIND IS REALLY AN INSTANCE OF IT (2026-10-20).
+        # Nodes that carry a DIFFERENT mesh than the one this unit is built from will be drawn with
+        # this unit's geometry in game, at their own transform - so a variant with the same shape
+        # but a moved origin (0..5.81 vs -2.9..2.9 is how it showed up) lands units away from where
+        # Blender has it.  Nothing about the bytes says so; only a comparison of mesh indices does.
+        others = [n for n in nodes if n['mesh'] != src_node['mesh']]
+        if others:
+            print('%-16s    WARNING: %d of %d node(s) use a DIFFERENT mesh than this unit is built'
+                  ' from (%s vs %s) - they will be drawn as this unit, not as their own geometry'
+                  % ('', len(others), len(nodes), ', '.join('mesh %s' % n['mesh'] for n in others[:3]),
+                     'mesh %s' % src_node['mesh']))
         pos, nrm, uv, idx = [], [], [], []
         prim_sizes = []
         for prim in src['primitives']:
