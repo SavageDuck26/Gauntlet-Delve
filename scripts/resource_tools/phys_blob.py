@@ -140,25 +140,39 @@ def set_shape_type(blob: bytes, shape: int) -> bytes:
     return bytes(out)
 
 
-def scale_sizes(blob: bytes, k: float) -> bytes:
-    """The same blob with every DISTANCE word multiplied by k (a box's size knob), length-preserving.
+def scale_sizes(blob: bytes, k: float, mask: str = 'lo') -> bytes:
+    """The same blob with the words `mask` selects multiplied by k - a box's size knob, length-keeping.
 
-    Skips the structural words (STRUCTURAL_ABS explains which and why), so normals stay unit length
-    and the quantiser's flags stay put while the extents move.  A blob scaled by 0.5 must come back
-    from the engine with half the half_extents; that ratio is what pins the units down.
+    `mask` says WHICH words, because the first attempt at this (9H.47) scaled the obvious candidates
+    and the collider did not move: the words that read -0.5/-0.4995 in the floor are not the extents.
+    What is left is the +/-1.0 family (the unit normals), which 9H.48 has to test by construction:
+
+        'lo'   the small words - whatever is not a normal, a flag or a count.  This is what the first
+               calibration run scaled, and the answer was NO.
+        'hi'   the +/-1.0 and +/-0.9990 family (|w| >= 32000).  If halving THESE halves the box, the
+               extents live here and a box of any size is arithmetic.
+        'all'  both, i.e. every word that is not 0, 1, 3 or the 2051 flag.
+
+    Normals and flags are never touched by 'lo', and 'hi' touches nothing else, so one run with both
+    masks on different kinds reads off which family carries the extents.
     """
     words = blob_words(blob)
     first, last = BLOB_HEADER // 2, len(words) - BLOB_TAIL // 2
     out = list(words)
     for i in range(first, last):
         w = words[i]
-        if w == 0 or abs(w) >= STRUCTURAL_ABS or w in STRUCTURAL_WORDS:
-            continue                      # a normal, a flag or a count - never a distance
+        if w == 0 or w in STRUCTURAL_WORDS:
+            continue                      # a flag or a count - never a distance
+        if abs(w) >= STRUCTURAL_ABS:
+            if mask not in ('hi', 'all'):
+                continue                  # the +/-1.0 family: 'lo' leaves it alone
+        elif mask not in ('lo', 'all'):
+            continue
         out[i] = max(-32768, min(32767, int(round(w * k))))
     return struct.pack('<%dh' % len(out), *out)
 
 
-def edit_blob(blob: bytes, scale: float = 1.0, shape: int = None) -> bytes:
+def edit_blob(blob: bytes, scale: float = 1.0, shape: int = None, mask: str = 'lo') -> bytes:
     """Both edits, in place: `scale` resizes the box, `shape` re-types the mesh block.
 
     This is the single entry point build_own_units.py calls (--collider-edit=KIND=scale:0.5,type:4),
@@ -166,7 +180,7 @@ def edit_blob(blob: bytes, scale: float = 1.0, shape: int = None) -> bytes:
     """
     out = blob
     if scale != 1.0:
-        out = scale_sizes(out, scale)
+        out = scale_sizes(out, scale, mask=mask)
     if shape is not None:
         out = set_shape_type(out, shape)
     if len(out) != len(blob):

@@ -242,6 +242,7 @@ def apply_collider_edits(unit_bytes: bytes, ops: dict) -> bytes:
     """
     scale = float(ops.get('scale', 1.0))
     shape = None if ops.get('type') is None else int(ops['type'])
+    mask = str(ops.get('mask', 'lo'))      # WHICH words scale: the +/-1.0 family, the small ones, both
     end = unit_mesh_end(unit_bytes)
     trailer = unit_bytes[end:]
     if len(trailer) < 16:
@@ -252,7 +253,7 @@ def apply_collider_edits(unit_bytes: bytes, ops: dict) -> bytes:
     if 16 + size > len(trailer):
         raise SystemExit('collider edit: the trailer claims %d bytes of physics and has %d'
                          % (size, len(trailer) - 16))
-    edited = edit_blob(trailer[16:16 + size], scale=scale, shape=shape)
+    edited = edit_blob(trailer[16:16 + size], scale=scale, shape=shape, mask=mask)
     return unit_bytes[:end] + trailer[:16] + edited + trailer[16 + size:]
 
 
@@ -436,9 +437,15 @@ def main():
                 if ':' not in field:
                     raise SystemExit('--collider-edit op wants field:value, got %r' % field)
                 fname2, value = field.split(':', 1)
-                if fname2 not in ('scale', 'type'):
-                    raise SystemExit('--collider-edit field must be scale or type, got %r' % fname2)
-                ops[fname2] = float(value) if fname2 == 'scale' else int(value)
+                if fname2 not in ('scale', 'type', 'mask'):
+                    raise SystemExit('--collider-edit field must be scale, type or mask, got %r'
+                                     % fname2)
+                if fname2 == 'scale':
+                    ops[fname2] = float(value)
+                elif fname2 == 'type':
+                    ops[fname2] = int(value)
+                else:
+                    ops[fname2] = value        # mask: hi | lo | all - WHICH words scale (9H.48)
             collider_edits[base_name(name)] = ops
         elif a.startswith('--physics-template='):
             # which native unit to splice into for a physics role: the template's trailer IS the

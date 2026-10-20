@@ -13400,3 +13400,44 @@ takes the pillar's proportions, the template rules end to end and the writer rou
 not, the blob is read and the box blob is the shape to understand.
 
 
+9H.48 THE BLOB RULES AFTER ALL - AND IT IS THE CONTENT, NOT A FLAG
+
+That isolating run went into the game on 2026-10-20 10:53 and corrected both of 9H.47's negatives.
+
+RESULT 1 - THE COLLIDER FOLLOWS THE BLOB, NOT THE MESH.  Big Spike - our 31 x 31 x 92 prop - was built
+on the PILLAR template and read back as
+
+    shape[1] type=3   (0.644994974, 0.698773503, 0.292357117)
+
+which is the pillar's own box, digit for digit the numbers 9H.47 measured when the ELEVATOR wore that
+same blob.  Two different meshes, one blob, one collider.  So 9H.47's "the template rules" refines to:
+the BLOB rules, interpreted in the template's space, and our geometry never participates.
+
+RESULT 2 - THE BLOB'S CONTENT PICKS THE SHAPE KIND.  Elevator Floor Metal, wearing the game's own
+192-byte solid six-plane blob, read back as
+
+    shape[1] type=4      (no half_extents printed at all)
+
+A different shape kind, produced by a different blob.  That explains both 9H.47 negatives at once:
+the one-byte type edit failed because the tail word is NOT the selector - the STRUCTURE is (three planes
+make the engine fit a box against the unit, a real plane set makes type 4) - and the scale edit failed
+because it moved the wrong words.
+
+SO EDITING THE BLOB IS THE LEVER, and what is left is exactly which words carry the extents.  The
+candidates are now only two families, and they were separated by construction:
+`scale_sizes(..., mask='lo')` touches only the small words (what the failed edit scaled - the -0.5 and
+-0.4995 family), `mask='hi'` only the +/-1.0 and +/-0.9990 family, `mask='all'` both, and every mask
+keeps the blob's LENGTH and its shape word so the trailer cannot move.  The deployed run (2026-10-20
+10:56) scales the pillar's blob by half under 'hi' (readable against the known 0.645 box), the floor's
+blob under 'all' (if everything that is not a flag half-scales the 8.05 slab, the extents are in the
+blob), and the floor's blob under 'hi' again as a second point.  The floor tiles keep the untouched
+blob as the control that must still read (4.025, 4.025, 0.025).
+
+WHAT EACH ANSWER BUYS.  If 'all' halves the slab and 'hi' does not, the extents are the small words
+and 9H.47's edit was wrong for a different reason than assumed (worth knowing: 9H.47's -16384 IS in
+'lo').  If 'hi' halves it, the extents are the +/-1.0 family and `_bb` - a box of any size - is
+arithmetic on the blob.  If neither moves, no word sizes it and the next target is the trailer, with
+type 4 (a real plane set, which is what `_fc` needs anyway) the shape to author against.
+
+
+
