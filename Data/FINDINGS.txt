@@ -13440,4 +13440,47 @@ arithmetic on the blob.  If neither moves, no word sizes it and the next target 
 type 4 (a real plane set, which is what `_fc` needs anyway) the shape to author against.
 
 
+9H.49 THE ANSWER: A BLOB CANNOT BE AUTHORED INTO A COLLIDER - AND strip: WAS NEVER BROKEN
+
+Ran 2026-10-20 11:12.  The elevator and a scaffold entrance both wore the game's own 192-byte solid
+six-plane blob, one byte-identical and one with EVERY non-flag word halved (56 words), and ActorProbe
+read back:
+
+    box blob UNCHANGED       type=4   footprint rows  -  +5.00  +5.00  +5.00  +4.73   (16 hits)
+    box blob ALL WORDS x0.5  type=4   footprint rows  -  +4.91  +4.91  +4.91  +4.60   (16 hits)
+
+Same shape kind, same coverage, the surface 0.09 apart on a 5-unit ray.  So the words of a type-4 blob
+barely move it either, and 9H.48's "the blob rules" is only true of its KIND.  Put together with 9H.47
+(mask:all on the floor's blob: nothing) and 9H.46-9H.48, the model is closed:
+
+    the SHAPE KIND    comes from the blob's content  (3 planes -> the engine fits a box; a real plane
+                      set -> type 4)
+    the SIZE          comes from a box stored with the TEMPLATE, which the splice never touches
+    OUR MESH          contributes nothing at all
+    a shape word in the blob's tail is NOT the type (it reads 3 on a blob that reports type 4)
+
+CONSEQUENCE FOR AUTHORING COLLISION: it cannot be done by editing a blob.  The two levers that DO work
+are the ones already proven in game - a per-kind TEMPLATE (`templates_by_kind`, 9H.45: a solid prop can
+wear any native collider, sized by that template) and `none` for no collision at all.  A collider that
+matches the author's own FACES needs a shape built at load from the mesh, which is code (the physics
+module's shape API, FUN_004db4e0, 9H.45), not data.
+
+AND strip: WAS NEVER REALLY BROKEN.  Its two crashes (9H.38.1, 9H.38.1.1, 9H.38.1.2) both removed the
+blob and moved everything after it - and 9H.46-9H.48 show the blob is an opaque block whose LENGTH is
+what tells the loader where the data table, the nav string and the 32-byte footer begin.  So
+strip_physics now removes NOTHING: it zeroes the blob's body in place, keeping its format float and its
+size word, leaving the trailer's 16 bytes untouched, and sets the nav type to "ignore" - the value the
+game's own builder writes for a unit that collides with nothing (9H.19).  Verified on the shipped floor
+template: 1437 bytes in, 1437 bytes out, 57 bytes changed (53 zeroed + "floor" -> "ignore"), trailer
+header, size field and 32-byte footer identical.
+
+Deployed 2026-10-20 11:14: Big Spike and Elevator Scaffold Entrance wear that stripped template (blob
+80 B, body all-zero, nav ignore) and everything else is the known-good floor patch, with the two
+192-byte box-blob units as the type-4 control.  The test is behavioural AND read out: the spike should
+be walk-through, and ActorProbe prints Unit.num_actors and Actor.shapes per unit, so a stripped unit
+must report ZERO actors.  If it crashes, the next iteration zeroes the trailer's count field as well -
+still without moving a single byte, which is the whole difference from the two failures.
+
+
+
 

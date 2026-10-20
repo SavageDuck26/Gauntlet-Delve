@@ -184,34 +184,38 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
     template had - the swatch, the flow, the nav data - and removes only the collider, which is what
     "no collision" means.
 
-    THE TRAILER'S LAYOUT, as measured: [16 bytes: {0, physics_size, 0, count}][physics blob
-    (physics_size bytes)][data table][32-byte footer].  The blob's size is what locates the table,
-    so this sets it to 0 and drops the bytes - a sequential parse stays consistent, and the table's
-    records carry their values inline.  The footer (the material binding) is a hash, so moving it is
-    safe.  VERIFIED OFFLINE as far as it can be: the stripped unit's trailer still yields its nav
-    string and its material swatch footer, and reports 0 B of physics.  The engine's own parse is
-    confirmed in game, not here - see FINDINGS 9H.38.
+    WHY NOTHING IS REMOVED ANY MORE (2026-10-20, FINDINGS 9H.49).  The two earlier attempts REMOVED
+    the blob and zeroed the trailer's size and count; both crashed on package load at the same
+    instruction (FUN_00402e10+0x3C, a container resize - 9H.38.1, 9H.38.1.1, 9H.38.1.2).  What those
+    runs could not see, and 9H.46-9H.48 now show, is that the physics blob is an opaque block whose
+    LENGTH is what tells the loader where the data table, the nav string and the 32-byte footer begin:
+    shorten it and everything the loader reads next is misaligned.
+
+    Zeroing keeps every offset exactly where it was, so the only thing that changes is what the blob
+    says - no planes, no triangles, no actors.  The blob's own header is left alone (its format float
+    and its size word) so the block still parses as the same block, and the trailer's 16 bytes are
+    untouched for the same reason.  The nav type becomes "ignore", the value the game's own builder
+    writes for a unit that collides with nothing (9H.19).  WHETHER THE ENGINE ACCEPTS IT IS THE TEST:
+    ActorProbe reports Unit.num_actors and Actor.shapes per unit, so a stripped unit must read back as
+    zero actors - that is the check, not this docstring.
     """
     end = unit_mesh_end(tpl_bytes)
     body, tr = tpl_bytes[:end], tpl_bytes[end:]
     if len(tr) < 16:
-        raise SystemExit('cannot strip physics: the template has no trailer')
+        return tpl_bytes                       # no trailer at all: there is no physics to strip
     size, = struct.unpack_from('<I', tr, 4)
     if size == 0:
         return tpl_bytes                       # already no physics
     if 16 + size > len(tr):
         raise SystemExit('cannot strip physics: the trailer claims %d bytes and has %d'
                          % (size, len(tr)))
-    header = bytearray(tr[:16])
-    struct.pack_into('<I', header, 4, 0)
-    # THE COUNT TOO, NOT JUST THE SIZE (2026-10-20).  The 16-byte header is {0, physics_size, 0,
-    # count} and the loader sizes its actor containers from `count` - FUN_00420390's per-element
-    # helper appends through FUN_00402e10, the growable container whose resize policy is
-    # `capacity/2 + capacity + 4`.  Zeroing only the size left the count naming actors whose bytes
-    # had just been removed, which is exactly the failure 9H.38.1 caught: access write at 0x4 inside
-    # FUN_00402e10+0x3C, a container resize during the level load, with a unit that had a physics
-    # blob of 0 bytes and a trailer that still claimed one.
-    struct.pack_into('<I', header, 12, 0)
+    blob = bytearray(tr[16:16 + size])
+    cleared = 0
+    for i in range(8, len(blob)):              # keep the format float and the size word: only the rest
+        if blob[i]:
+            cleared += 1
+        blob[i] = 0
+    print('   strip   : blob zeroed in place (%d B, %d bytes cleared, length kept)' % (size, cleared))
     rest = bytearray(tr[16 + size:])
     # The nav type is GENERATED metadata - the game's own builder writes "ignore" when a unit
     # collides with nothing (FINDINGS 9H.19) - so a stripped unit claims walkable AI nav no more.
@@ -224,7 +228,7 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
             rest[at:at + 8] = b'ignore\x00\x00'
             print('   strip   : nav %s -> ignore' % word)
             break
-    return body + bytes(header) + bytes(rest)
+    return body + tr[:16] + bytes(blob) + bytes(rest)
 
 
 def apply_collider_edits(unit_bytes: bytes, ops: dict) -> bytes:
