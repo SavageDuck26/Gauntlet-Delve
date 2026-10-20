@@ -186,8 +186,11 @@ def main() -> int:
                 if d:
                     # the placement was moved back by this vector; the engine applies the record's
                     # rotation and the placement's scale to it, so the authored node is the record
-                    # PLUS it - subtract to bring the authored point into the file's frame
-                    w = quat_rotate(q_engine, (d[0] * s[0], d[1] * s[1], d[2] * s[2]))
+                    # PLUS it - subtract to bring the authored point into the file's frame.
+                    # The scale is the node's IN THE ENGINE FRAME: y and z swap, the same
+                    # permutation the mesh's vertices get (FINDINGS 9H.44).
+                    sx, sy, sz = s
+                    w = quat_rotate(q_engine, (d[0] * sx, d[1] * sz, d[2] * sy))
                     pt = [pt[k] - w[k] for k in range(3)]
                 d_ = sum((pt[k] - pos[k]) ** 2 for k in range(3)) ** 0.5
                 if d_ < best_d:

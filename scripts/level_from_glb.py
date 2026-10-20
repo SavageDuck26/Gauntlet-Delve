@@ -621,6 +621,30 @@ def to_engine_position(t: List[float], deg_pos: int) -> List[float]:
     return x_rot(deg_pos, t)
 
 
+
+
+def to_engine_scale(s: List[float], deg_pos: int) -> List[float]:
+    """A glTF node scale as the level record must hold it.
+
+    A SCALE IS PER-LOCAL-AXIS, so it follows the frame change the way the MESH does, not the way a
+    position does - which is why build_own_units.py rotates the vertices into the engine frame too.
+    For the usual +-90 layout that means the y and z components SWAP:
+
+        glTF scale (1.4131, 1.0268, 1.4131)  ->  engine (1.4131, 1.4131, 1.0268)
+
+    and that is what Blender shows: 1.4131 across both horizontal axes, 1.0268 along the one that
+    points up (the engine's z).  Writing it verbatim looks right while every scale is uniform, which
+    is why the first non-uniform one - 17 elevator shafts, 2026-10-20 - came out 1.0268 tall and
+    1.4131 deep instead of the other way round.
+
+    The SIGNS do not flip: a diagonal scale conjugated by a rotation keeps them (the two flips
+    cancel), so this is the permutation and not x_rot's rotation of a vector.
+    """
+    x, y, z = (float(v) for v in s)
+    if abs(deg_pos) == 90:
+        return [x, z, y]
+    return [x, y, z]
+
 def _x_quat(deg: int) -> Tuple[float, float, float, float]:
     """The quaternion (xyzw) of a rotation about X by a multiple of 90 degrees."""
     h = math.radians(deg) / 2.0
@@ -1673,7 +1697,7 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
             # meshes themselves and is already in the engine's frame - converting it again
             # would double-apply the frame change.
             t, q = recovered[idx]
-            s = [float(v) for v in node.get('scale', [1.0, 1.0, 1.0])]
+            s = to_engine_scale(node.get('scale', [1.0, 1.0, 1.0]), deg_pos)
             placed.append({'unit': path, 't': t, 'q': q, 's': s, 'node': node.get('name', '')})
             orient['skipped'] += 1
             continue
@@ -1713,7 +1737,7 @@ def build(glb: Path, donor: Path, out: Path, max_entities: Optional[int],
                 orient['bad'].append((node.get('name', ''), err))
         else:
             orient['skipped'] += 1
-        s = [float(v) for v in node.get('scale', [1.0, 1.0, 1.0])]
+        s = to_engine_scale(node.get('scale', [1.0, 1.0, 1.0]), deg_pos)
         placed.append({'unit': path, 't': t, 'q': q, 's': s})
 
     if orient['n']:

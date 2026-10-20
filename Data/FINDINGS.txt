@@ -13196,3 +13196,33 @@ elevator shafts do not show up in the engine scaled the way they should.
   of a master must USE that master's data (Blender's Object Data link, or re-instantiating it).  A
   variant that genuinely differs - a different pivot, a modifier's result - is its OWN kind: give it
   its own name and its own LIB_ master and it becomes its own unit, drawn exactly as authored.
+
+9H.44 A SCALE FOLLOWS THE MESH'S AXES, NOT THE POSITION'S - AND 17 SHAFTS PROVED IT
+
+The author, looking at the game (2026-10-20): the scaled elevator shafts keep their scaling on one
+side only, while the placement and rotation are perfect.  That diagnosis was right, and here is the
+arithmetic behind it.
+
+A POSITION is a world vector: the file's world axes are the engine's rotated, so a position goes
+through x_rot(deg_pos) - to_engine_position, verified in game on 984 placements (9H.40.1).
+
+A SCALE is per-LOCAL-AXIS, and the local axes belong to the MESH: build_own_units.py rotates the
+vertices into the engine frame for exactly that reason.  So a scale must go through the same change,
+and for the usual +-90 layout that SWAPS y and z:
+
+    glTF node scale (1.4131, 1.0268, 1.4131)   ->   record scale (1.4131, 1.4131, 1.0268)
+
+which is what Blender shows: 1.4131 across both horizontal axes and 1.0268 along the axis that
+points up (the engine's z).  Writing the node's scale VERBATIM - what the tool did, and what every
+uniform scale hides - handed the engine 1.0268 of height and 1.4131 of depth instead.  The signs do
+NOT flip: a diagonal scale conjugated by a rotation keeps them (the two flips cancel), so this is the
+permutation and not x_rot's rotation of a vector.  At 0 or 180 degrees there is nothing to permute.
+
+WHERE IT LIVES NOW: to_engine_scale in level_from_glb.py, applied at both places a placement's scale
+is read (the computed path and the recovered one), so the record's scale AND the collider-shift
+compensation of 9H.41 both see the engine-frame value.  check_deployed_placement.py's own copy of
+that arithmetic permutes too - it was reading the raw node scale.
+
+WHY IT SURVIVED SO LONG: a uniform scale is a fixed point of the permutation.  It took a scene with
+17 instances at (1.4131, 1.0268, 1.4131) - the first non-uniform entity scale this pipeline ever
+wrote - for the swap to be visible at all.
