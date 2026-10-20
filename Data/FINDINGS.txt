@@ -3023,7 +3023,7 @@ validated by loader; runtime payload integrity is still enforced by engine load.
 Canonicalization used for lookup/hash stability:
   - Trim whitespace
   - Remove leading '@'
-  - Convert '\' to '/'
+  - Convert '' to '/'
   - Collapse duplicate '/'
   - Remove leading './' and leading '/'
   - Lowercase all characters
@@ -13161,3 +13161,38 @@ and mixes two shapes, so it still renders as its first node - which the report f
 instances differ in SIZE from their master renders as the master, and the report counts them;
 instances that differ only in triangulation are the same shape and stay silent, which is why the
 `Elevator Shaft` copies with 192 and 256 vertices are not a problem (one size, 2 value(s)).
+
+9H.43.1 NOT EVERY NODE OF A KIND IS AN INSTANCE OF ITS MASTER - AND THE PIVOT IS THE TELL
+
+Measured on Lost_Mine_Of_Tom'Aud.glb (2026-10-20), after the author reported that the scaled
+elevator shafts do not show up in the engine scaled the way they should.
+
+  * THE SCALE BYTES ARE RIGHT.  The 17 scaled shafts carry (1.4131, 1.0268, 1.4131) in their
+    record's transform lead, the wide Waterfall Back carries (8.5231, 1, 1), and level_from_glb.py
+    wrote both.  A SHIPPED level (assets/exports-samples/samples/level_24abcdf4b1fb4d4a.level,
+    record 0) writes (1.0000, 5.5000, 1.0000) in the same slot: w at the next record's +0 and scale
+    at +4, the layout 9H.36 established - confirmed here from the game's own data.  9H.20 measured in
+    game that the collider follows the entity scale, so the engine applies it.
+
+  * WHAT IS DIFFERENT IS THE MESH, AND ITS PIVOT.  `Elevator Shaft` is 67 nodes: 49 share the
+    master's mesh and 17 carry their own copy of the SAME SHAPE with the origin at the CENTRE:
+
+        LIB_Elevator Shaft   mesh 6  192 verts  y   0.00 .. 5.81   (origin at the base)
+        the 17 scaled ones   mesh 7  256 verts  y  -2.90 .. 2.90   (origin at the centre)
+        both: 96 unique points, 9.563 x 5.808 x 9.563 - one shape, two pivots
+
+    A unit is built from ONE mesh - the master's - so the engine draws those 17 with a base-pivoted
+    mesh at a centre-pivoted node's transform: their geometry lands 2.90 units away (2.90 x the
+    1.4131 scale, so about 4.1) from where Blender puts it.  Blender shows nothing wrong, and nothing
+    in the file says so either; only which mesh each node carries does.
+
+  * THE TOOLS NOW SAY IT.  report_scene_bases.py counts the nodes whose mesh differs from the kind's
+    source and how far their pivot differs: `<-- 17 node(s) carry a DIFFERENT MESH (not instances of
+    it) (up to 2.90 units of pivot, x their scale)`.  build_own_units.py warns about the same thing
+    while it builds the unit.  On this level both also flag `Floor`, where 51 of 52 nodes carry a
+    mesh other than the one its unit is built from.
+
+  THE FIX IS IN BLENDER, and it is the LIB_ convention's own rule: an object meant to be an instance
+  of a master must USE that master's data (Blender's Object Data link, or re-instantiating it).  A
+  variant that genuinely differs - a different pivot, a modifier's result - is its OWN kind: give it
+  its own name and its own LIB_ master and it becomes its own unit, drawn exactly as authored.
