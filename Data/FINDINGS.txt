@@ -13482,5 +13482,43 @@ must report ZERO actors.  If it crashes, the next iteration zeroes the trailer's
 still without moving a single byte, which is the whole difference from the two failures.
 
 
+9H.50 THE IN-PLACE STRIP CRASHED TOO - SO THE BYTES WERE NEVER THE CAUSE.  IT IS THE COUNT.
+
+Deployed 2026-10-20 11:14, crashed on startup 11:16.  crash_trace.log holds three dumps and the fatal
+one is the SAME instruction as both earlier strip: crashes - 9H.38.1 and 9H.38.1.1/9H.38.1.2:
+
+    exception 0xC0000005 at 00402e4c   (RVA 0x2E4C = FUN_00402e10+0x3C, a container resize)
+    (the first dump in the same file is an unrelated first-chance 0xE06D7363 in LightFX.dll)
+
+THE LENGTH WAS PRESERVED THIS TIME - 1437 bytes in, 1437 bytes out, 57 bytes changed - so 9H.49's claim
+that the byte removal was the whole problem is WRONG and is withdrawn.  What the crash addresses name
+instead is the trailer's COUNT field, and the chain is the one 9H.38.1 described, now with its cause
+identified: the trailer is {0, size, 0, count}, the loader sizes its actor containers from `count` (2
+for the floor template) through FUN_00402e10 whose resize policy is capacity/2 + capacity + 4, and an
+EMPTY blob with count 2 asks for actors that have no data - so the write goes through a NULL-ish data
+pointer at +0x4 and faults.  Zeroing the blob's body without zeroing the count is therefore a
+guaranteed crash, exactly as observed.
+
+WHAT 9H.38.1.2 ACTUALLY TESTED: it zeroed the count AND the size AND removed the bytes, all in one
+build, so its failure never isolated the count.  THE UNTESTED COMBINATION is:
+
+    keep `size` (it locates the data table, the nav string and the 32-byte footer)
+    keep the LENGTH (nothing moves)
+    zero the trailer's COUNT      <- this is the new part
+    zero the blob's body and keep its format float and size word
+    set the nav type to "ignore"  (what the game's own builder writes for a unit with no collision)
+
+That is what strip_physics does now - 1437 B in, 1437 B out, header (0, 80, 0, 2) -> (0, 80, 0, 0),
+blob body all-zero, nav "ignore", footer identical - and it is COMMITTED BUT NOT DEPLOYED: the config
+is back to a working template for every kind so the level loads, and the next `strip:` attempt is a
+one-line config change whenever it is wanted.
+
+WHAT THIS DOES NOT AFFECT: 9H.49's other conclusion - that a blob cannot be authored into a collider -
+came from the mask and footprint runs, which loaded normally and produced probe output.  The blob's
+content still only picks the shape KIND, the size still comes from the template, our mesh still
+contributes nothing, and a per-kind template is still the only working lever for a custom box.
+
+
+
 
 

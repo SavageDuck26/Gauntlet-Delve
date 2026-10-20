@@ -216,6 +216,17 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
             cleared += 1
         blob[i] = 0
     print('   strip   : blob zeroed in place (%d B, %d bytes cleared, length kept)' % (size, cleared))
+    # THE COUNT, AND THIS IS WHAT THE 11:16 CRASH ACTUALLY NAMED (FINDINGS 9H.50).  Zeroing the blob's
+    # body while the trailer still said count=2 kept the level load dying at FUN_00402e10+0x3C - the
+    # same instruction as both earlier strip: crashes, and with the length PRESERVED - which retires
+    # the byte-removal theory for good.  The trailer is {0, size, 0, count} and the loader sizes its
+    # actor containers from `count`, so an empty blob with count 2 asks for actors that have no data
+    # and the resize write at +0x4 faults.  `size` stays: it is what locates the table, the nav string
+    # and the footer, and moving those is what 9H.38.1.1/9H.38.1.2 did on top of the count change.
+    header = bytearray(tr[:16])
+    struct.pack_into('<I', header, 12, 0)
+    print('   strip   : trailer count -> 0 (was %d), size left at %d' % (
+        struct.unpack_from('<I', tr, 12)[0], size))
     rest = bytearray(tr[16 + size:])
     # The nav type is GENERATED metadata - the game's own builder writes "ignore" when a unit
     # collides with nothing (FINDINGS 9H.19) - so a stripped unit claims walkable AI nav no more.
@@ -228,7 +239,7 @@ def strip_physics(tpl_bytes: bytes) -> bytes:
             rest[at:at + 8] = b'ignore\x00\x00'
             print('   strip   : nav %s -> ignore' % word)
             break
-    return body + tr[:16] + bytes(blob) + bytes(rest)
+    return body + bytes(header) + bytes(blob) + bytes(rest)
 
 
 def apply_collider_edits(unit_bytes: bytes, ops: dict) -> bytes:
