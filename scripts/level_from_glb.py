@@ -333,8 +333,25 @@ def ignored_node(name: str) -> bool:
 
 
 def base_name(node_name: str) -> str:
-    """Strip Blender's suffixes.  Both can be present, in either role: `unit#326.001`."""
+    """The base name a node contributes to: Blender's suffixes off, and `LIB_` gone.
+
+    TWO RULES, AND BOTH ARE THE AUTHOR'S (2026-10-20):
+
+      * BLENDER'S SUFFIXES come off - `.001` and `#326`, in either role (`unit#326.001`), and only
+        when the tail is PURELY numeric.  `Spiral Road.002safdasdf` is a different name, not a
+        duplicate of `Spiral Road` (FINDINGS 9H.40);
+      * `LIB_` COMES OFF TOO.  `LIB_Floor Half` is not its own kind: it is the MASTER copy that the
+        instances named `Floor Half` are linked to, so the two are ONE unit called `Floor Half`, and
+        build_own_units.py takes that unit's mesh from the `LIB_` node (FINDINGS 9H.43).  Matched
+        case-insensitively, because the prefix is a convention rather than a spelling.
+
+    Every tool that groups nodes - level_from_glb, build_own_units, check_deployed_placement,
+    report_scene_bases - goes through this one function, because two of them disagreeing is how a
+    unit gets built under one name and resolved under another (the 9H.40 bug).
+    """
     name = node_name
+    if name[:4].upper() == 'LIB_':
+        name = name[4:]
     while True:
         before = name
         if '#' in name:

@@ -3023,7 +3023,7 @@ validated by loader; runtime payload integrity is still enforced by engine load.
 Canonicalization used for lookup/hash stability:
   - Trim whitespace
   - Remove leading '@'
-  - Convert '\\' to '/'
+  - Convert '\' to '/'
   - Collapse duplicate '/'
   - Remove leading './' and leading '/'
   - Lowercase all characters
@@ -13123,3 +13123,41 @@ shapes under one base name, and one base name is one unit - all 13 placements re
 section.  `Floor` similarly mixes 8x8 tiles with 8x4 halves.  Distinct shapes need distinct base
 names (`Road Top A`, `Road Top B`, ...) - a purely numeric tail like `.001` is stripped as Blender's
 duplicate suffix (9H.40), so letters or words are what works.
+
+9H.43 `LIB_` MARKS THE MASTER MESH OF A KIND - AND THE INSTANCES ARE WHAT GET PLACED
+
+THE AUTHOR'S CONVENTION (2026-10-20): an object named `LIB_<name>` is the LIBRARY copy of a kind -
+the mesh that every other object of that kind is an instance of - and everything else carrying that
+name is a placement of it.  Until now the builder took a kind's mesh from whichever node happened to
+come first, which is the same thing only by luck: on this level `Elevator Chains` has 1280
+instances and one master, and `Floor`'s 52 nodes are two different shapes with no master at all.
+
+MEASURED ON THE LEVEL (Lost_Mine_Of_Tom'Aud.glb: 1524 nodes, 1523 with a mesh, 37 kinds):
+
+    Elevator Chains       1281 nodes (1280 instances + the master)   <- LIB_Elevator Chains
+    Elevator Shaft          67 nodes                                 <- LIB_Elevator Shaft
+    Topside Floor Full      65 nodes                                 <- LIB_Topside Floor Full
+    Floor Full Triangle      7 nodes                                 <- LIB_Floor Full Triangle
+    Floor                   52 nodes, 2 shapes, NO master            <- its first node (flagged)
+
+WHAT THE TOOLS DO NOW
+
+  * base_name - in level_from_glb, and used by every tool that groups nodes - strips a leading
+    `LIB_`, so a master and its instances are ONE kind under the plain name: `LIB_Floor Half` plus
+    `Floor Half` is one unit called `Floor Half`.  Matched case-insensitively, since the prefix is a
+    convention rather than a spelling;
+  * build_own_units.py takes that kind's mesh from the `LIB_` node when there is one, and says
+    which node fed the unit (`mesh from LIB_Floor Half  (the LIB_ master)`).  A kind with several
+    LIB_ nodes is reported and the first supplies the mesh;
+  * report_scene_bases.py prints the source per kind, and when other nodes of the kind are a
+    DIFFERENT SIZE from it it says how many - that is the case that renders as the master in game,
+    and it is worth catching before a build rather than after;
+  * the copy of base_name that lived in build_own_units.py is GONE: it imports level_from_glb's.
+    The two were duplicated once and drifted apart (9H.40); one rule in one place is what stops that
+    recurring, and this is exactly the kind of change that would have drifted.
+
+WHAT IT DOES NOT DO.  It cannot give a kind a master it does not have: `Floor` has no `LIB_Floor`
+and mixes two shapes, so it still renders as its first node - which the report flags.  A kind whose
+instances differ in SIZE from their master renders as the master, and the report counts them;
+instances that differ only in triangulation are the same shape and stay silent, which is why the
+`Elevator Shaft` copies with 192 and 256 vertices are not a problem (one size, 2 value(s)).

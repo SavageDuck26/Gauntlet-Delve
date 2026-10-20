@@ -90,7 +90,7 @@ def main() -> int:
         verts, size = mesh_stats(js, node)
         groups.setdefault((False, base_name(name)), []).append(
             (verts, size, tuple(round(v, 3) for v in node.get('translation', [0, 0, 0])),
-             'rotation' in node))
+             'rotation' in node, name))
 
     print('%s: %d node(s), %d with a mesh%s'
           % (a.glb.name, len(js.get('nodes', [])), len(js.get('nodes', [])) - len(no_mesh),
@@ -110,6 +110,16 @@ def main() -> int:
         verts = sorted({v[0] for v in items})
         sizes = {v[1] for v in items}
         rot = sum(1 for v in items if v[3])
+        # WHICH NODE FEEDS THE UNIT, and whether the rest of the kind matches it.  The author's
+        # `LIB_` master does the feeding when the kind has one (FINDINGS 9H.43); instances that are
+        # a DIFFERENT SHAPE from their master are exactly what this column exists to catch, because
+        # they will render as the master in game.
+        masters = [v for v in items if v[4][:4].upper() == 'LIB_']
+        source = masters[0] if masters else items[0]
+        odd = [v for v in items if v[1] != source[1]]
+        from_what = '  [mesh from %s%s]' % (source[4], ', the LIB_ master' if masters else '')
+        if odd:
+            from_what += '  <-- %d node(s) have a DIFFERENT SHAPE' % len(odd)
         if base in own:
             what, status = 'own unit -> %s' % L.OWN_UNITS[base], 'own'
         elif L.resolve(base, by_base):
@@ -128,7 +138,7 @@ def main() -> int:
               % (status, base, len(items),
                  '%d value(s): %s' % (len(verts), ','.join(str(v) for v in verts[:4])),
                  '%d size(s)%s' % (len(sizes), '  <-- different shapes!' if len(sizes) > 1 else ''),
-                 rot, what))
+                 rot, what + from_what))
     print()
     print('%d node(s) would be placed, in %d kind(s)' % (placed, len(groups)))
     if clashes:

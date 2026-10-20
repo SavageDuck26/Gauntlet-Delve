@@ -62,10 +62,13 @@ sys.path.insert(0, str(HERE))
 from gltf_to_unit import encode_unit                       # noqa: E402
 from glb_to_template_unit import (read_u32, splice_into_template,   # noqa: E402
                                   unit_mesh_end, UNIT_SIGNATURE)
-# The SAME name filter the level converter uses (level_from_glb.IGNORE_NAME_SUBSTRINGS /
-# ignored_node): a node the author marked as scratch must not be placed AND must not become one
-# of our units, or the package would ship a unit nothing references.
-from level_from_glb import IGNORE_NAME_SUBSTRINGS, ignored_node     # noqa: E402
+# The SAME rules the level converter uses, IMPORTED rather than copied: the name filter
+# (IGNORE_NAME_SUBSTRINGS / ignored_node), so a node the author marked as scratch is neither placed
+# nor turned into a unit, and base_name, because these two tools disagreeing about what a node is
+# called is exactly how a unit gets built under one name and resolved under another (9H.40).  That
+# function also carries the author's LIB_ master convention now (9H.43).
+from level_from_glb import (IGNORE_NAME_SUBSTRINGS, base_name,       # noqa: E402
+                            ignored_node)
 
 # The rotation about X, in degrees, that maps the export's mesh up onto the engine's +Z - i.e.
 # exactly the inverse of the level tool's `deg_mesh` (level_from_glb.detect_mesh_up), which is
@@ -103,23 +106,11 @@ def accessor(js, bin0, index, kind):
     return out
 
 
-def base_name(name: str) -> str:
-    """`Floor.001`, `Stair#12`, `Floor.003#7` all reduce to the unit's base name.
-
-    ONLY A PURELY NUMERIC TAIL IS BLENDER'S DUPLICATE SUFFIX, and this is the same rule
-    level_from_glb.base_name applies - the two MUST agree, or the level resolves one base name
-    while the unit builder builds another.  They disagreed once: this one stripped any tail
-    STARTING with a digit, so the author's road pieces (`Spiral Road.002safdasdf`, `.003745sdgd`,
-    ...) collapsed into a single `Spiral Road` unit built from the first piece's mesh, and seven
-    different shapes would all have rendered as that one.
-    """
-    for sep in ('#', '.'):
-        if sep in name:
-            head, tail = name.split(sep, 1)
-            if sep == '.' and not tail.isdigit():
-                continue
-            name = head
-    return name.strip()
+# base_name LIVES IN level_from_glb NOW (imported above).  It was duplicated here once and the two
+# copies drifted: this one stripped any tail starting with a digit, so `Spiral Road.002safdasdf` and
+# its siblings collapsed into one unit built from the first piece's mesh (FINDINGS 9H.40).  That
+# function also carries the author's LIB_ master convention (9H.43) - one rule in one place, so the
+# level converter and this builder cannot disagree again.
 
 
 # PHYSICS BY NAME  (the author's request: `_walkable` / `_collision` in an object's name, and
@@ -480,7 +471,16 @@ def main():
         # and the engine's unit model is one material group per mesh block - so dropping the
         # later primitives drops geometry the author authored.  They are merged into the block
         # with the mesh's first material name.
-        src = js['meshes'][nodes[0]['mesh']]
+        # WHICH NODE SUPPLIES THE MESH.  The author's `LIB_` master when the kind has one (FINDINGS
+        # 9H.43): the other nodes are Blender instances of it, so normally their mesh data is the
+        # same - but when it is NOT (a stale copy, a one-off variant) the master is the shape the
+        # author means, and this is said out loud instead of the first node silently winning.
+        libs = [n for n in nodes if n.get('name', '')[:4].upper() == 'LIB_']
+        if len(libs) > 1:
+            print('%-16s    %d LIB_ node(s) for this kind (%s) - the first one supplies the mesh'
+                  % ('', len(libs), ', '.join(n.get('name', '') for n in libs[:4])))
+        src_node = libs[0] if libs else nodes[0]
+        src = js['meshes'][src_node['mesh']]
         pos, nrm, uv, idx = [], [], [], []
         prim_sizes = []
         for prim in src['primitives']:
@@ -536,6 +536,8 @@ def main():
               '(%d mesh block(s), %d primitive(s): %s)'
               % (base, unit_path, len(nodes), len(pos), len(idx) // 3, len(unit), written,
                  len(prim_sizes), ' '.join(prim_sizes)))
+        print('%-16s    mesh from %s%s'
+              % ('', src_node.get('name', ''), '  (the LIB_ master)' if libs else ''))
         csh = shifts.get(mapping[base])
         if csh is not None:
             print('%-16s    collider shift (%+.2f, %+.2f, %+.2f): the template\'s collider sits on'
