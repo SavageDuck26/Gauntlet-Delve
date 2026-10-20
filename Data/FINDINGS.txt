@@ -13277,3 +13277,24 @@ blob's bytes but left the count naming the actors it had just removed, so the lo
 for physics that was not there.  build_own_units.py now zeroes both fields, which makes the `none`
 role (9H.38's walk-through units) worth retesting in game: the crash was not the route being wrong,
 it was one unzeroed field.
+
+9H.38.1.2 RETESTED IN GAME: THE COUNT WAS NOT ENOUGH - SAME FAULT, SAME INSTRUCTION
+
+The `none = strip:` build (all three roles' physics removed but the trailer count AND size zeroed)
+went into the game on 2026-10-20 09:35 and crashed on package load with:
+
+    exception 0xC0000005 at 00402e4c   (RVA 0x2E4C)
+    access    write at 00000004        (RVA 0x4)
+
+0x402e4c is FUN_00402e10 + 0x3C - the SAME instruction as 9H.38.1, to the byte.  That function is
+`resize(container, n)` and the faulting write goes through `container->data` (target address 4: a
+NULL-ish data pointer while the count is non-zero), so the container is still being built from
+something the strip left inconsistent.  The trailer is more than its 16-byte header: after the blob
+come the data table and the 32-byte footer, and every mesh block carries its own shape list
+([shape_count][shapes x 16]), which pairs with the physics actors.  Removing the actors while leaving
+those in place is the obvious candidate for a loader that still expects them.
+
+CONCLUSION: `strip:` needs the WHOLE trailer consistent, which needs the trailer's parse read - the
+same work the collider writer needs (9H.45).  One effort, two payoffs.  Bisect step B
+(`none -> lights/light`, a shipped unit with 0 B of physics) needs no byte surgery at all and is the
+fallback if the parse takes too long, at the cost of the material swatch (9H.19).
