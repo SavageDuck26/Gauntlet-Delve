@@ -17,24 +17,20 @@ import struct
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bundle_tools import decompress_bundle
 
-# Known resource types from reverse engineering
-RESOURCE_TYPES = {
-    0xcd4238c6a0c69e32: "texture",
-    0x0d972bab10b40fd3: "lua",
-    0xe3f0baa21e4d6d4c: "unit",
-    0x2a690fd348fe9ac5: "material",
-    0xad9c6d9ed1e5e77a: "state_machine",
-    0x169de9566953d264: "physics",
-    0x786f65c00a816b19: "shader_library_group",
-    0x48c37614eb2b40fa: "strings",
-    0x27862fe24795319c: "network_config",
-    0x3b1fa9e8f6bac374: "package",
-    0x9efe0a916aae7880: "shading_environment_mapping",
-    0xeac0b497876adedf: "shading_environment",
-    0x70e7720eb5e04065: "render_config",
-    0x1e688f716949e4b1: "particles",
-    0x0d8ab026a70d5a59: "entity",
-}
+# Resource type hashes.
+#
+# The authoritative list of type NAMES is in list_game_bundles.py - taken verbatim from
+# the engine's null-separated type-name string table inside binaries/gauntlet.exe - and
+# a type's hash is murmur64A(name, seed=0).  So DERIVE it instead of hardcoding it.
+# This used to be a hardcoded table built from earlier guesses, and it was wrong for 14
+# of its 15 entries: it called 0x2a690fd348fe9ac5 "material" when that is "level", and
+# "unit", "package", "shading_environment", "strings", "render_config" and
+# "state_machine" were wrong too.  Re-derive the whole table in one line:
+#     python3 -c "from list_game_bundles import TYPE_NAMES as T; from bundle_tools import
+#     murmur_hash64 as m; print({f'0x{m(t):016x}': t for t in T})"
+from list_game_bundles import TYPE_HASH_TO_NAME
+
+RESOURCE_TYPES = TYPE_HASH_TO_NAME
 
 def analyze_bundle(bundle_path):
     """Analyze a bundle and return info about its contents."""

@@ -19,13 +19,17 @@ Format notes (do NOT extrapolate -- see FINDINGS.txt sections 4-6):
                    followed by N x {u32 compressed_size, zlib bytes}.
                    Each block decompresses to a padded 64 KiB frame; the true
                    content length is `unzipped_size`.
-  * Unpacked body (corrected May 2026):
+  * Unpacked body (CORRECTED Oct 2026 - see FINDINGS 9H.12 and SCRIPTS.md
+    "Mod bundles: the container format".  This tool's earlier "(N+1) TOC with a
+    sentinel" description was WRONG, and so was "resource 0 has a 20-byte header"):
       [0x000] u32   N            resource count
-      [0x004] 84-byte preamble (opaque for natives, zero for customs)
-      [0x058] 172-byte zero padding
-      [0x104] (N+1) x 16-byte TOC entries {u64 type_hash, u64 name_hash}
-              entry[N] is a sentinel copy of entry[0]
-      resource 0 has a 20-byte header, resources 1..N-1 have 36-byte headers.
+      [0x004] 256 bytes of preamble (opaque for natives, zero for customs)
+      [0x104] TOC: EXACTLY N x 16-byte entries {u64 type_hash, u64 name_hash} -
+              NO sentinel
+      [0x104 + N*16] payloads back to back, NO alignment padding.  EVERY resource,
+              resource 0 included, carries the same 36-byte header
+              {u64 type, u64 name, u32 flags, u64 stream_size, u32 data_size,
+              u32 unknown} followed by data_size bytes
 
 Usage:
     python list_game_bundles.py                      # everything, auto path
@@ -180,8 +184,10 @@ def parse_toc(data: bytes):
     """
     Return (resource_count, toc) where toc is a list of (type_hash, name_hash).
 
-    The on-disk TOC holds N+1 entries; entry[N] is a sentinel copy of entry[0].
-    We return only the N real entries (0..N-1).
+    The on-disk TOC holds exactly N entries at 0x104, with no sentinel.  An (N+1)th
+    "sentinel" entry, and a special 20-byte header for resource 0, are the mistakes
+    that made a bundle the engine cannot read look structurally fine - see FINDINGS
+    9H.12 and SCRIPTS.md "Mod bundles".
     """
     if len(data) < 4:
         raise ValueError("no resource count")
@@ -199,12 +205,11 @@ def parse_resources(data: bytes, toc):
     """
     Locate every resource in the bundle body and report its on-disk footprint.
 
-    Layout (corrected May 2026, verified against native bundles):
-      * resource 0 carries a 20-byte header {u32 flags, u64 zeros,
-        u32 hdr_size, u32 stream_sz} starting at toc_end (no type/name).
-      * every other resource carries the full 36-byte header
-        {u64 type, u64 name, u32 flags, u64 zeros, u32 hdr_size, u32 stream_sz}
-        followed by its body. `hdr_size` is NOT always the body length:
+    Layout (corrected Oct 2026, verified against native bundles - FINDINGS 9H.12):
+      * EVERY resource, resource 0 included, carries the same 36-byte header
+        {u64 type, u64 name, u32 flags, u64 stream_size, u32 data_size, u32 unknown}
+        at toc_end = 0x104 + N*16, followed by its body. `hdr_size` is NOT always the
+        body length:
         banked/streamed resources (e.g. timpani_bank) embed an internal
         sub-stream table, so the real footprint is only known from the gap to
         the next header. We therefore walk forward, matching each TOC entry's
@@ -217,20 +222,28 @@ def parse_resources(data: bytes, toc):
       * end_offset  : byte position just past the final resource body
       * scan_complete: True if every TOC entry's header was found in order
     """
-    toc_end = 0x104 + (len(toc) + 1) * 16
+    toc_end = 0x104 + len(toc) * 16
     entries = []
     scan_complete = True
 
-    if not toc or toc_end + 20 > len(data):
+    if not toc or toc_end + 36 > len(data):
         return entries, toc_end, False
 
-    # ---- resource 0 (reduced header, at toc_end) -------------------------
-    flags, _zeros, hdr_size, stream_sz = struct.unpack_from("<IQII", data, toc_end)
+    # ---- resource 0: the same 36-byte header as every other resource -----
+    # The fields are read at +16 for the same reason the loop below reads them there
+    # (the first 16 bytes are type/name, which the TOC already gave us), so entry 0 is
+    # shaped exactly like its siblings.  Every offset and value this function returns
+    # is byte-for-byte what the previous arithmetic produced: the old code computed
+    # toc_end as 0x104 + (N+1)*16 and then added its "20-byte" header, i.e. it read at
+    # 0x104 + N*16 + 16 and stopped at 0x104 + N*16 + 36 - which IS this header's +16
+    # and its end.  header_offset is the one improvement: it now points at the real
+    # start of the 36-byte header instead of 16 bytes into it.
+    flags, _stream_size, hdr_size, stream_sz = struct.unpack_from("<IQII", data, toc_end + 16)
     entries.append({
         "index": 0, "header_offset": toc_end,
         "type_hash": toc[0][0], "name_hash": toc[0][1],
         "flags": flags, "hdr_size": hdr_size, "stream_size": stream_sz,
-        "body_start": toc_end + 20, "body_size": None,
+        "body_start": toc_end + 36, "body_size": None,
     })
     prev = entries[0]
     search = prev["body_start"]

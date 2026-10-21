@@ -126,7 +126,7 @@ TYPE_HASHES: Dict[str, int] = {
     "mesh":             0xF7505491A64F4B44,
     "animation":        0x6AA91AA3C4D9E90F,
     "shader":           0x7FFD67AEB2A75069,
-    "level":            0xB7893ADF7567506A,
+    "level":            0x2A690FD348FE9AC5,
     "physics":          0x82645835E6B73232,
     "config":           0x2B02B3A4E0E594F5,
     "render_config":    0x27862FE24795319C,
@@ -592,38 +592,40 @@ def _build_package_resource(non_pkg_resources: List[Resource],
     """
     Build the .package resource blob listing all non-package resources.
 
-    CORRECTED FORMAT (28-byte fixed entries - verified against native bundles):
+    FORMAT (verified against native bundles via analyze_package_dependencies.py):
       uint32  entry_count
-      per entry (28 bytes each):
-        uint64  type_hash     [0:8]
-        uint64  name_hash     [8:16]
-        uint32  c1            [16:20] = ALWAYS 2 (native requirement)
-        uint32  c2            [20:24] = 0 (safe for custom bundles)
-        uint32  name_hi32     [24:28] = upper 32 bits of name_hash
-      uint8   trailer = 0x01
+      per entry:
+        uint64  type_hash        [0:8]
+        uint64  name_hash        [8:16]
+        uint32  dependencyCount  [16:20]
+        uint32  deps[dependencyCount]
 
-    PRIOR 20-byte variable-size format was WRONG and caused buffer overruns
-    when the engine read entries past the end of the undersized payload.
-    (See FINDINGS.txt Section 9B.1 for the byte-level confirmation.)
-
-    Dependencies are NOT emitted inline - they are expressed implicitly through
-    the resource ordering and the engine's built-in dependency resolution.
-    Material->texture and unit->material relationships are resolved at runtime
-    by the engine's resource manager scanning name hashes.
+    Shipped entries all use dependencyCount 2.  An earlier version of this builder
+    emitted a fixed "2, 0, name_hi32" triple instead, which is the same size but the
+    wrong structure, so the engine read a dependency on 0x00000000 and the package's
+    load stalled forever.  We now emit the real count, and 0 dependencies for the
+    resources whose dependencies we cannot determine yet, rather than a broken one.
     """
     count = len(non_pkg_resources)
     body = struct.pack('<I', count)  # entry_count header
 
     for r in non_pkg_resources:
-        name_hi32 = (r.name_hash >> 32) & 0xFFFFFFFF
-        body += struct.pack(
-            '<QQIII',
-            r.type_hash,   # uint64: resource type hash
-            r.name_hash,   # uint64: resource name hash
-            2,             # uint32: c1 = 2 (REQUIRED - native bundles ALWAYS use 2)
-            0,             # uint32: c2 = 0 (safe for custom bundles)
-            name_hi32,     # uint32: upper 32 bits of name_hash
-        )
+        # Entry: {u64 type, u64 name, u32 dependencyCount} followed by dependencyCount
+        # u32 dependency hashes.  This used to emit a hardcoded "c1 = 2" then "c2 = 0"
+        # and "name_hi32", which has exactly the same 28-byte size but is NOT the same
+        # structure: the engine reads those three u32s as depCount, dep[0], dep[1].
+        # So it saw depCount=2 with dep[0] = 0x00000000 - a dependency on a resource
+        # hash that does not exist - and dep[1] = the name's high 32 bits.  Waiting for
+        # a dependency that can never arrive is what makes the package's load never
+        # complete, ResourcePackage.has_loaded() stay false forever, and the game hang
+        # on Game:are_all_packages_online(_G.COMMON_GAME_PACKAGES).
+        #
+        # Measured: shipped packages always declare depCount 2, with dep[1] equal to the
+        # entry name's high 32 bits and dep[0] a real dependency hash (analysis via
+        # analyze_package_dependencies.py over 13 packages / 157 entries: no dep ever
+        # equals the entry's low 32 bits; every entry has a dep equal to its high 32).
+        # A leaf resource needs no dependencies, so emit none rather than a broken one.
+        body += struct.pack('<QQI', r.type_hash, r.name_hash, 0)
 
     body += b'\x01'  # trailer byte (always 0x01 in native bundles)
     return body
@@ -683,53 +685,35 @@ def _build_bundle(all_resources: List[Resource]) -> bytes:
     #    (84 bytes preamble + 172 bytes = 256 bytes from offset 4)
     parts.append(b'\x00' * 172)
 
-    # 4. TOC - (N+1) x 16-byte entries with sentinel
+    # 4. TOC - exactly N x 16-byte entries, NO sentinel.
+    #    The engine's table size is resource_count*16 and the payloads begin immediately
+    #    after it (analyze_package_dependencies.py: data_offset = entry_table_offset +
+    #    resource_count*16).  An (N+1)th entry shifts every payload by 16 bytes and the
+    #    engine then reads resource headers out of the first resource's blob.
     for r in sorted_res:
         parts.append(struct.pack('<QQ', r.type_hash, r.name_hash))
-    # Sentinel: entry[N] = exact copy of entry[0]
-    parts.append(struct.pack('<QQ', sorted_res[0].type_hash, sorted_res[0].name_hash))
 
-    # 5. Resource-0 (package) - 20-byte header (NO type/name fields)
-    r0 = sorted_res[0]
-    sz0 = len(r0.data)
-    parts.append(struct.pack('<IQII',
-        1,     # uint32: flags
-        0,     # uint64: zeros
-        sz0,   # uint32: data_sz
-        0      # uint32: stream_sz
-    ))
-    parts.append(r0.data)
-
-    # 6. Resources 1..N-1 - each with 36-byte header + data
-    # CRITICAL: each resource must start on a 4-byte boundary.
-    # Pad to 4-byte alignment after resource-0 data before writing
-    # the first 36-byte resource header, and again after each
-    # resource's data before the next header.
-    for r in sorted_res[1:]:
-        # Align to 4 bytes before writing this resource
-        current = b''.join(parts)
-        misalign = len(current) % 4
-        if misalign:
-            parts.append(b'\x00' * (4 - misalign))
-
-        sz = len(r.data)
+    # 5. Every resource, INCLUDING the first, carries the same 36-byte header
+    #    {u64 type, u64 name, u32 flags, u64 stream_size, u32 data_size, u32 unknown},
+    #    and payloads are packed TIGHT - the engine advances to data_start + data_size
+    #    with no alignment padding.
+    #    Previously the first resource got a 20-byte header with no type/name and every
+    #    resource was padded to a 4-byte boundary.  The shift from those two mistakes
+    #    meant the engine could not read a single resource out of the bundle, so the
+    #    package's load never completed: ResourcePackage.has_loaded() stayed false
+    #    forever and the game hung on Game:are_all_packages_online().
+    for r in sorted_res:
         parts.append(struct.pack('<QQIQII',
-            r.type_hash, r.name_hash,
-            1,   # flags
-            0,   # stream_size (uint64)
-            sz,  # data_size
-            0    # unknown
+            r.type_hash,
+            r.name_hash,
+            1,              # flags
+            0,              # stream_size (uint64)
+            len(r.data),    # data_size
+            0               # unknown
         ))
         parts.append(r.data)
 
-    raw = b''.join(parts)
-
-    # 7. Final 4-byte alignment (safety)
-    pad = (4 - len(raw) % 4) % 4
-    if pad:
-        raw += b'\x00' * pad
-
-    return raw
+    return b''.join(parts)
 
 
 def _compress_bundle(unpacked: bytes) -> bytes:
@@ -864,7 +848,17 @@ def build_mod_bundle(mod_json_path: str, output_dir: Optional[str] = None,
                 print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "unit":
-                data = _encode_unit(rs["source"], res_path, str(mod_dir))
+                if rs.get("raw") or str(rs.get("source", "")).lower().endswith(".unit"):
+                    # A pre-built .unit ships AS-IS.  The working recipe
+                    # (CUSTOM_ASSET_LOADING_FINDINGS 10.2) splices your mesh into a native
+                    # unit with glb_to_template_unit.py, which preserves that template's
+                    # trailing sections verbatim - and a unit missing them loads (bring-in
+                    # is a CPU copy) but CRASHES at the engine's later resolve/patch stage.
+                    # Re-encoding a .unit here would drop exactly those sections, so
+                    # anything already in .unit form is passed straight through.
+                    data = _encode_raw(rs["source"], str(mod_dir))
+                else:
+                    data = _encode_unit(rs["source"], res_path, str(mod_dir))
                 print(f"              -> {len(data):,} bytes  (hash 0x{name_hash:016X})")
 
             elif res_type == "material":
