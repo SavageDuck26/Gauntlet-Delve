@@ -119,6 +119,8 @@ scripts/output_icons/
 scripts/output_models/
 scripts/small_test/
 scripts/CONTEXT/
+scripts/ghidra
+scripts/arena_mod
 
 # ---- Per-mod build output ------------------------------------------------
 scripts/crane_mod/output/
@@ -126,6 +128,26 @@ scripts/test_mod/output/
 scripts/example_mod/output/
 scripts/**/build/
 scripts/**/*.stream
+
+# ---- Per-mod content -------------------------------------------------------
+# A mod directory ships its TOOLS; the content they build is regenerated.  A .unit
+# carries a native template's trailer spliced into it, a .level is a donor level with
+# only its entity table replaced, and a .glb is the authoring input - all game-derived
+# and rebuilt by one command.  Nothing of that kind has ever been published here: no
+# .level, .unit, .glb or mod.json is tracked, and a mod definition describes files that
+# exist only after a build.  So keep the *.py files in these directories (deliberately
+# NOT matched below) and ignore everything else.
+scripts/plane_mod/*
+!scripts/plane_mod/*.py
+scripts/level_probe_mod/
+
+# ---- Bundle build scratch -------------------------------------------------
+# A bundle belongs in the loader's mods/bundles/<Name>/.  These are the same file set
+# built with scripts/ as the working directory; the body is 116 KB of game-derived
+# resources and every build rewrites it.
+scripts/5aa67cb8548c3281
+scripts/bundle.ini
+scripts/manifest.json
 
 # ---- Scratch -------------------------------------------------------------
 *.tmp.*
@@ -166,5 +188,8 @@ hashcracker/REMOTE-GPU.md
 game-source/
 # locally-cached liveness probe results
 scripts/.liveness_cache/
+# level_from_glb.py's kind -> material table: a cache, not authored data - the tool
+# rebuilds it by rescanning the shipped levels whenever the file is missing
+Data/kind_materials.json
 # reference images extracted from the Stingray docs
 Data/Stingray_Documentation/
