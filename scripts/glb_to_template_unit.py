@@ -14,9 +14,57 @@ from gltf_to_unit import encode_unit, read_glb  # type: ignore
 
 DEFAULT_MATERIAL_NAME = 'm_ham'
 
+# Every .unit body starts with this signature and then the MESH COUNT.  The count is not
+# decoration: a native unit's trailing sections (collision actors, flow data, the 32-byte footer
+# whose material hash is the binding) are serialized FOR ITS OWN MESH LIST, so the trailer can
+# only be reused by a body that declares the same number of mesh blocks.  Splicing a 1-mesh body
+# into a template that has 2 or more meshes makes the loader build a mesh list whose size is
+# non-zero while its array stays NULL - and the next pass dereferences it (FINDINGS 9H.31:
+# `access read at 00000008`, RVA 0x00270259).
+UNIT_SIGNATURE = 0x00010090
+
 
 def read_u32(data: bytes, offset: int) -> int:
     return struct.unpack_from('<I', data, offset)[0]
+
+
+def splice_into_template(generated: bytes, template: bytes,
+                         allow_duplicate: bool = True) -> tuple[bytes, int, int]:
+    """Bolt a generated mesh section onto a native template's trailer, mesh counts kept equal.
+
+    Returns (unit_bytes, template_mesh_count, mesh_blocks_written).  The generated body's single
+    mesh block is replicated to the template's mesh count when they differ, because a mesh block
+    is self-contained (its own vertex/element/index/shape/material tables), so N identical copies
+    parse exactly like one - and they are what the trailer was serialized against.
+    """
+    if read_u32(generated, 0) != UNIT_SIGNATURE:
+        raise ValueError('generated body is not a unit')
+    if read_u32(template, 0) != UNIT_SIGNATURE:
+        raise ValueError('template is not a unit')
+
+    tpl_meshes = read_u32(template, 4)
+    if not 1 <= tpl_meshes <= 64:
+        raise ValueError('template declares an implausible mesh count: %d' % tpl_meshes)
+
+    trailer = template[unit_mesh_end(template):]
+    if not trailer:
+        raise ValueError('template has no trailer to preserve')
+
+    gen_meshes = read_u32(generated, 4)
+    gen_end = unit_mesh_end(generated)
+
+    if gen_meshes == tpl_meshes:
+        return generated[:gen_end] + trailer, tpl_meshes, gen_meshes
+    if not allow_duplicate:
+        raise ValueError('template has %d mesh(es) but the generated body has %d - pick a template '
+                         'with %d (or allow duplication)' % (tpl_meshes, gen_meshes, gen_meshes))
+    if gen_meshes != 1:
+        raise ValueError('cannot reconcile %d generated mesh(es) with a %d-mesh template'
+                         % (gen_meshes, tpl_meshes))
+
+    block = generated[8:gen_end]                       # everything after sig + mesh count
+    body = struct.pack('<II', UNIT_SIGNATURE, tpl_meshes) + block * tpl_meshes
+    return body + trailer, tpl_meshes, tpl_meshes
 
 
 def normalize(vec: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -192,9 +240,7 @@ def glb_to_template_unit(
 
     mesh = _build_combined_single_mesh(glb_path, scale, material_name)
     generated = encode_unit([mesh])
-    generated_mesh_end = unit_mesh_end(generated)
-
-    out = generated[:generated_mesh_end] + template_trailer
+    out, tpl_meshes, written = splice_into_template(generated, template_data)
     output_path.write_bytes(out)
 
     mn = mesh['positions'].min(axis=0)
@@ -202,6 +248,7 @@ def glb_to_template_unit(
     size = mx - mn
     print(f'mesh: verts={len(mesh["positions"]):,} tris={len(mesh["indices"]) // 3:,}')
     print(f'bbox size: x={size[0]:.4f} y={size[1]:.4f} z={size[2]:.4f}')
+    print(f'meshes: template declares {tpl_meshes}, body carries {written}')
 
 
 if __name__ == '__main__':

@@ -155,7 +155,8 @@ def main() -> int:
                  '%d size(s)%s' % (len(sizes), '  <-- different shapes!' if len(sizes) > 1 else ''),
                  rot, what + from_what))
     print()
-    print('%d node(s) would be placed, in %d kind(s)' % (placed, len(groups)))
+    kinds = sum(1 for ignored, _b in groups if not ignored)
+    print('%d node(s) would be placed, in %d kind(s)' % (placed, kinds))
     if clashes:
         print('WARNING: %d base name(s) cover more than one shape.  One name is ONE unit, built from'
               % clashes)
