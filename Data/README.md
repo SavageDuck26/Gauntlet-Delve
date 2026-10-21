@@ -2,7 +2,8 @@
 
 Everything the reverse-engineering produced. None of it is derivable from the repo
 alone - the databases, the overlays and the catalogue are built from the game - so
-it is all versioned here.
+it is all versioned here, apart from the two local-only entries at the end of this
+file (a regenerable cache and a set of reference images).
 
 ## Sources (canonical)
 
@@ -19,6 +20,7 @@ it is all versioned here.
 | `bundle_name_overlay.json` | recovered *bundle* names |
 | `bundle_manifest/` | the resource catalogue: `00_file_tree` ... `12_names_by_bundle` |
 | `runtime_units/` | per-level engine capture: one JSON per level - what the running engine reports for each unit's position and rotation. 27 shipped levels, 67,682 units, plus `modules_d01_hub_room_custom_duckomp_room.json` - our own arena, captured after the 9H.36 fix, which reports the authored quaternions exactly. This is what settled the `.level` rotation decode (FINDINGS 9H.6, corrected in 9H.36) and what the manifest is for |
+| `unused_quilt_pieces.txt` | the 231 quilt pieces no shipped layout names, split into **usable if named** and **malformed** - the working list behind the quilt findings (FINDINGS 9H.8/9H.9) |
 
 ## Documents
 
@@ -28,6 +30,13 @@ it is all versioned here.
 | `LEVEL_RECORD_LAYOUT.md` | **the authoritative `.level` unit-record field map** - the 72-byte record, which fields belong to which unit, the engine addresses behind it, how to check a level against the engine, and the traps (FINDINGS 9H.36) |
 | `CUSTOM_ASSET_LOADING_FINDINGS.md` | the in-game-proven custom unit / material / texture recipe |
 | `DEP/` | archived, superseded modding docs - see [`DEP/README.md`](DEP/README.md) |
+
+## Local-only (on disk, never published)
+
+| file | what it holds |
+| --- | --- |
+| `kind_materials.json` | `scripts/level_from_glb.py`'s `kind -> the material the shipped levels use for it` table, which is how each placement gets a material the engine can actually resolve for that kind. It is a **cache**, not authored data: the tool rebuilds it by rescanning the exported levels whenever the file is missing, which is why it is gitignored rather than versioned. |
+| `Stingray_Documentation/` | reference images extracted from the Stingray docs (`.gitignore` and `.git/info/exclude`). |
 
 ## Capturing `runtime_units/` (needs a game run, not a script)
 

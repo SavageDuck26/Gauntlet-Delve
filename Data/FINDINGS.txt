@@ -278,6 +278,9 @@ STATUS: FULL ASSET EXTRACTION PIPELINE COMPLETE + CUSTOM PACKAGE INJECTION VERIF
   - **NEW**: render_config COBJ binary format fully decoded + byte-perfect encoder
   - **NEW**: C++ dinput8.dll mod loader architecture fully documented
   - **CORRECTED**: Unpacked bundle format (TOC has N+1 entries, 20-byte res-0 header)
+    **[RE-CORRECTED Oct 2026: WRONG - the TOC is exactly N entries, there is no sentinel, and
+every resource including the first carries the same 36-byte header.  Proven in game; see 9H.12
+and SCRIPTS.md "Mod bundles".]**
   - **CORRECTED July 2026**: Per-resource 4-byte alignment required in bundle body. Package resource is 33 bytes -> 1-byte misalignment of subsequent res-1 headers -> corrupted type/name/size fields. Fixed in mod_bundle_builder.py.
     **[RE-CORRECTED July 5, 2026: WRONG - native bundles pack resources back-to-back with NO alignment padding; inserting padding was itself a bug. See #16.4. The working bundles use consecutive packing via replace_textures_v4.rebuild_simple_bundle.]**
   - **NEW July 2026**: bundle_database.data fully decoded: 189-entry fixed allocation per bundle, alphabetically sorted. 77 native stems. Database extractor validates structure.
@@ -436,12 +439,17 @@ All offsets are confirmed by byte-level comparison against native game bundles.
 
 [0x058:0x104]  172-byte PADDING (zeros)
 ------------------------------------------------------------
-[0x104:]       TOC - (N+1) x 16-byte entries
+[0x104:]       TOC - (N+1) x 16-byte entries          *** WRONG - SUPERSEDED, see 9H.12 ***
     Each entry: {uint64 type_hash, uint64 name_hash}
-    IMPORTANT: entry[N] is a SENTINEL = exact copy of entry[0]
+    IMPORTANT: entry[N] is a SENTINEL = exact copy of entry[0]     *** WRONG ***
                (the engine relies on this sentinel; omitting it corrupts the file)
+    *** The TOC is EXACTLY N entries and there is NO sentinel: an (N+1)th entry shifts
+        every payload by 16 bytes and the engine then reads resource headers out of the
+        first resource's blob, which is the silent boot hang of 9H.12.  Corrected layout:
+        9H.12, and SCRIPTS.md "Mod bundles: the container format". ***
 ------------------------------------------------------------
-[toc_end:]     RESOURCE-0 METADATA - 20 bytes  <- DIFFERENT from resources 1..N-1!
+[toc_end:]     RESOURCE-0 METADATA - 20 bytes  <- WRONG - SEE 9H.12: resource 0 has the
+               SAME 36-byte header as every other resource (no reduced header at all)
     uint32  flags       (normally 1)
     uint64  zeros       (always 0)
     uint32  data_sz     (byte count of resource-0 data that follows)
@@ -467,10 +475,16 @@ KEY DIFFERENCES FROM PRIOR DESCRIPTION (CORRECTIONS):
 
   WRONG (old): "Entry table has N entries"
   RIGHT:       Entry table has N+1 entries - entry[N] is a sentinel copy of entry[0]
+               *** BOTH LINES SUPERSEDED Oct 2026: the "WRONG (old)" line was right.
+                   The entry table is exactly N x 16 bytes; there is no sentinel.
+                   Proven in game, see 9H.12. ***
 
   WRONG (old): "All resources have 36-byte headers"
   RIGHT:       Resource-0 has a 20-byte header (no type/name, just flags/zeros/sizes)
                Resources 1..N-1 have the full 36-byte header
+               *** BOTH LINES SUPERSEDED Oct 2026: the "WRONG (old)" line was right.
+                   Resource 0 has no reduced header - all resources carry the same
+                   36-byte header.  Proven in game, see 9H.12. ***
 
   WRONG (old): "stream_size field is stream FILE size for whole bundle"
   RIGHT:       stream_sz in the per-resource header is specific to that resource's
@@ -1176,7 +1190,11 @@ replaced here for clarity:
 WRONG OLD FORMAT (discarded):
   "name hash table at 0x04, entry table at 0x104, 36-byte headers for all resources"
 
-CORRECT FORMAT (confirmed May 2026):
+CORRECT FORMAT (confirmed May 2026):          *** SUPERSEDED Oct 2026 - see 9H.12 ***
+  WRONG in three places below: the TOC length, the sentinel, and res-0's header.  The real
+  layout is TOC = exactly N x 16 bytes at 0x104 with no sentinel, and EVERY resource -
+  res-0 included - carrying the same 36-byte header, payloads packed back to back with no
+  alignment padding.  The numbers below are kept only as history.
   See Section 4 for the full layout. Summary:
   - [0x000] uint32 N
   - [0x004..0x104] 252-byte preamble + padding (zeros for custom bundles)

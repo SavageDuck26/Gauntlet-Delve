@@ -2,10 +2,27 @@
 
 The Python RE toolchain. Files are imported as modules by their neighbours, so
 they stay in a flat directory (the 7 files marked **lib** are imported by
-others - don't move them without updating importers).
+others - don't move them without updating importers). `grep -rnE '^(from|import) <name>'
+scripts/` is the authority on who imports what: `list_game_bundles.py` and
+`bundle_tools.py` lead, with 16 and 15 importers.
 
-Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format document;
-sections 17-18 = current state) and [`../Data/DEP/`](../Data/DEP/).
+Two things sit beside the flat files:
+
+- `resource_tools/` - one module per resource type (`level_tools.py`, `unit_tools.py`,
+  `mesh_tools.py`, `material_tools.py`, ...). Six neighbour tools import this package, so
+  a resource format belongs in a module here rather than in a new top-level script.
+- `plane_mod/`, `level_probe_mod/` - mod trees and the tool that builds one
+  (`plane_mod/make_room_levels.py`). Their content (`.level`, `.unit`, `.glb`, `mod.json`)
+  is built, game-derived and gitignored; only the `.py` is versioned.
+
+**The other half of this index is [`../hashcracker/SCRIPTS.md`](../hashcracker/SCRIPTS.md)**
+- the cracker engine, its vocabularies and the sweeps that drive them. Neither file is
+complete on its own: this one covers the game-side toolchain, that one the name-recovery
+side, and a few tools (the reference hunts, the resource probes) appear in both.
+
+Read first: [`../Data/FINDINGS.txt`](../Data/FINDINGS.txt) (master format document; the
+live sections are **9H.\*** - units, levels, colliders, mod bundles - and **6x.\*** - name
+recovery, both still being added to) and [`../Data/DEP/`](../Data/DEP/).
 
 ## Name recovery (the pipeline that produced the overlays)
 
@@ -26,6 +43,14 @@ sections 17-18 = current state) and [`../Data/DEP/`](../Data/DEP/).
 | `extract_anim_refs.py` | Maps unresolved animation resources to their owning unit via `state_machine` bodies. |
 | `catalog_bundles.py`, `add_bundle_to_db.py`, `bundle_database_manager.py` | Bundle catalogue + `bundle_database.data` bookkeeping. |
 | `render_config_tools.py` | `render_config` resource handling. |
+| `crack_by_rule.py` | Guess names by **rule** rather than vocabulary: the grammar of a name is derived and then walked, instead of crossing mined words. |
+| `crack_siblings.py` | Crack unnamed resources by mutating the names of their **siblings** (same directory / same family). |
+| `crack_from_hints.py` | All ways to cut a word run into vocabulary words joined by underscores. |
+| `crack_from_referrers.py` | Name an unknown from its **referrers**, by swapping one token of the referrer's own name. |
+| `crack_units_by_body_strings.py` | Join unknown **units** to named ones by the material / mesh names inside their bodies. |
+| `crack_m_namespace.py` | The `m_` namespace, harvested from unit bodies, as candidate resource names (Stingray's material form). |
+| `mine_glb_names.py` | Names from the JSON chunk of a `.glb` - the export corpus as a name source. |
+| `hunt_loc_vocab.py` | Every plausible `snake_case` reading of a display string (the localization half of the vocabulary). |
 
 ## Cross-build hunting (deprecated and renamed content)
 
@@ -35,6 +60,9 @@ sections 17-18 = current state) and [`../Data/DEP/`](../Data/DEP/).
 | `hunt_build_diff.py` | Diffs one bundle between two snapshots and pairs resources whose **bytes are identical while their hashes differ** - a rename (341 moves 2015-01->2015-08). `--report-changed` also lists the opposite case: same name hash, different bytes, i.e. an asset that was reworked in place (4,298 between 2014-10-10 and 2015-08-11). |
 | `check_build_liveness.py` | **Was this name ever a live resource, and in which build?** Walks each snapshot's real entries and tests a name's hash against them, plus the shipped catalogue's status. |
 | `tools/apply_renames.py` (hashcracker) | Joins the two above: old name -> new name, and a token-translation pass over the old corpus. |
+| `hunt_ref_graph.py` | The reference graph between ***resolved*** resources (FINDINGS #49) - who points at whom, which is what makes a referrer-based guess possible at all. |
+| `hunt_texture_refs.py` | Prints `<referrer> -> [referenced names]` for resolved pairs, to learn the naming. Also indexed in [`../hashcracker/SCRIPTS.md`](../hashcracker/SCRIPTS.md) - it was written for texture recovery. |
+| `hunt_level_refs.py` | For an unnamed resource, the resolved names whose **body size** is closest to it - the level / quilt side of the referrer idea. |
 
 A harvest (`_names.txt`) is evidence of a *string*, never of a live resource, so it
 always needs `check_build_liveness.py` (or `hunt_old_names.py`) behind it. Keep a
@@ -157,6 +185,12 @@ hub it is 460/461 against 207/461.  The single hub miss is a file/capture disagr
 (record 330's `xyz.x` differs between our copy and the captured file), which is what
 `--max-bad` exists to acknowledge - never to widen.
 
+`check_rotation_encoding.py` and `check_rotation_rule.py` are the isolation pair behind it.
+The first checks the level record's ROTATION against the **code** and against the corpus
+(FINDINGS 9H.34); the second is the pre-9H.29 `to_engine_rotation`, whose branch negated
+only `xyz` and left `w` positive - kept as the counter-example, so a regression to it is a
+test failure rather than a silent 180-degree flip in the shipped levels.
+
 The engine side of that capture lives in the loader repo:
 `../GauntletModLoader/src/level_mining.cpp` and
 `../GauntletModLoader/mods/functions/LevelProbe/script_main.lua`.  Its call shapes
@@ -199,9 +233,18 @@ Every payload, **the first included**, carries the same 36-byte header
 `dataSize` bytes; the next header begins immediately at the end of that data.
 
 Resource 0 being special (a 20-byte header with no type/name) and a repeated (N+1)th TOC
-entry are both **wrong**.  They were believed for a long time and are still asserted by
-`bundle_inspect.py` and by the loader's `src/bundle_diagnostics.cpp`, which is exactly why
-a bundle the engine could not read was reported as having "no structural problems".
+entry are both **wrong**.  They were believed for a long time, and were asserted by
+`bundle_inspect.py`, by the loader's `src/bundle_diagnostics.cpp`, by `list_game_bundles.py`
+(its docstring and its `toc_end` arithmetic) and by the older blocks in FINDINGS 4 and 9B -
+which is exactly why a bundle the engine could not read was reported as having "no
+structural problems".
+
+`list_game_bundles.py` now implements the real layout and its output is unchanged by that
+correction - except `header_offset` for resource 0, which moved 16 bytes to the true start
+of the 36-byte header: the old arithmetic (`0x104 + (N+1)*16 + 20`) lands exactly where the
+real `N*16 + 36` does, which is the only reason the wrong model never corrupted the
+catalogue.  `bundle_inspect.py` and `bundle_diagnostics.cpp` still implement it and say so
+themselves; fixing them is outstanding work.
 
 The package resource blob (`type 0xAD9C6D9ED1E5E77A`) lists the bundle's resources:
 `uint32 entryCount`, then per entry `{u64 type, u64 name, u32 dependencyCount}` followed by
@@ -324,10 +367,37 @@ python3 probe_resource.py --name characters/mummy_priest/mummy_priest \
 
 ## Subdirectories
 
-`resource_tools/` - the 16-type resource read/write suite.  `phys_blob.py` owns a unit's PHYSICS
+`resource_tools/` - the per-type resource read/write suite.  It is a **package** (16 modules)
+because these are imported by their neighbours rather than run, so a new resource-format tool
+belongs in a module here rather than in a new top-level script (6 scripts import this package).
+
+| module | what it holds |
+| --- | --- |
+| `level_tools.py` | `Stingray .level resource decode/encode` - the sectioned container, entity table included. |
+| `unit_tools.py` | `Stingray .unit resource tools` - full Blender round-trip. |
+| `material_tools.py` | Encodes a material dict back to the binary blob. |
+| `texture_tools.py` | Converts every `.dds` / `.texture` in `src_dir` to PNG in `out_dir`. |
+| `strings_tools.py` | `Stingray .strings resource decode/encode.` |
+| `font_tools.py` | `Stingray .font resource decode/encode.` |
+| `package_tools.py` | `Stingray .package resource decode/encode.` |
+| `bones_tools.py` | Exports a skeleton as a simple JSON armature definition. |
+| `shader_tools.py` | `Stingray .shader resource decode` (read-only). |
+| `particles_tools.py` | `Stingray .particles resource decode` (partial). |
+| `animation_tools.py` | `Stingray .animation resource decode` (partial). |
+| `config_tools.py`, `lua_tools.py` | Round-trip checks for the two text-ish types (an extracted config sample, a trivial Lua program). |
+| `mesh_tools.py`, `physics_tools.py` | Record that `.mesh` and `.physics` are **NOT standalone types** in Gauntlet Slayer Edition. |
+| `__init__.py` | `Stingray/Bitsquid Resource Tools for Gauntlet`. |
+
+`phys_blob.py` owns a unit's PHYSICS
 TRAILER: `split_trailer()` finds the blob inside it, `describe()` dumps its quantised words, and
 `edit_blob()` rewrites the distance words (`scale`) or the shape word (`shape`) without changing a
 single byte of length - so the table and footer after it never move (FINDINGS 9H.46).
+
+`plane_mod/` and `level_probe_mod/` are **mod trees, not tool families**.  `plane_mod/make_room_levels.py`
+is the one tool among them: it takes a donor room and retargets or shrinks its placement records,
+leaving the entity table untouched.  Everything else in those directories is built content
+(`.level`, `.unit`, `.glb`, `mod.json`) and is gitignored, so read `plane_mod/README.md` before
+reusing any file in it.
 
 The findings and the catalogue no longer live here - they are in the repo's
 **`Data/`** tree: `Data/FINDINGS.txt`, `Data/DEP/`, `Data/*_overlay.json`,
@@ -373,7 +443,11 @@ which reads the master list to count the unreachable.
 
 ```bash
 python3 ../hashcracker/tools/merge_matches.py ..   # matches.tsv -> overlay
-python3 list_game_bundles.py                       # install + overlay -> 00_..05_
+# Check the score line here: the shipped game is 75 bundles / 20,000 rows.  Seeing 76 /
+# 20,040 means an installed mod bundle slipped in.  `--shipped-only` does NOT exclude it,
+# because the LOADER writes that bundle's own rows into bundle_database.data - so exclude
+# it by the 16-hex name of its file in contents/ (same id as mods/bundles/<Name>):
+python3 list_game_bundles.py --shipped-only --exclude-bundle <mod-bundle-id>  # -> 00_..05_
 python3 make_name_index.py                         # 04_csv + overlay -> 06_/07_ indexes
 python3 reachability_audit.py                      # named refs        -> 09_/10_
 python3 make_progress_report.py                    # everything        -> 08_progress.txt

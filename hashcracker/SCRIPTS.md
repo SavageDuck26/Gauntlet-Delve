@@ -4,6 +4,11 @@ Everything that drives the brute-forcer. **Workflow:** build targets ->
 build/flatten vocabularies -> generate candidates -> `hashcracker crack` ->
 merge hits.
 
+**The game-side toolchain is indexed separately in [`../scripts/SCRIPTS.md`](../scripts/SCRIPTS.md)**
+- the unit/level/collider tools, the bundle and catalogue tooling, and the exporters. A few
+tools (the reference hunts, the resource probes) are documented in both files, so read that
+one too before concluding a tool does not exist.
+
 ## Rust modes (the engine itself)
 
 | mode | purpose |
