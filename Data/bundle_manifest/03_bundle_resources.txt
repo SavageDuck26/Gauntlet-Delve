@@ -284,7 +284,7 @@ BUNDLE 0164ad48615ba9ed   (modules/d01_crypt/resources)
   276 animation                931e336d7646cc26   0430ab54a119fd8c        14056      14056 characters/boss_mummy/animations/chestburst_exit
   277 animation                931e336d7646cc26   058fa08678632469         4188       4188 characters/boss_mummy/animations/dormant
   278 animation                931e336d7646cc26   077732389f41a57f         1738       1738 characters/mummy_priest/animations/idle
-  279 animation                931e336d7646cc26   0b9858fc601db786         6996       6996 <unresolved>
+  279 animation                931e336d7646cc26   0b9858fc601db786         6996       6996 characters/boss_mummy/animations/turn_right_130
   280 animation                931e336d7646cc26   0e3bb65ce3e9aeba         3876       3876 characters/skeleton_warrior/animation/attack_shieldbash
   281 animation                931e336d7646cc26   11a330207442f13a         5908       5908 characters/skeleton_warrior/animation/death_right_02
   282 animation                931e336d7646cc26   11f82858442d6209         3112       3112 characters/boss_mummy/animations/chestburst_hit_offset_01
@@ -408,7 +408,7 @@ BUNDLE 0164ad48615ba9ed   (modules/d01_crypt/resources)
   400 animation                931e336d7646cc26   e094ac3e9e25d63d         4048       4048 characters/mummy_risen/animations/stagger_left_01
   401 animation                931e336d7646cc26   e2f2039dd43876fe         2532       2532 <unresolved>
   402 animation                931e336d7646cc26   e323533ece29ffeb         3636       3636 characters/necromancer/animations/spawn
-  403 animation                931e336d7646cc26   e3b929b47878ef1f         6370       6370 <unresolved>
+  403 animation                931e336d7646cc26   e3b929b47878ef1f         6370       6370 characters/boss_mummy/animations/turn_left_130
   404 animation                931e336d7646cc26   e742db3cfc55a492         4898       4898 characters/skeleton_warrior/animation/stagger_front_01
   405 animation                931e336d7646cc26   e7b63a1ae6bf3b06         4938       4938 characters/mummy_risen/animations/knockdown_flip
   406 animation                931e336d7646cc26   f04c82e9689a9447         4226       4226 characters/mummy_risen/animations/move_walk_left
@@ -3682,7 +3682,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   819 unit                     e0a48d0be9a7453f   3cd91c54a3c80f1a        26777      26777 core/editor_slave/units/skydome/skydome_black
   820 unit                     e0a48d0be9a7453f   3de4714204581e47        37744      37744 blocks/d01_lava/floors/lavastruct_floor_drain_straight_2c_lavaflow
   821 unit                     e0a48d0be9a7453f   3f599d363e6a30d9         1392       1392 blocks/d01_lava/floors/lavastruct_floor_4c_2c
-  822 unit                     e0a48d0be9a7453f   407ab5c0723a8c38        41466      41466 <unresolved>
+  822 unit                     e0a48d0be9a7453f   407ab5c0723a8c38        41466      41466 blocks/d01_lava/floors/lavarock_floor_border_2c_twosided
   823 unit                     e0a48d0be9a7453f   42a08ab0c1e8a484        35982      35982 <unresolved>
   824 unit                     e0a48d0be9a7453f   42c3413a2db22011        14850      14850 blocks/d01_lava/borders/lavastruct_border_4c
   825 unit                     e0a48d0be9a7453f   42f237b6a419fe80       136890     136890 props/d01_common/chains_wall_bend_4c_01
@@ -3814,7 +3814,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   951 unit                     e0a48d0be9a7453f   b9857707ae448e8c       104619     104619 props/d01_lava/lava_skulloven
   952 unit                     e0a48d0be9a7453f   b9dd9b67029c44ef        54574      54574 props/d01_common/barrel_01
   953 unit                     e0a48d0be9a7453f   b9de2b2f3407555c         1260       1260 <unresolved>
-  954 unit                     e0a48d0be9a7453f   bb5ee02b30a7bc64        74434      74434 <unresolved>
+  954 unit                     e0a48d0be9a7453f   bb5ee02b30a7bc64        74434      74434 blocks/d01_lava/floors/lavarock_floor_border_4c_twosided
   955 unit                     e0a48d0be9a7453f   bd063ff05442b4fe       102877     102877 props/d01_lava/lava_weapon_rack_01
   956 unit                     e0a48d0be9a7453f   bdfb7da18607f132      3630667    3630667 <unresolved>
   957 unit                     e0a48d0be9a7453f   be670c73c74a6b3c         2664       2664 blocks/d01_crypt/walls/crypt_blackbox
@@ -5831,7 +5831,7 @@ BUNDLE 2c8fb6cb55aba416   (resource_packages/heroes/elf_base)
    78 animation                931e336d7646cc26   d2abba80013d8fc0         9314       9314 characters/avatar_elf/animations/bow_move_run_backwards_right
    79 animation                931e336d7646cc26   d75f17d2b12108c4         3140       3140 characters/avatar_elf/animations/charselect_turnright
    80 animation                931e336d7646cc26   d90d6035dc5bd7e5         6534       6534 characters/avatar_elf/animations/bow_move_walk_backwards
-   81 animation                931e336d7646cc26   da186fcf7031b79f         2886       2886 <unresolved>
+   81 animation                931e336d7646cc26   da186fcf7031b79f         2886       2886 characters/avatar_elf/animations/charselect_turndown
    82 animation                931e336d7646cc26   dd2a9b2ebf5322d5        30800      30800 characters/avatar_elf/animations/character_select_pos01_var01
    83 animation                931e336d7646cc26   e18e00203c438c99         5642       5642 characters/avatar_elf/animations/legs_turn_right30
    84 animation                931e336d7646cc26   e5a1501d5a2b665c         2908       2908 characters/avatar_elf/animations/tilt_left
@@ -5841,7 +5841,7 @@ BUNDLE 2c8fb6cb55aba416   (resource_packages/heroes/elf_base)
    88 animation                931e336d7646cc26   efb941e14164054f         6340       6340 <unresolved>
    89 animation                931e336d7646cc26   f2fd7d95a49feeed         9480       9480 characters/avatar_elf/animations/tumble_forward
    90 animation                931e336d7646cc26   f9b36237e47e35ff         3920       3920 characters/avatar_elf/animations/leap_enter
-   91 animation                931e336d7646cc26   fb0229eeb1fdd105         3478       3478 <unresolved>
+   91 animation                931e336d7646cc26   fb0229eeb1fdd105         3478       3478 characters/avatar_elf/animations/charselect_turnup
    92 animation                931e336d7646cc26   fc3850c1181a443f         7500       7500 <unresolved>
    93 animation                931e336d7646cc26   fc89be7a51535a37        15092      15092 characters/avatar_elf/animations/knockback_slide
    94 animation                931e336d7646cc26   fca6fb365f509095         2348       2348 characters/avatar_elf/animations/passout_idle
@@ -6755,7 +6755,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   167 level                    2a690fd348fe9ac5   ae50ce55dd8ca7b8         2480       2480 modules/d01_caves/dungeon_tiles/caverock_8c_8c_u_u_g_u_02
   168 level                    2a690fd348fe9ac5   aec35a0e21021393         5456       5456 modules/d01_caves/caves_quilt_straight__x_e_x_e__01_spider
   169 level                    2a690fd348fe9ac5   b0d02ed18b8d6d06        39568      39568 modules/d01_caves/quilts/encounters/caves_quilt_smallroom__ox_ee_ix_ee__04_spider
-  170 level                    2a690fd348fe9ac5   b339df01128e0e8c        78176      78176 <unresolved>
+  170 level                    2a690fd348fe9ac5   b339df01128e0e8c        78176      78176 modules/d01_caves/quilts/encounters/caves_quilt_largeroom__eoe_xex_xix_eex__04_civilization
   171 level                    2a690fd348fe9ac5   b42563bcf3ba38aa         5008       5008 modules/d01_caves/quilts/entrances/caves_quilt_entrance__xox_xx_xxx_xx__01
   172 level                    2a690fd348fe9ac5   b521b224dfb2d888        66832      66832 modules/d01_caves/quilts/encounters/caves_quilt_largeroom__oox_xix_iii_xox__01_spider
   173 level                    2a690fd348fe9ac5   b5e948b0f2b4c9e6        22528      22528 modules/d01_caves/quilts/encounters/caves_quilt_mediumroom__xox_xex_xix_xex__01
@@ -7431,7 +7431,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   843 unit                     e0a48d0be9a7453f   3f065636172f940c          886        886 props/d01_common/fog_plane
   844 unit                     e0a48d0be9a7453f   3f53f4595d755e28         1598       1598 blocks/d01_caves/floors/caverock_floor_4c_4c_invisibility
   845 unit                     e0a48d0be9a7453f   3f599d363e6a30d9         1392       1392 blocks/d01_lava/floors/lavastruct_floor_4c_2c
-  846 unit                     e0a48d0be9a7453f   407ab5c0723a8c38        41466      41466 <unresolved>
+  846 unit                     e0a48d0be9a7453f   407ab5c0723a8c38        41466      41466 blocks/d01_lava/floors/lavarock_floor_border_2c_twosided
   847 unit                     e0a48d0be9a7453f   4081a71d7818d6a0         6644       6644 props/d01_crypt/sword_01
   848 unit                     e0a48d0be9a7453f   426d07e58a37eba0         9195       9195 props/d01_caves/caves_cobweb_hanging_01
   849 unit                     e0a48d0be9a7453f   42c3413a2db22011        14850      14850 blocks/d01_lava/borders/lavastruct_border_4c
@@ -7566,7 +7566,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   978 unit                     e0a48d0be9a7453f   b9dd9b67029c44ef        54574      54574 props/d01_common/barrel_01
   979 unit                     e0a48d0be9a7453f   ba22766a477919f0         9661       9661 blocks/d01_caves/rocks/caverock_rockpile_02
   980 unit                     e0a48d0be9a7453f   ba41ea370021a5ac        97580      97580 blocks/d01_caves/walls/swampstruct_wall_corner_4c
-  981 unit                     e0a48d0be9a7453f   bb5ee02b30a7bc64        74434      74434 <unresolved>
+  981 unit                     e0a48d0be9a7453f   bb5ee02b30a7bc64        74434      74434 blocks/d01_lava/floors/lavarock_floor_border_4c_twosided
   982 unit                     e0a48d0be9a7453f   bc2f1726be9134e8       148808     148808 props/d01_caves/cart_02
   983 unit                     e0a48d0be9a7453f   bdf5dc5b55079998         8207       8207 characters/avatar_elf/abilities/arrow_light
   984 unit                     e0a48d0be9a7453f   be574920631d9020        25681      25681 props/d01_caves/mushroom_02
@@ -7947,11 +7947,11 @@ BUNDLE 40d0e0479ffe0c4c   (resource_packages/heroes/necromagus_base)
    10 flow                     92d3ee038eeb610d   f9dbe41e5ef20d06         1084       1084 flow/status_effect_poisoned
    11 animation                931e336d7646cc26   04167b6ccdca209d        10908      10908 characters/avatar_necromagus/animation/move_run_left
    12 animation                931e336d7646cc26   119f9619ee29645f        12720      12720 characters/avatar_necromagus/animation/ability_talisman_02
-   13 animation                931e336d7646cc26   144a49caaa929442         3564       3564 <unresolved>
+   13 animation                931e336d7646cc26   144a49caaa929442         3564       3564 characters/avatar_necromagus/animation/idle_rightback
    14 animation                931e336d7646cc26   18e75cc6d72dea5f        14306      14306 characters/avatar_necromagus/animation/attack_light_left
    15 animation                931e336d7646cc26   1a0ec3cc83ad0ed9         2980       2980 characters/avatar_necromagus/animation/eye_4
    16 animation                931e336d7646cc26   1d7d28ef257db1c6         5988       5988 characters/avatar_necromagus/animation/death_decapitated
-   17 animation                931e336d7646cc26   2437be1600e96ac4         7528       7528 <unresolved>
+   17 animation                931e336d7646cc26   2437be1600e96ac4         7528       7528 characters/avatar_necromagus/animation/move_walk_leftback
    18 animation                931e336d7646cc26   2be30a6b58d368e4         3564       3564 characters/avatar_necromagus/animation/idle_left
    19 animation                931e336d7646cc26   2cd9caa166df7eb6         5494       5494 characters/avatar_necromagus/animation/leap_windup
    20 animation                931e336d7646cc26   2e4005ad7c003664         7528       7528 characters/avatar_necromagus/animation/move_walk_left
@@ -7969,7 +7969,7 @@ BUNDLE 40d0e0479ffe0c4c   (resource_packages/heroes/necromagus_base)
    32 animation                931e336d7646cc26   572b36a837f53eb7         9162       9162 characters/avatar_necromagus/animation/charselect_01_alt_01
    33 animation                931e336d7646cc26   5d2e66b9d1325286        12174      12174 characters/avatar_necromagus/animation/ability_talisman_01
    34 animation                931e336d7646cc26   62afddcaac9a8809        10908      10908 characters/avatar_necromagus/animation/move_run_right
-   35 animation                931e336d7646cc26   638567ec527556a8         7552       7552 <unresolved>
+   35 animation                931e336d7646cc26   638567ec527556a8         7552       7552 characters/avatar_necromagus/animation/move_walk_rightback
    36 animation                931e336d7646cc26   63df7d6a32350bd4         8424       8424 <unresolved>
    37 animation                931e336d7646cc26   65544ffdc82e6f72         3516       3516 characters/avatar_necromagus/animation/idle_right
    38 animation                931e336d7646cc26   65e8e65c9ecdc6d0         6054       6054 characters/avatar_necromagus/animation/blink_offset_02
@@ -7978,7 +7978,7 @@ BUNDLE 40d0e0479ffe0c4c   (resource_packages/heroes/necromagus_base)
    41 animation                931e336d7646cc26   7116474c76b07c02        13366      13366 characters/avatar_necromagus/animation/dash_forward
    42 animation                931e336d7646cc26   72f46535f02ac191         6856       6856 characters/avatar_necromagus/animation/push_block
    43 animation                931e336d7646cc26   7cff4f2ff85f769b         6278       6278 <unresolved>
-   44 animation                931e336d7646cc26   8a855c1142c7506b         3388       3388 <unresolved>
+   44 animation                931e336d7646cc26   8a855c1142c7506b         3388       3388 characters/avatar_necromagus/animation/idle_leftback
    45 animation                931e336d7646cc26   90549bd8b52c974b         4212       4212 characters/avatar_necromagus/animation/ability_summon
    46 animation                931e336d7646cc26   9b6636bfac03d8d7         4544       4544 characters/avatar_necromagus/animation/carry_run
    47 animation                931e336d7646cc26   9dfdc84a8d2c5108         4092       4092 characters/avatar_necromagus/animation/colosseum_profile
@@ -8011,10 +8011,10 @@ BUNDLE 40d0e0479ffe0c4c   (resource_packages/heroes/necromagus_base)
    74 animation                931e336d7646cc26   f07f369240ca3b1e         8480       8480 characters/avatar_necromagus/animation/carry_drop
    75 animation                931e336d7646cc26   f56db9649ec25434         2628       2628 characters/avatar_necromagus/animation/death_default
    76 animation                931e336d7646cc26   f575a1e2f13d958a         9162       9162 <unresolved>
-   77 animation                931e336d7646cc26   f7a02c8cd763c2a8        10924      10924 <unresolved>
+   77 animation                931e336d7646cc26   f7a02c8cd763c2a8        10924      10924 characters/avatar_necromagus/animation/move_run_rightback
    78 animation                931e336d7646cc26   fe0284d2c79a90bc         8424       8424 <unresolved>
    79 animation                931e336d7646cc26   ffdbae46a8d94661        16014      16014 characters/avatar_necromagus/animation/leap
-   80 animation                931e336d7646cc26   ffe4cd9a49adc53a        10916      10916 <unresolved>
+   80 animation                931e336d7646cc26   ffe4cd9a49adc53a        10916      10916 characters/avatar_necromagus/animation/move_run_leftback
    81 lua                      a14e8dfa2cd117e2   0a77af83067876ea         3262       3262 characters/avatar_base
    82 lua                      a14e8dfa2cd117e2   8e0b90914f36fb20         6810       6810 characters/hit_reacts_avatar
    83 lua                      a14e8dfa2cd117e2   d1ca54bdc89aae47         3704       3704 characters/avatar_necromagus/necromagus
@@ -9563,7 +9563,7 @@ BUNDLE 67fdaf59c0374dce   (resource_packages/heroes/warrior_base)
    49 animation                931e336d7646cc26   7391c94f79d50dac         3516       3516 characters/avatar_warrior/animations/hit_offset02
    50 animation                931e336d7646cc26   7a434d6b38febc88         7364       7364 characters/avatar_warrior/animations/die_decapitate
    51 animation                931e336d7646cc26   7ae83e357a1be7a7         7526       7526 <unresolved>
-   52 animation                931e336d7646cc26   8053fca819dae06b         5466       5466 <unresolved>
+   52 animation                931e336d7646cc26   8053fca819dae06b         5466       5466 characters/avatar_warrior/animations/character_select_pos02_turndown
    53 animation                931e336d7646cc26   8323a2bb3be3ce6a         2488       2488 characters/avatar_warrior/animations/blink_open_offset
    54 animation                931e336d7646cc26   84b4f5da50a14c12         8778       8778 characters/avatar_warrior/animations/push_block
    55 animation                931e336d7646cc26   864d0314fdd098b0        26378      26378 characters/avatar_warrior/animations/axe_attack_light2_right
@@ -9602,7 +9602,7 @@ BUNDLE 67fdaf59c0374dce   (resource_packages/heroes/warrior_base)
    88 animation                931e336d7646cc26   d96dd018f144f8e0         6154       6154 characters/avatar_warrior/animations/axe_smash_windup
    89 animation                931e336d7646cc26   da9cc50c9236652e         3912       3912 characters/avatar_warrior/animations/push_block_idle
    90 animation                931e336d7646cc26   dc824bf773f5cfcc        12218      12218 <unresolved>
-   91 animation                931e336d7646cc26   dd9f44287b9f1c07         3240       3240 <unresolved>
+   91 animation                931e336d7646cc26   dd9f44287b9f1c07         3240       3240 characters/avatar_warrior/animations/character_select_pos02_turnup
    92 animation                931e336d7646cc26   e148775154b2c077         2488       2488 characters/avatar_warrior/animations/pass_out_idle
    93 animation                931e336d7646cc26   e3f219e8110852ec         7058       7058 characters/avatar_warrior/animations/axe_move_walk_right_back
    94 animation                931e336d7646cc26   e4977e1c320899d4         4452       4452 characters/avatar_warrior/animations/crank_turn_idle
@@ -12008,10 +12008,10 @@ BUNDLE 8c75217fc3fad29b   (resource_packages/heroes/wizard_base)
    85 animation                931e336d7646cc26   c5807d5edb91e85f         9678       9678 characters/avatar_wizard/animations/attack_firebomb
    86 animation                931e336d7646cc26   cbcf29b9b2fa1294         8848       8848 <unresolved>
    87 animation                931e336d7646cc26   ce8ef5b61212cb8a         4078       4078 characters/avatar_wizard/animations/idle_squat_left30
-   88 animation                931e336d7646cc26   d3c141fc21e34e03         5526       5526 <unresolved>
+   88 animation                931e336d7646cc26   d3c141fc21e34e03         5526       5526 characters/avatar_wizard/animations/charselect_turndown
    89 animation                931e336d7646cc26   d76427eb34c6a1d0         3470       3470 characters/avatar_wizard/animations/legs_turn_shuffle
    90 animation                931e336d7646cc26   dbf0b18572cd48ce         6240       6240 characters/avatar_wizard/animations/attack_winddown
-   91 animation                931e336d7646cc26   e3ee5415cc67ccfa         5410       5410 <unresolved>
+   91 animation                931e336d7646cc26   e3ee5415cc67ccfa         5410       5410 characters/avatar_wizard/animations/charselect_turnup
    92 animation                931e336d7646cc26   ebe824d9754755ba         6538       6538 characters/avatar_wizard/animations/carry_walk
    93 animation                931e336d7646cc26   ee407d2d5b421775        11680      11680 characters/avatar_wizard/animations/idle
    94 animation                931e336d7646cc26   ef4b97765b902350         3070       3070 characters/avatar_wizard/animations/tilt_right
@@ -14489,7 +14489,7 @@ BUNDLE af66175d2487bb0d   (resource_packages/crypt_boss)
     4 animation                931e336d7646cc26   041932fb8846d9ed         2968       2968 characters/boss_mummy/animations/chestburst_hit_offset_02
     5 animation                931e336d7646cc26   0430ab54a119fd8c        14056      14056 characters/boss_mummy/animations/chestburst_exit
     6 animation                931e336d7646cc26   058fa08678632469         4188       4188 characters/boss_mummy/animations/dormant
-    7 animation                931e336d7646cc26   0b9858fc601db786         6996       6996 <unresolved>
+    7 animation                931e336d7646cc26   0b9858fc601db786         6996       6996 characters/boss_mummy/animations/turn_right_130
     8 animation                931e336d7646cc26   11f82858442d6209         3112       3112 characters/boss_mummy/animations/chestburst_hit_offset_01
     9 animation                931e336d7646cc26   13144fc35e129d53         7588       7588 characters/boss_mummy/animations/ability_floor_bash_exit
    10 animation                931e336d7646cc26   17bca2f58393a33c        13086      13086 <unresolved>
@@ -14516,7 +14516,7 @@ BUNDLE af66175d2487bb0d   (resource_packages/crypt_boss)
    31 animation                931e336d7646cc26   c446005b3013c7a7         3116       3116 characters/boss_mummy/animations/chestburst_loop
    32 animation                931e336d7646cc26   d466bcc6bc65ccf2         1618       1618 characters/boss_mummy/animations/heart_hit_offset02
    33 animation                931e336d7646cc26   d73d69cf344656d9         5402       5402 <unresolved>
-   34 animation                931e336d7646cc26   e3b929b47878ef1f         6370       6370 <unresolved>
+   34 animation                931e336d7646cc26   e3b929b47878ef1f         6370       6370 characters/boss_mummy/animations/turn_left_130
    35 animation                931e336d7646cc26   f0f1045900ce954f         5664       5664 characters/boss_mummy/animations/turn_left_90
    36 animation                931e336d7646cc26   fd53e7d7e6ef2706         1602       1602 characters/boss_mummy/animations/heart_hit_offset01
    37 timpani_bank             99736be1fff739a4   0e4827ba0e706956     14931188   14931188 audio/enemy_mummy_king
@@ -17460,7 +17460,7 @@ BUNDLE d2fac3c70e7333f9   (resource_packages/heroes/valkyrie_base)
    50 animation                931e336d7646cc26   9502801f8541749a         9972       9972 characters/avatar_valkyrie/animations/death_decapitated
    51 animation                931e336d7646cc26   957c8c5fb0f6ed5d         2600       2600 characters/avatar_valkyrie/animations/blink_open
    52 animation                931e336d7646cc26   95936874be4a5912         3296       3296 characters/avatar_valkyrie/animations/spear_block_loop_right
-   53 animation                931e336d7646cc26   9a4536b8b49ffdbd         3380       3380 <unresolved>
+   53 animation                931e336d7646cc26   9a4536b8b49ffdbd         3380       3380 characters/avatar_valkyrie/animations/character_select_turnup
    54 animation                931e336d7646cc26   9be0b478dabd60ae         8052       8052 characters/avatar_valkyrie/animations/spear_block_strafe_right
    55 animation                931e336d7646cc26   9c4b91cc5d33ed80         7512       7512 characters/avatar_valkyrie/animations/spear_attack_heavy_impact
    56 animation                931e336d7646cc26   9d9a93b24379ae90         8994       8994 characters/avatar_valkyrie/animations/carry_run
@@ -17501,7 +17501,7 @@ BUNDLE d2fac3c70e7333f9   (resource_packages/heroes/valkyrie_base)
    91 animation                931e336d7646cc26   e73dbdc4dacbd08e         3124       3124 characters/avatar_valkyrie/animations/revive_default
    92 animation                931e336d7646cc26   e82d5a8febce3faa         7486       7486 characters/avatar_valkyrie/animations/spear_attack_heavy_impale
    93 animation                931e336d7646cc26   e86e3b178bfbe402        16462      16462 characters/avatar_valkyrie/animations/shield_bash_01
-   94 animation                931e336d7646cc26   e891b09b500b2bc8         2868       2868 <unresolved>
+   94 animation                931e336d7646cc26   e891b09b500b2bc8         2868       2868 characters/avatar_valkyrie/animations/character_select_turndown
    95 animation                931e336d7646cc26   eecece354180b0d2         4238       4238 characters/avatar_valkyrie/animations/spear_idle_right
    96 animation                931e336d7646cc26   f060905a9656f902         2790       2790 characters/avatar_valkyrie/animations/tilt_back
    97 animation                931e336d7646cc26   f1f5dfa948e11f16         8772       8772 characters/avatar_valkyrie/animations/spawn_default

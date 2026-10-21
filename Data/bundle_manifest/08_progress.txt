@@ -1,6 +1,6 @@
 GAUNTLET NAME-RECOVERY PROGRESS
 ==================================================================================================
-generated 2026-10-21 08:39   (regenerate with: python3 make_progress_report.py)
+generated 2026-10-21 10:56   (regenerate with: python3 make_progress_report.py)
 
 1. HEADLINE
 --------------------------------------------------------------------------------------------------
@@ -14,9 +14,11 @@ generated 2026-10-21 08:39   (regenerate with: python3 make_progress_report.py)
   sweeps with a status log             27
   unreachable (no named ref)           33   of which orphans 33
 
-  note: 05_summary.txt reports "Unresolved 1999" - that is counted against the
-  static hash_database.json, not against this overlay, which is why it never moves
-  as names land.  The numbers above are the live ones.
+  note: 05_summary.txt reports "Unresolved 1976" - that is the CATALOGUE
+  build's own count: hash_database.json MERGED with the overlays, taken at build time.
+  So it is a snapshot - it moves when the catalogue is rebuilt (SCRIPTS.md,
+  "Regenerating the catalogue after recovery work"), not when a single name lands.
+  The numbers above are read live from the catalogue and the overlay.
 
 2. COVERAGE BY TYPE   (rows named / rows unresolved / unique unresolved)
 --------------------------------------------------------------------------------------------------

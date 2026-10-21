@@ -5,7 +5,7 @@ Total files  : 1236
 Bundle files : 75
 Scan check   : 0 bundle(s) with incomplete header scan
 Resources    : 20000
-Unresolved   : 1999 name hashes (not in hash_database.json)
+Unresolved   : 1976 name hashes (not in hash_database.json)
 
 RESOURCES BY TYPE
 ----------------------------------------------------------------------------------------------------

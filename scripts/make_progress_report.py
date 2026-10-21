@@ -178,9 +178,11 @@ def main():
                 if len(words) >= 2:
                     static_metric = words[1]
                 break
-    w(f'  note: 05_summary.txt reports "Unresolved {static_metric}" - that is counted against the')
-    w('  static hash_database.json, not against this overlay, which is why it never moves')
-    w('  as names land.  The numbers above are the live ones.')
+    w(f'  note: 05_summary.txt reports "Unresolved {static_metric}" - that is the CATALOGUE')
+    w("  build's own count: hash_database.json MERGED with the overlays, taken at build time.")
+    w('  So it is a snapshot - it moves when the catalogue is rebuilt (SCRIPTS.md,')
+    w('  "Regenerating the catalogue after recovery work"), not when a single name lands.')
+    w('  The numbers above are read live from the catalogue and the overlay.')
     w()
 
     w('2. COVERAGE BY TYPE   (rows named / rows unresolved / unique unresolved)')
