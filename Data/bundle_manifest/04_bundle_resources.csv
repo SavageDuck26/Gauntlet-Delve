@@ -566,7 +566,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0164ad48615ba9ed,modules/d01_crypt/resources,564,texture,cd4238c6a0c69e32,04ed3e2019da2351,blocks/d01_caves/caverock_rock_01_norm,349684,349684,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,565,texture,cd4238c6a0c69e32,050c3a46d44dafd0,blocks/d01_caves/swamp_cavestruct_pillar_01_diff,174908,174908,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,566,texture,cd4238c6a0c69e32,05fc0518043b9947,blocks/d01_caves/cavestruct_doorarch_diff,174908,174908,0,1
-0164ad48615ba9ed,modules/d01_crypt/resources,567,texture,cd4238c6a0c69e32,062fdf681373e72f,,87540,87540,0,1
+0164ad48615ba9ed,modules/d01_crypt/resources,567,texture,cd4238c6a0c69e32,062fdf681373e72f,blocks/d01_lava/lavastruct_goat_satan_statue_norm,87540,87540,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,568,texture,cd4238c6a0c69e32,06915753e1b3d147,,349684,349684,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,569,texture,cd4238c6a0c69e32,0757d54f78c7b8a1,gameobjects/doors/door_wall_01_spec,174908,174908,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,570,texture,cd4238c6a0c69e32,08d7dd4f27565e75,blocks/d01_lava/lavastruct_swatch_diff,11068,11068,0,1
@@ -908,7 +908,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0164ad48615ba9ed,modules/d01_crypt/resources,906,texture,cd4238c6a0c69e32,bed3e7a03984815b,,349684,349684,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,907,texture,cd4238c6a0c69e32,bf3b3629ff21b3af,menu/black,828,828,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,908,texture,cd4238c6a0c69e32,c09b0d67aca94664,blocks/d01_lava/lavastruct_stairs_diff,87532,87532,0,1
-0164ad48615ba9ed,modules/d01_crypt/resources,909,texture,cd4238c6a0c69e32,c0a1917e0fd46589,,43836,43836,0,1
+0164ad48615ba9ed,modules/d01_crypt/resources,909,texture,cd4238c6a0c69e32,c0a1917e0fd46589,blocks/d01_lava/lavastruct_goat_satan_statue_diff,43836,43836,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,910,texture,cd4238c6a0c69e32,c0fc62e6a0969dc4,blocks/d01_caves/cavestruct_plinth_01_norm,174932,174932,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,911,texture,cd4238c6a0c69e32,c1d10eb70d4e5e4a,blocks/d01_caves/cavestruct_floor_01_norm,1398260,1398260,0,1
 0164ad48615ba9ed,modules/d01_crypt/resources,912,texture,cd4238c6a0c69e32,c2506eaa7e0b6641,gameobjects/doors/door_crypt_encounter_01_diff,43860,43860,0,1
@@ -2069,7 +2069,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 07cdebae91f29fae,modules/menu/resources,43,texture,cd4238c6a0c69e32,050c3a46d44dafd0,blocks/d01_caves/swamp_cavestruct_pillar_01_diff,174908,174908,0,1
 07cdebae91f29fae,modules/menu/resources,44,texture,cd4238c6a0c69e32,05fc0518043b9947,blocks/d01_caves/cavestruct_doorarch_diff,174908,174908,0,1
 07cdebae91f29fae,modules/menu/resources,45,texture,cd4238c6a0c69e32,062ba873a0ce8e73,,699220,699220,0,1
-07cdebae91f29fae,modules/menu/resources,46,texture,cd4238c6a0c69e32,062fdf681373e72f,,87540,87540,0,1
+07cdebae91f29fae,modules/menu/resources,46,texture,cd4238c6a0c69e32,062fdf681373e72f,blocks/d01_lava/lavastruct_goat_satan_statue_norm,87540,87540,0,1
 07cdebae91f29fae,modules/menu/resources,47,texture,cd4238c6a0c69e32,06915753e1b3d147,,349684,349684,0,1
 07cdebae91f29fae,modules/menu/resources,48,texture,cd4238c6a0c69e32,0872a79e0d2fd574,effects/textures/alpha_liquid_explosion_03,87540,87540,0,1
 07cdebae91f29fae,modules/menu/resources,49,texture,cd4238c6a0c69e32,08d7dd4f27565e75,blocks/d01_lava/lavastruct_swatch_diff,11068,11068,0,1
@@ -2303,7 +2303,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 07cdebae91f29fae,modules/menu/resources,277,texture,cd4238c6a0c69e32,bed3e7a03984815b,,349684,349684,0,1
 07cdebae91f29fae,modules/menu/resources,278,texture,cd4238c6a0c69e32,bf8efb20c760bb41,props/menu/menu_grass_diff,349684,349684,0,1
 07cdebae91f29fae,modules/menu/resources,279,texture,cd4238c6a0c69e32,c09b0d67aca94664,blocks/d01_lava/lavastruct_stairs_diff,87532,87532,0,1
-07cdebae91f29fae,modules/menu/resources,280,texture,cd4238c6a0c69e32,c0a1917e0fd46589,,43836,43836,0,1
+07cdebae91f29fae,modules/menu/resources,280,texture,cd4238c6a0c69e32,c0a1917e0fd46589,blocks/d01_lava/lavastruct_goat_satan_statue_diff,43836,43836,0,1
 07cdebae91f29fae,modules/menu/resources,281,texture,cd4238c6a0c69e32,c0fc62e6a0969dc4,blocks/d01_caves/cavestruct_plinth_01_norm,174932,174932,0,1
 07cdebae91f29fae,modules/menu/resources,282,texture,cd4238c6a0c69e32,c1d10eb70d4e5e4a,blocks/d01_caves/cavestruct_floor_01_norm,1398260,1398260,0,1
 07cdebae91f29fae,modules/menu/resources,283,texture,cd4238c6a0c69e32,c292bb93ae4cac75,,349684,349684,0,1
@@ -2970,7 +2970,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0f07a1cb5132485b,modules/d01_lava/resources,161,level,2a690fd348fe9ac5,a2c8785a8e8fe4f0,modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_xe_xix_xe__02_temple,109952,109952,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,162,level,2a690fd348fe9ac5,a4add9496f8cc308,modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_w_d_d_01,2656,2656,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,163,level,2a690fd348fe9ac5,a5224457079bd4fa,modules/d01_lava/prefabs/prefab_lava_pit_2c_2c,2272,2272,0,1
-0f07a1cb5132485b,modules/d01_lava/resources,164,level,2a690fd348fe9ac5,a9f3b892cabcf8c2,,3168,3168,0,1
+0f07a1cb5132485b,modules/d01_lava/resources,164,level,2a690fd348fe9ac5,a9f3b892cabcf8c2,modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor,3168,3168,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,165,level,2a690fd348fe9ac5,ad4fba97fc1443be,modules/d01_lava/quilts/base/lava_quilt_turn__x_x_e_e__01,13920,13920,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,166,level,2a690fd348fe9ac5,ae1d0fd8548eb410,modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_ix_xix_ox__01_rocks,135968,135968,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,167,level,2a690fd348fe9ac5,af2f4d750f8afc80,modules/d01_lava/quilts/base/lava_quilt_straight__x_e_x_e__06_rocks,24048,24048,0,1
@@ -3158,7 +3158,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0f07a1cb5132485b,modules/d01_lava/resources,349,texture,cd4238c6a0c69e32,040c6141e8c39660,,21996,21996,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,350,texture,cd4238c6a0c69e32,04ed3e2019da2351,blocks/d01_caves/caverock_rock_01_norm,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,351,texture,cd4238c6a0c69e32,05fc0518043b9947,blocks/d01_caves/cavestruct_doorarch_diff,174908,174908,0,1
-0f07a1cb5132485b,modules/d01_lava/resources,352,texture,cd4238c6a0c69e32,062fdf681373e72f,,87540,87540,0,1
+0f07a1cb5132485b,modules/d01_lava/resources,352,texture,cd4238c6a0c69e32,062fdf681373e72f,blocks/d01_lava/lavastruct_goat_satan_statue_norm,87540,87540,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,353,texture,cd4238c6a0c69e32,06915753e1b3d147,,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,354,texture,cd4238c6a0c69e32,0757d54f78c7b8a1,gameobjects/doors/door_wall_01_spec,174908,174908,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,355,texture,cd4238c6a0c69e32,0872a79e0d2fd574,effects/textures/alpha_liquid_explosion_03,87540,87540,0,1
@@ -3454,7 +3454,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0f07a1cb5132485b,modules/d01_lava/resources,645,texture,cd4238c6a0c69e32,bed3e7a03984815b,,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,646,texture,cd4238c6a0c69e32,bf3b3629ff21b3af,menu/black,828,828,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,647,texture,cd4238c6a0c69e32,c09b0d67aca94664,blocks/d01_lava/lavastruct_stairs_diff,87532,87532,0,1
-0f07a1cb5132485b,modules/d01_lava/resources,648,texture,cd4238c6a0c69e32,c0a1917e0fd46589,,43836,43836,0,1
+0f07a1cb5132485b,modules/d01_lava/resources,648,texture,cd4238c6a0c69e32,c0a1917e0fd46589,blocks/d01_lava/lavastruct_goat_satan_statue_diff,43836,43836,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,649,texture,cd4238c6a0c69e32,c0edb422fc86e071,blocks/d01_caves/stairs/roundstairs_norm,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,650,texture,cd4238c6a0c69e32,c0fc62e6a0969dc4,blocks/d01_caves/cavestruct_plinth_01_norm,174932,174932,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,651,texture,cd4238c6a0c69e32,c1d10eb70d4e5e4a,blocks/d01_caves/cavestruct_floor_01_norm,1398260,1398260,0,1
@@ -3510,7 +3510,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 0f07a1cb5132485b,modules/d01_lava/resources,701,texture,cd4238c6a0c69e32,e46328a03e2a94b3,blocks/d01_crypt/cryptsmooth_wall_01_norm,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,702,texture,cd4238c6a0c69e32,e464265f66754f41,blocks/d01_caves/caves_swatch_diff,11068,11068,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,703,texture,cd4238c6a0c69e32,e51c3432aa1d49e4,,349684,349684,0,1
-0f07a1cb5132485b,modules/d01_lava/resources,704,texture,cd4238c6a0c69e32,e549e905c4357a28,,349684,349684,0,1
+0f07a1cb5132485b,modules/d01_lava/resources,704,texture,cd4238c6a0c69e32,e549e905c4357a28,props/d01_lava/swamp_redwizard_brazier_02_diff,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,705,texture,cd4238c6a0c69e32,e5557fcffb58c25f,,87540,87540,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,706,texture,cd4238c6a0c69e32,e58991a6ebcbed4d,decals/moss_01_norm,349684,349684,0,1
 0f07a1cb5132485b,modules/d01_lava/resources,707,texture,cd4238c6a0c69e32,e652cd963fc86516,props/d01_lava/lava_metalbox_top_norm,22004,22004,0,1
@@ -5907,7 +5907,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 2dcf25b90002fc07,modules/d01_hub_room/resources,19,texture,cd4238c6a0c69e32,0451f9d391a4ce38,,1398260,1398260,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,20,texture,cd4238c6a0c69e32,04ed3e2019da2351,blocks/d01_caves/caverock_rock_01_norm,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,21,texture,cd4238c6a0c69e32,05fc0518043b9947,blocks/d01_caves/cavestruct_doorarch_diff,174908,174908,0,1
-2dcf25b90002fc07,modules/d01_hub_room/resources,22,texture,cd4238c6a0c69e32,062fdf681373e72f,,87540,87540,0,1
+2dcf25b90002fc07,modules/d01_hub_room/resources,22,texture,cd4238c6a0c69e32,062fdf681373e72f,blocks/d01_lava/lavastruct_goat_satan_statue_norm,87540,87540,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,23,texture,cd4238c6a0c69e32,06915753e1b3d147,,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,24,texture,cd4238c6a0c69e32,08d7dd4f27565e75,blocks/d01_lava/lavastruct_swatch_diff,11068,11068,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,25,texture,cd4238c6a0c69e32,0b33e10b909fb2a1,,349684,349684,0,1
@@ -5915,7 +5915,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 2dcf25b90002fc07,modules/d01_hub_room/resources,27,texture,cd4238c6a0c69e32,0c157d7a3c58cf32,blocks/d01_caves/cavestruct_doorarch_norm,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,28,texture,cd4238c6a0c69e32,10705713e79ee0cc,blocks/d01_lava/lavastruct_lavaflow_normal,87540,87540,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,29,texture,cd4238c6a0c69e32,10c1d22ada91c312,blocks/d01_caves/caverock_skulldoor_diff,174908,174908,0,1
-2dcf25b90002fc07,modules/d01_hub_room/resources,30,texture,cd4238c6a0c69e32,1279fa7baa6a64e3,,1398260,1398260,0,1
+2dcf25b90002fc07,modules/d01_hub_room/resources,30,texture,cd4238c6a0c69e32,1279fa7baa6a64e3,blocks/d01_hub_room/tutorial_cliff_01_norm,1398260,1398260,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,31,texture,cd4238c6a0c69e32,12d4363870a67434,blocks/d01_lava/lavastruct_fountain_01_norm,87540,87540,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,32,texture,cd4238c6a0c69e32,1417dc08a0973de6,blocks/d01_crypt/crypt_exit_skulldoor_norm,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,33,texture,cd4238c6a0c69e32,143cf1b8bc86046c,decals/blood_splat_black_03,349684,349684,0,1
@@ -6075,11 +6075,11 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 2dcf25b90002fc07,modules/d01_hub_room/resources,187,texture,cd4238c6a0c69e32,bea8ad587db7b07a,,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,188,texture,cd4238c6a0c69e32,bed3e7a03984815b,,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,189,texture,cd4238c6a0c69e32,c09b0d67aca94664,blocks/d01_lava/lavastruct_stairs_diff,87532,87532,0,1
-2dcf25b90002fc07,modules/d01_hub_room/resources,190,texture,cd4238c6a0c69e32,c0a1917e0fd46589,,43836,43836,0,1
+2dcf25b90002fc07,modules/d01_hub_room/resources,190,texture,cd4238c6a0c69e32,c0a1917e0fd46589,blocks/d01_lava/lavastruct_goat_satan_statue_diff,43836,43836,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,191,texture,cd4238c6a0c69e32,c0fc62e6a0969dc4,blocks/d01_caves/cavestruct_plinth_01_norm,174932,174932,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,192,texture,cd4238c6a0c69e32,c1d10eb70d4e5e4a,blocks/d01_caves/cavestruct_floor_01_norm,1398260,1398260,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,193,texture,cd4238c6a0c69e32,c292bb93ae4cac75,,349684,349684,0,1
-2dcf25b90002fc07,modules/d01_hub_room/resources,194,texture,cd4238c6a0c69e32,c2fc0983bc5c5d99,,699196,699196,0,1
+2dcf25b90002fc07,modules/d01_hub_room/resources,194,texture,cd4238c6a0c69e32,c2fc0983bc5c5d99,blocks/d01_hub_room/tutorial_cliff_01_diff,699196,699196,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,195,texture,cd4238c6a0c69e32,c43dcbf4dc82ce09,blocks/d01_caves/caverock_border_low_diff,87532,87532,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,196,texture,cd4238c6a0c69e32,c7e9ade4017781ca,,349684,349684,0,1
 2dcf25b90002fc07,modules/d01_hub_room/resources,197,texture,cd4238c6a0c69e32,c8173e61209a04f4,effects/textures/additive_blob,11068,11068,0,1
@@ -6602,7 +6602,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 3ee1f740a8e57e21,modules/d01_caves/resources,156,level,2a690fd348fe9ac5,a601a6e6986374c3,modules/d01_caves/quilts/encounters/caves_quilt_mediumroom__xox_xex_xix_xex__03_spider,99200,99200,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,157,level,2a690fd348fe9ac5,a865086a1ba96bbd,modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e__06_spider,14368,14368,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,158,level,2a690fd348fe9ac5,a876d92bb00072ca,modules/d01_caves/quilts/entrances/caves_quilt_entrance__xox_xx_xxx_xx__01_civilization,15696,15696,0,1
-3ee1f740a8e57e21,modules/d01_caves/resources,159,level,2a690fd348fe9ac5,a9f3b892cabcf8c2,,3168,3168,0,1
+3ee1f740a8e57e21,modules/d01_caves/resources,159,level,2a690fd348fe9ac5,a9f3b892cabcf8c2,modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor,3168,3168,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,160,level,2a690fd348fe9ac5,aa6ec9377f382b1c,modules/d01_caves/quilts/base/caves_quilt_turn__e_e_x_x__03_spider,8832,8832,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,161,level,2a690fd348fe9ac5,ab6c1d3cf38cd8d7,modules/d01_caves/quilts/base/caves_quilt_turn__e_x_x_e__04_civilization,7072,7072,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,162,level,2a690fd348fe9ac5,ab7d7bfad20ed41a,modules/d01_caves/room_caves_floor_adventure_2,77680,77680,0,1
@@ -6782,7 +6782,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 3ee1f740a8e57e21,modules/d01_caves/resources,336,texture,cd4238c6a0c69e32,04ed3e2019da2351,blocks/d01_caves/caverock_rock_01_norm,349684,349684,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,337,texture,cd4238c6a0c69e32,050c3a46d44dafd0,blocks/d01_caves/swamp_cavestruct_pillar_01_diff,174908,174908,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,338,texture,cd4238c6a0c69e32,05fc0518043b9947,blocks/d01_caves/cavestruct_doorarch_diff,174908,174908,0,1
-3ee1f740a8e57e21,modules/d01_caves/resources,339,texture,cd4238c6a0c69e32,062fdf681373e72f,,87540,87540,0,1
+3ee1f740a8e57e21,modules/d01_caves/resources,339,texture,cd4238c6a0c69e32,062fdf681373e72f,blocks/d01_lava/lavastruct_goat_satan_statue_norm,87540,87540,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,340,texture,cd4238c6a0c69e32,06915753e1b3d147,,349684,349684,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,341,texture,cd4238c6a0c69e32,0757d54f78c7b8a1,gameobjects/doors/door_wall_01_spec,174908,174908,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,342,texture,cd4238c6a0c69e32,0872a79e0d2fd574,effects/textures/alpha_liquid_explosion_03,87540,87540,0,1
@@ -7109,7 +7109,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 3ee1f740a8e57e21,modules/d01_caves/resources,663,texture,cd4238c6a0c69e32,bed3e7a03984815b,,349684,349684,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,664,texture,cd4238c6a0c69e32,bf3b3629ff21b3af,menu/black,828,828,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,665,texture,cd4238c6a0c69e32,c09b0d67aca94664,blocks/d01_lava/lavastruct_stairs_diff,87532,87532,0,1
-3ee1f740a8e57e21,modules/d01_caves/resources,666,texture,cd4238c6a0c69e32,c0a1917e0fd46589,,43836,43836,0,1
+3ee1f740a8e57e21,modules/d01_caves/resources,666,texture,cd4238c6a0c69e32,c0a1917e0fd46589,blocks/d01_lava/lavastruct_goat_satan_statue_diff,43836,43836,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,667,texture,cd4238c6a0c69e32,c0edb422fc86e071,blocks/d01_caves/stairs/roundstairs_norm,349684,349684,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,668,texture,cd4238c6a0c69e32,c0fc62e6a0969dc4,blocks/d01_caves/cavestruct_plinth_01_norm,174932,174932,0,1
 3ee1f740a8e57e21,modules/d01_caves/resources,669,texture,cd4238c6a0c69e32,c1d10eb70d4e5e4a,blocks/d01_caves/cavestruct_floor_01_norm,1398260,1398260,0,1
@@ -8012,8 +8012,6 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,225,material,eac0b497876adedf,fecfb397ea28af14,effects/statuseffect_invisible_enter,468,468,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,226,material,eac0b497876adedf,ffc01eafcb74384c,effects/cha_status_haste,224,224,0,1
 44bcc04093e5c506,core/editor_slave/level_editor/baked_lighting,0,render_config,27862fe24795319c,44bcc04093e5c506,core/editor_slave/level_editor/baked_lighting,336,336,0,1
-47adcf8355608941,,0,package,ad9c6d9ed1e5e77a,47adcf8355608941,,4,33,0,1
-47adcf8355608941,,1,texture,cd4238c6a0c69e32,453e598f9df89c50,,4256,3332256257,1111017120,2
 47f1b7369bdf82c5,core/editor_slave/level_editor/terrain_editor,0,render_config,27862fe24795319c,47f1b7369bdf82c5,core/editor_slave/level_editor/terrain_editor,1404,1404,0,1
 49d4d51fb4291f95,resource_packages/heroes/wizard_equipment,0,bones,18dead01056b72e9,00f924ed67dd942a,equipment/wizard/set04_head,237,237,0,1
 49d4d51fb4291f95,resource_packages/heroes/wizard_equipment,1,bones,18dead01056b72e9,0e492fb29e414f75,equipment/wizard/weapon01,23,23,0,1
@@ -8198,8 +8196,6 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 49d4d51fb4291f95,resource_packages/heroes/wizard_equipment,180,material,eac0b497876adedf,dd7ace5f7804e69b,effects/footstep_default,136,136,0,1
 49d4d51fb4291f95,resource_packages/heroes/wizard_equipment,181,material,eac0b497876adedf,e2fd9d95ca41509c,equipment/wizard/weapon,540,540,0,1
 49d4d51fb4291f95,resource_packages/heroes/wizard_equipment,182,material,eac0b497876adedf,ea468b0eda508f55,effects/wep_wizard_sinister_orb_fire,512,512,0,1
-4ba749ebdb5c9069,,0,package,ad9c6d9ed1e5e77a,4ba749ebdb5c9069,,4,33,0,1
-4ba749ebdb5c9069,,1,texture,cd4238c6a0c69e32,dca96153a4ee0ccf,gameobjects/food/ham_diff,4256,3332256257,1111017120,2
 4bbbfb1c3f6a00b8,resource_packages/elias/cave_labyrinth,0,ugg,712d6e3dd1024c9c,19b040b8bc8cc914,elias/cave_labyrinth/audio/6_0_1,105222,105222,0,1
 4bbbfb1c3f6a00b8,resource_packages/elias/cave_labyrinth,1,ugg,712d6e3dd1024c9c,1db3e6caad62a84e,elias/cave_labyrinth/audio/3_0_4,1138446,1138446,0,1
 4bbbfb1c3f6a00b8,resource_packages/elias/cave_labyrinth,2,ugg,712d6e3dd1024c9c,23547cb8e4cc7b62,elias/cave_labyrinth/audio/8_0_1,123850,123850,0,1

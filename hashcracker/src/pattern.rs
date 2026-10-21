@@ -133,11 +133,19 @@ pub struct Compiler {
     /// slot letter (uppercase-normalised) -> global list index
     pub slot_index: Vec<(u8, usize)>,
     pub lists: Vec<Vec<Vec<u8>>>,
+    /// Lowercase the pattern's literal bytes at compile time?
+    ///
+    /// `true` is the Gauntlet/Bitsquid convention (resource paths are folded
+    /// before hashing).  `false` keeps the pattern exactly as written, for
+    /// namespaces whose hashes are case-sensitive (Helldivers 2) - the arena the
+    /// hot loop and the GPU kernel read is built from these bytes, so this one
+    /// flag covers both paths.
+    pub fold: bool,
 }
 
 impl Compiler {
-    pub fn new() -> Self {
-        Compiler { slot_index: Vec::new(), lists: Vec::new() }
+    pub fn new(fold: bool) -> Self {
+        Compiler { slot_index: Vec::new(), lists: Vec::new(), fold }
     }
 
     /// Bind (or fetch) the global list index for a slot letter.
@@ -193,7 +201,7 @@ impl Compiler {
                 parts.push(Part::Slot(pos));
                 i += 2;
             } else {
-                lit.push(b.to_ascii_lowercase());
+                lit.push(if self.fold { b.to_ascii_lowercase() } else { b });
                 i += 1;
             }
         }
@@ -217,7 +225,7 @@ mod tests {
     use super::*;
 
     fn comp() -> Compiler {
-        let mut c = Compiler::new();
+        let mut c = Compiler::new(true);
         let d = c.slot(b'd');
         c.lists[d] = vec![b"a".to_vec(), b"b".to_vec()];
         let n = c.slot(b'n');
@@ -267,7 +275,7 @@ mod tests {
     /// it used to be an index-out-of-bounds panic.
     #[test]
     fn too_many_slots_is_an_error_not_a_panic() {
-        let mut c = Compiler::new();
+        let mut c = Compiler::new(true);
         let mut pat = String::new();
         for ch in b'a'..=b'q' {
             c.slot(ch);

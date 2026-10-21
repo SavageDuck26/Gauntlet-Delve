@@ -694,6 +694,8 @@ blocks/d01_crypt/walls/cryptsmooth_wall_4c_var01                     bf5e14e5306
 blocks/d01_crypt/walls/cryptsmooth_wall_4c_var02                     e9620a53beb63d68  unit
 blocks/d01_crypt/walls/cryptsmooth_wall_convex                       6f1baf77489957f9  unit
 blocks/d01_crypt/walls/cryptsmooth_wall_door_01_4c                   f76990ad0cbf1ed9  unit
+blocks/d01_hub_room/tutorial_cliff_01_diff                           c2fc0983bc5c5d99  texture
+blocks/d01_hub_room/tutorial_cliff_01_norm                           1279fa7baa6a64e3  texture
 blocks/d01_hub_room/tutorial_platform_diff                           44f4672de6c968e5  texture
 blocks/d01_hub_room/tutorial_platform_middle                         3d370ba37fdf3958  material
 blocks/d01_hub_room/tutorial_platform_norm                           a066b56c048795ad  texture
@@ -770,6 +772,8 @@ blocks/d01_lava/lavastruct_floor_tile_01_diff                        326550231e5
 blocks/d01_lava/lavastruct_floor_tile_01_norm                        315f62e2962c3b29  texture
 blocks/d01_lava/lavastruct_fountain_01_diff                          a8a104eda3743ce2  texture
 blocks/d01_lava/lavastruct_fountain_01_norm                          12d4363870a67434  texture
+blocks/d01_lava/lavastruct_goat_satan_statue_diff                    c0a1917e0fd46589  texture
+blocks/d01_lava/lavastruct_goat_satan_statue_norm                    062fdf681373e72f  texture
 blocks/d01_lava/lavastruct_lavaflow_diff                             161d943d4511fbee  texture
 blocks/d01_lava/lavastruct_lavaflow_normal                           10705713e79ee0cc  texture
 blocks/d01_lava/lavastruct_pillar_01_diff                            7fff619aad4473f0  texture
@@ -6143,6 +6147,7 @@ modules/d01_lava/dungeon_tiles/lavarock_dungeon_tiles_master         14d03b24ab9
 modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_end  68a3d761625817be  level
 modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_start  d294f860962fa534  level
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_d_w_d_01_corridor  58bbb8b2593e0594  level
+modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor  a9f3b892cabcf8c2  level
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_d_w_01_corridorturn  992d678e2fa1f2e3  level
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_01_corridor  5d8db61d32ebbcc0  level
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_02_corridor  2519b63de26905a0  level
@@ -6735,6 +6740,7 @@ props/d01_lava/skysphere_vortex                                      eb0ca73e8ab
 props/d01_lava/souls_01                                              e7cb79ffbe124ac9  material
 props/d01_lava/souls_emissive                                        0e2467ce91e68aae  texture
 props/d01_lava/stool_01                                              a9696b8d94d01292  unit
+props/d01_lava/swamp_redwizard_brazier_02_diff                       e549e905c4357a28  texture
 props/d01_lava/swamp_redwizard_cage_01_diff                          c360e2facc448c23  texture
 props/d01_lava/swamp_redwizard_cage_01_norm                          e21c473feddaf138  texture
 props/d01_lava/vase                                                  5cc0f77fb2ee0714  material+unit
@@ -6934,5 +6940,5 @@ volumetric_fog:color_map:octave_2                                    3d22237cc6b
 volumetric_fog:octave_2                                              176f8cdc1eb6631f  shader_library
 volumetric_fog:octave_2:octave_3                                     7f9b5b71ff68cddc  shader_library
 
-6,932 names
-generated 2026-10-12 03:42
+6,938 names
+generated 2026-10-21 07:11

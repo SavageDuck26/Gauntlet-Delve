@@ -9,6 +9,25 @@ It is the fast complement to the Python toolchain
 (`../scripts/crack_*_names.py`): where Python handles a few million
 candidates, this handles **billions** in seconds.
 
+## Engine lineage (synced 2026-10-21)
+
+`src/` is shared with the `HD2-Hashcracking` fork, so the two projects run the
+same engine.  The 2026-10-21 sync brought over:
+
+* **`--preserve-case`** - candidates are hashed exactly as written instead of
+  being folded to lowercase.  Gauntlet/Stingray resource paths are folded
+  before hashing, so the default here is unchanged; the flag exists for
+  case-sensitive namespaces (Helldivers 2).
+* **`--thin`** - targets are 32-bit ids (`Hash.Thin()`), and a candidate matches
+  when the **top half** of its 64-bit hash equals the target.  Hits still print
+  the full 64-bit hash.
+* the matching GPU/WGSL and `substitute`/`mutate` paths, plus the cross-check
+  test vectors for `filediver`/HD2 ids.
+
+Gauntlet behaviour is unchanged: `cargo test --release --offline` is 10/10, and
+an uppercase candidate still matches a lowercase Gauntlet hash by default but
+not under `--preserve-case`.
+
 ## Layout
 
 ```
@@ -33,14 +52,17 @@ tracked alongside the overlay it is merged into.
 
 See **[SCRIPTS.md](SCRIPTS.md)** for every script and when to use it.
 
-## Current state (2026-10-06)
+## Current state (2026-10-21)
 
-* overlay: **6,037** names - **1,507** unique unresolved hashes
-* catalogue: 20,000 resources, **16,676 named** (83.4%), 3,324 unresolved rows
-* GPU: ~0.7-1.2 G candidates/s (AMD RX 6600 XT, RADV) vs ~0.15 G/s on 12 CPU threads
+* overlay: **6,938** names - **867** unique unresolved hashes
+* catalogue: 20,000 shipped resources, **18,001 named** (90.00%), 1,999 unnamed rows
+* GPU: ~1.1-2.0 G candidates/s (RTX 4060 Laptop, NVIDIA Vulkan) vs ~0.15 G/s
+  on 12 CPU threads
 
-Remaining by family (unique): `texture 527 - animation 346 - shader_library 245 -
-material 145 - particles 115 - level 103 - unit 66 - shader 46 - timpani_bank 37`.
+Remaining by family (unique hashes per type; a hash shared by several types -
+`material`+`unit`, `material`+`texture` - counts once in the 867 total):
+`animation 303 - texture 246 - shader_library 122 - material 80 - particles 67 -
+unit 39 - timpani_bank 37 - shader 36 - level 9 - flow 1`.
 
 **One at a time**: the engine will happily use the whole machine, so run a
 single instance - two at once halve each other's throughput.

@@ -572,7 +572,7 @@ BUNDLE 0164ad48615ba9ed   (modules/d01_crypt/resources)
   564 texture                  cd4238c6a0c69e32   04ed3e2019da2351       349684     349684 blocks/d01_caves/caverock_rock_01_norm
   565 texture                  cd4238c6a0c69e32   050c3a46d44dafd0       174908     174908 blocks/d01_caves/swamp_cavestruct_pillar_01_diff
   566 texture                  cd4238c6a0c69e32   05fc0518043b9947       174908     174908 blocks/d01_caves/cavestruct_doorarch_diff
-  567 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 <unresolved>
+  567 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 blocks/d01_lava/lavastruct_goat_satan_statue_norm
   568 texture                  cd4238c6a0c69e32   06915753e1b3d147       349684     349684 <unresolved>
   569 texture                  cd4238c6a0c69e32   0757d54f78c7b8a1       174908     174908 gameobjects/doors/door_wall_01_spec
   570 texture                  cd4238c6a0c69e32   08d7dd4f27565e75        11068      11068 blocks/d01_lava/lavastruct_swatch_diff
@@ -914,7 +914,7 @@ BUNDLE 0164ad48615ba9ed   (modules/d01_crypt/resources)
   906 texture                  cd4238c6a0c69e32   bed3e7a03984815b       349684     349684 <unresolved>
   907 texture                  cd4238c6a0c69e32   bf3b3629ff21b3af          828        828 menu/black
   908 texture                  cd4238c6a0c69e32   c09b0d67aca94664        87532      87532 blocks/d01_lava/lavastruct_stairs_diff
-  909 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 <unresolved>
+  909 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 blocks/d01_lava/lavastruct_goat_satan_statue_diff
   910 texture                  cd4238c6a0c69e32   c0fc62e6a0969dc4       174932     174932 blocks/d01_caves/cavestruct_plinth_01_norm
   911 texture                  cd4238c6a0c69e32   c1d10eb70d4e5e4a      1398260    1398260 blocks/d01_caves/cavestruct_floor_01_norm
   912 texture                  cd4238c6a0c69e32   c2506eaa7e0b6641        43860      43860 gameobjects/doors/door_crypt_encounter_01_diff
@@ -2091,7 +2091,7 @@ BUNDLE 07cdebae91f29fae   (modules/menu/resources)
    43 texture                  cd4238c6a0c69e32   050c3a46d44dafd0       174908     174908 blocks/d01_caves/swamp_cavestruct_pillar_01_diff
    44 texture                  cd4238c6a0c69e32   05fc0518043b9947       174908     174908 blocks/d01_caves/cavestruct_doorarch_diff
    45 texture                  cd4238c6a0c69e32   062ba873a0ce8e73       699220     699220 <unresolved>
-   46 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 <unresolved>
+   46 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 blocks/d01_lava/lavastruct_goat_satan_statue_norm
    47 texture                  cd4238c6a0c69e32   06915753e1b3d147       349684     349684 <unresolved>
    48 texture                  cd4238c6a0c69e32   0872a79e0d2fd574        87540      87540 effects/textures/alpha_liquid_explosion_03
    49 texture                  cd4238c6a0c69e32   08d7dd4f27565e75        11068      11068 blocks/d01_lava/lavastruct_swatch_diff
@@ -2325,7 +2325,7 @@ BUNDLE 07cdebae91f29fae   (modules/menu/resources)
   277 texture                  cd4238c6a0c69e32   bed3e7a03984815b       349684     349684 <unresolved>
   278 texture                  cd4238c6a0c69e32   bf8efb20c760bb41       349684     349684 props/menu/menu_grass_diff
   279 texture                  cd4238c6a0c69e32   c09b0d67aca94664        87532      87532 blocks/d01_lava/lavastruct_stairs_diff
-  280 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 <unresolved>
+  280 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 blocks/d01_lava/lavastruct_goat_satan_statue_diff
   281 texture                  cd4238c6a0c69e32   c0fc62e6a0969dc4       174932     174932 blocks/d01_caves/cavestruct_plinth_01_norm
   282 texture                  cd4238c6a0c69e32   c1d10eb70d4e5e4a      1398260    1398260 blocks/d01_caves/cavestruct_floor_01_norm
   283 texture                  cd4238c6a0c69e32   c292bb93ae4cac75       349684     349684 <unresolved>
@@ -3024,7 +3024,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   161 level                    2a690fd348fe9ac5   a2c8785a8e8fe4f0       109952     109952 modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_xe_xix_xe__02_temple
   162 level                    2a690fd348fe9ac5   a4add9496f8cc308         2656       2656 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_w_d_d_01
   163 level                    2a690fd348fe9ac5   a5224457079bd4fa         2272       2272 modules/d01_lava/prefabs/prefab_lava_pit_2c_2c
-  164 level                    2a690fd348fe9ac5   a9f3b892cabcf8c2         3168       3168 <unresolved>
+  164 level                    2a690fd348fe9ac5   a9f3b892cabcf8c2         3168       3168 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor
   165 level                    2a690fd348fe9ac5   ad4fba97fc1443be        13920      13920 modules/d01_lava/quilts/base/lava_quilt_turn__x_x_e_e__01
   166 level                    2a690fd348fe9ac5   ae1d0fd8548eb410       135968     135968 modules/d01_lava/quilts/encounters/lava_quilt_mediumroom__xox_ix_xix_ox__01_rocks
   167 level                    2a690fd348fe9ac5   af2f4d750f8afc80        24048      24048 modules/d01_lava/quilts/base/lava_quilt_straight__x_e_x_e__06_rocks
@@ -3212,7 +3212,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   349 texture                  cd4238c6a0c69e32   040c6141e8c39660        21996      21996 <unresolved>
   350 texture                  cd4238c6a0c69e32   04ed3e2019da2351       349684     349684 blocks/d01_caves/caverock_rock_01_norm
   351 texture                  cd4238c6a0c69e32   05fc0518043b9947       174908     174908 blocks/d01_caves/cavestruct_doorarch_diff
-  352 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 <unresolved>
+  352 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 blocks/d01_lava/lavastruct_goat_satan_statue_norm
   353 texture                  cd4238c6a0c69e32   06915753e1b3d147       349684     349684 <unresolved>
   354 texture                  cd4238c6a0c69e32   0757d54f78c7b8a1       174908     174908 gameobjects/doors/door_wall_01_spec
   355 texture                  cd4238c6a0c69e32   0872a79e0d2fd574        87540      87540 effects/textures/alpha_liquid_explosion_03
@@ -3508,7 +3508,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   645 texture                  cd4238c6a0c69e32   bed3e7a03984815b       349684     349684 <unresolved>
   646 texture                  cd4238c6a0c69e32   bf3b3629ff21b3af          828        828 menu/black
   647 texture                  cd4238c6a0c69e32   c09b0d67aca94664        87532      87532 blocks/d01_lava/lavastruct_stairs_diff
-  648 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 <unresolved>
+  648 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 blocks/d01_lava/lavastruct_goat_satan_statue_diff
   649 texture                  cd4238c6a0c69e32   c0edb422fc86e071       349684     349684 blocks/d01_caves/stairs/roundstairs_norm
   650 texture                  cd4238c6a0c69e32   c0fc62e6a0969dc4       174932     174932 blocks/d01_caves/cavestruct_plinth_01_norm
   651 texture                  cd4238c6a0c69e32   c1d10eb70d4e5e4a      1398260    1398260 blocks/d01_caves/cavestruct_floor_01_norm
@@ -3564,7 +3564,7 @@ BUNDLE 0f07a1cb5132485b   (modules/d01_lava/resources)
   701 texture                  cd4238c6a0c69e32   e46328a03e2a94b3       349684     349684 blocks/d01_crypt/cryptsmooth_wall_01_norm
   702 texture                  cd4238c6a0c69e32   e464265f66754f41        11068      11068 blocks/d01_caves/caves_swatch_diff
   703 texture                  cd4238c6a0c69e32   e51c3432aa1d49e4       349684     349684 <unresolved>
-  704 texture                  cd4238c6a0c69e32   e549e905c4357a28       349684     349684 <unresolved>
+  704 texture                  cd4238c6a0c69e32   e549e905c4357a28       349684     349684 props/d01_lava/swamp_redwizard_brazier_02_diff
   705 texture                  cd4238c6a0c69e32   e5557fcffb58c25f        87540      87540 <unresolved>
   706 texture                  cd4238c6a0c69e32   e58991a6ebcbed4d       349684     349684 decals/moss_01_norm
   707 texture                  cd4238c6a0c69e32   e652cd963fc86516        22004      22004 props/d01_lava/lava_metalbox_top_norm
@@ -6017,7 +6017,7 @@ BUNDLE 2dcf25b90002fc07   (modules/d01_hub_room/resources)
    19 texture                  cd4238c6a0c69e32   0451f9d391a4ce38      1398260    1398260 <unresolved>
    20 texture                  cd4238c6a0c69e32   04ed3e2019da2351       349684     349684 blocks/d01_caves/caverock_rock_01_norm
    21 texture                  cd4238c6a0c69e32   05fc0518043b9947       174908     174908 blocks/d01_caves/cavestruct_doorarch_diff
-   22 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 <unresolved>
+   22 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 blocks/d01_lava/lavastruct_goat_satan_statue_norm
    23 texture                  cd4238c6a0c69e32   06915753e1b3d147       349684     349684 <unresolved>
    24 texture                  cd4238c6a0c69e32   08d7dd4f27565e75        11068      11068 blocks/d01_lava/lavastruct_swatch_diff
    25 texture                  cd4238c6a0c69e32   0b33e10b909fb2a1       349684     349684 <unresolved>
@@ -6025,7 +6025,7 @@ BUNDLE 2dcf25b90002fc07   (modules/d01_hub_room/resources)
    27 texture                  cd4238c6a0c69e32   0c157d7a3c58cf32       349684     349684 blocks/d01_caves/cavestruct_doorarch_norm
    28 texture                  cd4238c6a0c69e32   10705713e79ee0cc        87540      87540 blocks/d01_lava/lavastruct_lavaflow_normal
    29 texture                  cd4238c6a0c69e32   10c1d22ada91c312       174908     174908 blocks/d01_caves/caverock_skulldoor_diff
-   30 texture                  cd4238c6a0c69e32   1279fa7baa6a64e3      1398260    1398260 <unresolved>
+   30 texture                  cd4238c6a0c69e32   1279fa7baa6a64e3      1398260    1398260 blocks/d01_hub_room/tutorial_cliff_01_norm
    31 texture                  cd4238c6a0c69e32   12d4363870a67434        87540      87540 blocks/d01_lava/lavastruct_fountain_01_norm
    32 texture                  cd4238c6a0c69e32   1417dc08a0973de6       349684     349684 blocks/d01_crypt/crypt_exit_skulldoor_norm
    33 texture                  cd4238c6a0c69e32   143cf1b8bc86046c       349684     349684 decals/blood_splat_black_03
@@ -6185,11 +6185,11 @@ BUNDLE 2dcf25b90002fc07   (modules/d01_hub_room/resources)
   187 texture                  cd4238c6a0c69e32   bea8ad587db7b07a       349684     349684 <unresolved>
   188 texture                  cd4238c6a0c69e32   bed3e7a03984815b       349684     349684 <unresolved>
   189 texture                  cd4238c6a0c69e32   c09b0d67aca94664        87532      87532 blocks/d01_lava/lavastruct_stairs_diff
-  190 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 <unresolved>
+  190 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 blocks/d01_lava/lavastruct_goat_satan_statue_diff
   191 texture                  cd4238c6a0c69e32   c0fc62e6a0969dc4       174932     174932 blocks/d01_caves/cavestruct_plinth_01_norm
   192 texture                  cd4238c6a0c69e32   c1d10eb70d4e5e4a      1398260    1398260 blocks/d01_caves/cavestruct_floor_01_norm
   193 texture                  cd4238c6a0c69e32   c292bb93ae4cac75       349684     349684 <unresolved>
-  194 texture                  cd4238c6a0c69e32   c2fc0983bc5c5d99       699196     699196 <unresolved>
+  194 texture                  cd4238c6a0c69e32   c2fc0983bc5c5d99       699196     699196 blocks/d01_hub_room/tutorial_cliff_01_diff
   195 texture                  cd4238c6a0c69e32   c43dcbf4dc82ce09        87532      87532 blocks/d01_caves/caverock_border_low_diff
   196 texture                  cd4238c6a0c69e32   c7e9ade4017781ca       349684     349684 <unresolved>
   197 texture                  cd4238c6a0c69e32   c8173e61209a04f4        11068      11068 effects/textures/additive_blob
@@ -6744,7 +6744,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   156 level                    2a690fd348fe9ac5   a601a6e6986374c3        99200      99200 modules/d01_caves/quilts/encounters/caves_quilt_mediumroom__xox_xex_xix_xex__03_spider
   157 level                    2a690fd348fe9ac5   a865086a1ba96bbd        14368      14368 modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e__06_spider
   158 level                    2a690fd348fe9ac5   a876d92bb00072ca        15696      15696 modules/d01_caves/quilts/entrances/caves_quilt_entrance__xox_xx_xxx_xx__01_civilization
-  159 level                    2a690fd348fe9ac5   a9f3b892cabcf8c2         3168       3168 <unresolved>
+  159 level                    2a690fd348fe9ac5   a9f3b892cabcf8c2         3168       3168 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor
   160 level                    2a690fd348fe9ac5   aa6ec9377f382b1c         8832       8832 modules/d01_caves/quilts/base/caves_quilt_turn__e_e_x_x__03_spider
   161 level                    2a690fd348fe9ac5   ab6c1d3cf38cd8d7         7072       7072 modules/d01_caves/quilts/base/caves_quilt_turn__e_x_x_e__04_civilization
   162 level                    2a690fd348fe9ac5   ab7d7bfad20ed41a        77680      77680 modules/d01_caves/room_caves_floor_adventure_2
@@ -6924,7 +6924,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   336 texture                  cd4238c6a0c69e32   04ed3e2019da2351       349684     349684 blocks/d01_caves/caverock_rock_01_norm
   337 texture                  cd4238c6a0c69e32   050c3a46d44dafd0       174908     174908 blocks/d01_caves/swamp_cavestruct_pillar_01_diff
   338 texture                  cd4238c6a0c69e32   05fc0518043b9947       174908     174908 blocks/d01_caves/cavestruct_doorarch_diff
-  339 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 <unresolved>
+  339 texture                  cd4238c6a0c69e32   062fdf681373e72f        87540      87540 blocks/d01_lava/lavastruct_goat_satan_statue_norm
   340 texture                  cd4238c6a0c69e32   06915753e1b3d147       349684     349684 <unresolved>
   341 texture                  cd4238c6a0c69e32   0757d54f78c7b8a1       174908     174908 gameobjects/doors/door_wall_01_spec
   342 texture                  cd4238c6a0c69e32   0872a79e0d2fd574        87540      87540 effects/textures/alpha_liquid_explosion_03
@@ -7251,7 +7251,7 @@ BUNDLE 3ee1f740a8e57e21   (modules/d01_caves/resources)
   663 texture                  cd4238c6a0c69e32   bed3e7a03984815b       349684     349684 <unresolved>
   664 texture                  cd4238c6a0c69e32   bf3b3629ff21b3af          828        828 menu/black
   665 texture                  cd4238c6a0c69e32   c09b0d67aca94664        87532      87532 blocks/d01_lava/lavastruct_stairs_diff
-  666 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 <unresolved>
+  666 texture                  cd4238c6a0c69e32   c0a1917e0fd46589        43836      43836 blocks/d01_lava/lavastruct_goat_satan_statue_diff
   667 texture                  cd4238c6a0c69e32   c0edb422fc86e071       349684     349684 blocks/d01_caves/stairs/roundstairs_norm
   668 texture                  cd4238c6a0c69e32   c0fc62e6a0969dc4       174932     174932 blocks/d01_caves/cavestruct_plinth_01_norm
   669 texture                  cd4238c6a0c69e32   c1d10eb70d4e5e4a      1398260    1398260 blocks/d01_caves/cavestruct_floor_01_norm
@@ -8172,16 +8172,6 @@ BUNDLE 44bcc04093e5c506   (core/editor_slave/level_editor/baked_lighting)
     0 render_config            27862fe24795319c   44bcc04093e5c506          336        336 core/editor_slave/level_editor/baked_lighting
 
 ====================================================================================================
-BUNDLE 47adcf8355608941   (unresolved package path)
-  packed=182.0 B  unzipped=4.5 KiB  sig=0xF0000004  resources=2
-  header scan complete: yes
---------------------------------------------------------------------------------------------------------------
-    # type                     type_hash          name_hash                body   declared name
---------------------------------------------------------------------------------------------------------------
-    0 package                  ad9c6d9ed1e5e77a   47adcf8355608941            4         33 <unresolved>
-    1 texture                  cd4238c6a0c69e32   453e598f9df89c50         4256 3332256257 <unresolved>
-
-====================================================================================================
 BUNDLE 47f1b7369bdf82c5   (core/editor_slave/level_editor/terrain_editor)
   packed=807.0 B  unzipped=1.7 KiB  sig=0xF0000004  resources=1
   header scan complete: yes
@@ -8380,16 +8370,6 @@ BUNDLE 49d4d51fb4291f95   (resource_packages/heroes/wizard_equipment)
   180 material                 eac0b497876adedf   dd7ace5f7804e69b          136        136 effects/footstep_default
   181 material                 eac0b497876adedf   e2fd9d95ca41509c          540        540 equipment/wizard/weapon
   182 material                 eac0b497876adedf   ea468b0eda508f55          512        512 effects/wep_wizard_sinister_orb_fire
-
-====================================================================================================
-BUNDLE 4ba749ebdb5c9069   (unresolved package path)
-  packed=163.0 B  unzipped=4.5 KiB  sig=0xF0000004  resources=2
-  header scan complete: yes
---------------------------------------------------------------------------------------------------------------
-    # type                     type_hash          name_hash                body   declared name
---------------------------------------------------------------------------------------------------------------
-    0 package                  ad9c6d9ed1e5e77a   4ba749ebdb5c9069            4         33 <unresolved>
-    1 texture                  cd4238c6a0c69e32   dca96153a4ee0ccf         4256 3332256257 gameobjects/food/ham_diff
 
 ====================================================================================================
 BUNDLE 4bbbfb1c3f6a00b8   (resource_packages/elias/cave_labyrinth)

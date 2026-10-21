@@ -46,7 +46,6 @@ aabc726b53a9b26b	texture	modules/d01_crypt/resources	0164ad48615ba9ed	349684	11	
 b1db19ff8027e143	texture	modules/d01_crypt/resources	0164ad48615ba9ed	349684	11	6	modules/d01_crypt/resources
 b2f3e16c8530496b	texture	modules/d01_crypt/resources	0164ad48615ba9ed	174908	11	0	blocks/d01_crypt/d01_crypt_swatch
 bea8ad587db7b07a	texture	modules/d01_crypt/resources	0164ad48615ba9ed	349684	11	0	decals/decal_caves_floor_04
-c0a1917e0fd46589	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	11	0	blocks/d01_lava/lavastruct_set
 dda186d761ca0b90	texture	modules/d01_crypt/resources	0164ad48615ba9ed	349684	11	0	modules/d01_crypt/resources
 559155d644cfbe1c	texture	resource_packages/heroes/elf_base	2c8fb6cb55aba416	22004	11	1	effects/cha_beast_charge_target
 350ee84dacd4a224	unit	modules/d01_crypt/resources	0164ad48615ba9ed	1609	11	0	modules/d01_crypt/colosseum/crypt_colosseum_03_template
@@ -421,7 +420,6 @@ e0f84951e11cbbb0	animation	resource_packages/cave_boss	e06f540aaee65d0d	6112	2	0
 f1c854b45cfe3253	animation	resource_packages/cave_boss	e06f540aaee65d0d	3906	2	0	resource_packages/debug
 fe22ef5e55d7c102	animation	resource_packages/cave_boss	e06f540aaee65d0d	3946	2	0	resource_packages/debug
 f6e003b8ed3e7eb7	level	modules/d01_crypt/resources	0164ad48615ba9ed	37632	2	0	modules/d01_crypt/resources
-a9f3b892cabcf8c2	level	modules/d01_lava/resources	0f07a1cb5132485b	3168	2	0	modules/d01_lava/dungeon_tiles/lavastruct_dungeon_tiles_master
 01585bdee840cfb8	level	modules/d01_caves/resources	3ee1f740a8e57e21	5200	2	0	modules/d01_caves/resources
 2e5799e5242acdee	level	modules/d01_caves/resources	3ee1f740a8e57e21	13312	2	0	modules/d01_caves/resources
 b339df01128e0e8c	level	modules/d01_caves/resources	3ee1f740a8e57e21	78176	2	0	modules/d01_caves/resources
@@ -469,7 +467,6 @@ b9fc1e1f8fac0956	texture	modules/d01_lava/resources	0f07a1cb5132485b	43836	2	0	m
 59b5da1a66c33da7	texture	resource_packages/d01_lava	1bbcb9610a009446	2876	2	0	gameobjects/spawners/spawner_lava_daemon
 0451f9d391a4ce38	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	1398260	2	0	modules/d01_hub_room/resources
 5e963fc690185df3	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	349684	2	0	modules/d01_hub_room/resources
-c2fc0983bc5c5d99	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	2	1	modules/debug/resources
 cfccc965504f2217	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	2	1	modules/debug/resources
 ee7749b9bd1dd5ec	texture	resource_packages/heroes/necromagus_ability	62bed773ef95d36e	11068	2	0	resource_packages/heroes/necromagus_ability
 d7c5132e91a6b3af	texture	resource_packages/splash	bc1322b850aa1afd	699220	2	0	resource_packages/menu
@@ -762,7 +759,6 @@ b58f14aec9e5472e	shader_library	core/rendering/renderer	1a9c33dcd0301dfd	32	1	0	
 b61465cf404de905	texture	modules/menu/resources	07cdebae91f29fae	1229316	1	0	props/menu/titlescreen_background
 040c6141e8c39660	texture	modules/d01_lava/resources	0f07a1cb5132485b	21996	1	0	props/d01_lava/lava_redwizard_brazier_01
 aec5665329076d51	texture	modules/d01_lava/resources	0f07a1cb5132485b	43836	1	0	props/d01_lava/lava_redwizard_chair
-e549e905c4357a28	texture	modules/d01_lava/resources	0f07a1cb5132485b	349684	1	0	props/d01_lava/lava_topfence
 eceebae2879afffa	texture	modules/d01_lava/resources	0f07a1cb5132485b	21996	1	0	props/d01_lava/lava_redwizard_brazier_01
 da7211ee1a25a79a	texture	resource_packages/d01_lava	1bbcb9610a009446	43836	1	0	resource_packages/d01_caves
 c6e178fe91aef431	texture	resource_packages/heroes/necromagus_ability	62bed773ef95d36e	11156	1	0	resource_packages/relic_units
@@ -839,8 +835,6 @@ e1fbae1cb7a59595	unit	modules/d01_hub_room/resources	2dcf25b90002fc07	28584	1	0	
 ef070bebd19a23cf	unit	modules/d01_caves/resources	3ee1f740a8e57e21	2406	1	1	modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e__07_spider
 08958446a27515bf	level	modules/d01_lava/resources	0f07a1cb5132485b	8352	0	0	
 e1eac81d372142af	level	modules/d01_caves/resources	3ee1f740a8e57e21	90592	0	0	
-47adcf8355608941	package		47adcf8355608941	4	0	0	
-4ba749ebdb5c9069	package		4ba749ebdb5c9069	4	0	0	
 1dee006f6dfdc4cd	particles	resource_packages/all_effects	695b9dc585a733f4	3124	0	0	
 556555a003860381	particles	resource_packages/all_effects	695b9dc585a733f4	2652	0	0	
 66d1e2b6de607542	particles	resource_packages/all_effects	695b9dc585a733f4	3744	0	0	
@@ -851,13 +845,10 @@ d94e836937cfc7a6	particles	resource_packages/all_effects	695b9dc585a733f4	460	0	
 15438ae1c061100f	particles	resource_packages/menu	ec181385e7000cf1	1084	0	0	
 43ddef0511c8241e	shader	resource_packages/heroes/wizard_ability	5c5954828b367156	59568	0	0	
 935ee7506742e484	shader	resource_packages/menu	ec181385e7000cf1	7296	0	0	
-062fdf681373e72f	texture	modules/d01_crypt/resources	0164ad48615ba9ed	87540	0	0	
 1ef35ab1425d475d	texture	modules/d01_crypt/resources	0164ad48615ba9ed	174932	0	0	
 2b1bdea63cb3e2f8	texture	modules/menu/resources	07cdebae91f29fae	2253716	0	0	
 7b92430911b96a75	texture	modules/menu/resources	07cdebae91f29fae	699220	0	0	
 9e3ba18a50a58667	texture	modules/menu/resources	07cdebae91f29fae	1383244	0	0	
-1279fa7baa6a64e3	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	1398260	0	0	
-453e598f9df89c50	texture		47adcf8355608941	4256	0	0	
 01d4b1da2fcd59ff	texture	resource_packages/menu	ec181385e7000cf1	148100	0	0	
 0abc30c794338950	texture	resource_packages/menu	ec181385e7000cf1	512404	0	0	
 0b5fe2bb171e48ca	texture	resource_packages/menu	ec181385e7000cf1	43836	0	0	

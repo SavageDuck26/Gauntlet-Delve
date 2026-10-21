@@ -22,7 +22,7 @@
 //!
 //!     hashcracker substitute [--catalogue FILE] [--overlay FILE] [--targets FILE]
 //!                            [--packages N] [--depth N] [--top N] [--cpu]
-//!                            [--matches FILE]
+//!                            [--preserve-case] [--matches FILE]
 
 use anyhow::{Context, Result};
 use rayon::prelude::*;
@@ -323,15 +323,19 @@ fn merge_by_type(ctxs: Vec<Ctx>) -> Vec<Ctx> {
 /// catalogue-wide pools (every directory, stem, suffix and number) and crosses
 /// them, bounded by `--top` so the space stays runnable.
 /// Read extra vocabulary files (one value per line) into byte vectors.
-fn read_vocab(paths: &[String]) -> Vec<Vec<u8>> {
+///
+/// `fold` follows the run's case policy: true lowercases each value (Gauntlet),
+/// false keeps it as written (case-sensitive HD2 names).
+fn read_vocab(paths: &[String], fold: bool) -> Vec<Vec<u8>> {
     let mut out: Vec<Vec<u8>> = Vec::new();
     for path in paths {
         let Ok(text) = std::fs::read_to_string(path) else { continue };
         for line in text.lines() {
-            let v = line.trim().to_ascii_lowercase();
-            if v.is_empty() || v.starts_with('#') || v.len() > 64 {
+            let raw = line.trim();
+            if raw.is_empty() || raw.starts_with('#') || raw.len() > 64 {
                 continue;
             }
+            let v = if fold { raw.to_ascii_lowercase() } else { raw.to_string() };
             push_unique(&mut out, &v);
         }
     }
@@ -404,6 +408,8 @@ pub fn run(argv: &[String]) -> Result<()> {
     let top: usize = args.one_or("top", "24").parse().unwrap_or(24);
     let max_ctx: usize = args.one_or("packages", "0").parse().unwrap_or(0);
     let suf_path = args.one("suffixes").unwrap_or_else(|| "data/suffixes.txt".to_string());
+    // Case policy, as everywhere else: Gauntlet folds, HD2 preserves.
+    let fold = args.fold();
 
     let overlay = read_overlay(&ov_path);
     let (ctxs, targets) = load(&cat, &overlay)?;
@@ -441,7 +447,7 @@ pub fn run(argv: &[String]) -> Result<()> {
 
     for c in &ctxs {
         let mut ctx_cands: u64 = 0;
-        let mut comp = Compiler::new();
+        let mut comp = Compiler::new(fold);
         for p in plan(c, &mut comp, depth, top) {
             let Ok(pat) = comp.compile(&p) else { continue };
             let total = pat.total();
@@ -454,7 +460,7 @@ pub fn run(argv: &[String]) -> Result<()> {
             if let Some(g) = &gpu {
                 let label = format!("{}/{}", c.pack, c.typ);
                 let mut cb = |h: u64, name: &[u8]| record(&matches, &hits, &label, h, name);
-                match g.eval_pattern(&pat, &tset, 0, &mut cb) {
+                match g.eval_pattern(&pat, &tset, 0, &mut cb, false) {
                     Ok(_) => {
                         done = true;
                         used_gpu.fetch_add(total, Ordering::Relaxed);
@@ -473,10 +479,10 @@ pub fn run(argv: &[String]) -> Result<()> {
     }
 
     if args.has("cross") {
-        let extra = read_vocab(&args.all("vocab"));
-        let sufs_extra = read_vocab(&[suf_path]);
+        let extra = read_vocab(&args.all("vocab"), fold);
+        let sufs_extra = read_vocab(&[suf_path], fold);
         let g = cross_ctx(&ctxs, top, &extra, &sufs_extra);
-        let mut comp = Compiler::new();
+        let mut comp = Compiler::new(fold);
         for p in cross_patterns(&g, &mut comp) {
             let Ok(pat) = comp.compile(&p) else { continue };
             let total = pat.total();
@@ -489,7 +495,7 @@ pub fn run(argv: &[String]) -> Result<()> {
             if let Some(gpu) = &gpu {
                 let label = "cross-type".to_string();
                 let mut cb = |h: u64, name: &[u8]| record(&matches, &hits, &label, h, name);
-                match gpu.eval_pattern(&pat, &tset, 0, &mut cb) {
+                match gpu.eval_pattern(&pat, &tset, 0, &mut cb, false) {
                     Ok(_) => {
                         done = true;
                         used_gpu.fetch_add(total, Ordering::Relaxed);

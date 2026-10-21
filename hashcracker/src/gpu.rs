@@ -42,6 +42,14 @@ struct Params {
     tmask: u32,
     /// Bytes the pattern's literals contribute - the seed for the length pass.
     lit_len: u32,
+    /// 1 = compare only the top 32 bits of a candidate (`--thin` targets).
+    thin: u32,
+    /// Explicit padding. `bytemuck::Pod` rejects *implicit* padding (it cannot be
+    /// guaranteed zero), and a uniform block that is a multiple of 16 bytes is
+    /// the safest WebGPU layout. Always 0.
+    pad0: u32,
+    pad1: u32,
+    pad2: u32,
 }
 
 /// GPU context: device, queue, pipeline and the bind group layout.
@@ -65,6 +73,10 @@ struct Params {
     nslots: u32,
     tmask: u32,
     lit: u32,
+    thin: u32,
+    pad0: u32,
+    pad1: u32,
+    pad2: u32,
 };
 
 @group(0) @binding(0) var<uniform> P: Params;
@@ -167,12 +179,14 @@ fn eval(@builtin(global_invocation_id) gid: vec3<u32>) {
         h = h * M;
         h = h ^ (h >> R);
 
-        // probe the target table (open addressing, 0 marks an empty slot)
-        var i = u32((h * K) >> 40u) & P.tmask;
+        // probe the target table (open addressing, 0 marks an empty slot).
+        // For --thin targets only the top 32 bits have to match the target.
+        let key: u64 = select(h, h >> 32u, P.thin != 0u);
+        var i = u32((key * K) >> 40u) & P.tmask;
         loop {
             let t = tab[i];
             if (t == u64(0u)) { break; }
-            if (t == h) {
+            if (t == key) {
                 let slot = atomicAdd(&rc[0], 1u);
                 if (slot < 4096u) { ridx[slot] = idx; }
                 break;
@@ -269,7 +283,12 @@ impl Gpu {
 
     /// Evaluate every candidate of `pat` (capped at `limit`, 0 = all) on the
     /// GPU. The candidate bytes come from the pattern's arena, so no word lists
-    /// are needed here. `on_match(hash, name)` fires for confirmed targets only.
+    /// are needed here. `on_match(hash, name)` fires for confirmed targets only,
+    /// always with the full 64-bit hash the *name* really hashes to.
+    ///
+    /// `thin` compares only the top 32 bits of a candidate against the targets
+    /// (`stingray.Hash.Thin()`, i.e. a `--thin` target file).
+    ///
     /// Returns the number of candidates evaluated.
     pub fn eval_pattern(
         &self,
@@ -277,6 +296,7 @@ impl Gpu {
         targets: &std::collections::HashSet<u64>,
         limit: u64,
         on_match: &mut dyn FnMut(u64, &[u8]),
+        thin: bool,
     ) -> Result<u64> {
         use wgpu::util::DeviceExt;
 
@@ -288,6 +308,11 @@ impl Gpu {
         if nslots > MAX_SLOTS {
             return Err(anyhow!("{nslots} slots exceeds the GPU limit of {MAX_SLOTS}"));
         }
+        // A candidate's comparison form - the whole hash, or its top half for
+        // --thin.  Targets are used exactly as given (a thin target file already
+        // holds 32-bit ids), so the shader's table, the zero check and the
+        // host-side re-verification below all agree.
+        let key = |h: u64| if thin { h >> 32 } else { h };
         if targets.contains(&0) {
             return Err(anyhow!("a target hash is 0, which marks empty table slots"));
         }
@@ -345,7 +370,8 @@ impl Gpu {
             packed.push(0);
         }
 
-        // target hash table, same slot function as the CPU TargetSet
+        // target hash table, same slot function as the CPU TargetSet; targets are
+        // stored as given - whole hashes, or the 32-bit ids under --thin
         let cap = (targets.len() * 2).next_power_of_two().max(16);
         let mask = cap - 1;
         let mut tab = vec![0u64; cap];
@@ -432,6 +458,10 @@ impl Gpu {
                 nslots: nslots as u32,
                 tmask: mask as u32,
                 lit_len: arena.lit_len,
+                thin: thin as u32,
+                pad0: 0,
+                pad1: 0,
+                pad2: 0,
             };
             self.queue.write_buffer(&params_buf, 0, bytemuck::bytes_of(&params));
             self.queue.write_buffer(&rc_buf, 0, &[0u8; 4]);
@@ -469,7 +499,7 @@ impl Gpu {
                     pat.decode(idx, &mut picks);
                     pat.arena.emit_into(&picks, &mut buf);
                     let h = hash_bytes(&buf);
-                    if targets.contains(&h) {
+                    if targets.contains(&key(h)) {
                         confirmed += 1;
                         on_match(h, &buf);
                     } else if rehash_mismatch < 5 {

@@ -1,6 +1,6 @@
 BUNDLE_DATABASE.DATA
 ====================================================================================================
-Version: 2   Entries: 14557
+Version: 2   Entries: 14595
 Priority: entries LATER in the file take precedence.
 ----------------------------------------------------------------------------------------------------
 
@@ -91,10 +91,10 @@ UNIQUE BUNDLES IN PRIORITY ORDER (79)
 13986 f3830d1c26ef30ee   yes       yes       resource_packages/heroes/valkyrie_banks
 14175 f76548f0d3e1077d   yes       yes       resource_packages/heroes/warrior_equipment
 14364 feec2c9522011d13   yes       yes       resource_packages/morak
-14553 4ba749ebdb5c9069   yes       yes       
-14555 47adcf8355608941   yes       yes       
+14553 1efe89c5bb4cf15b   yes       MISSING   
+14555 d2d7af3d217320a8   yes       MISSING   
 
-ALL DATABASE ENTRIES (14557)
+ALL DATABASE ENTRIES (14595)
 ----------------------------------------------------------------------------------------------------
    idx bundle             stream       on-disk  
 ----------------------------------------------------------------------------------------------------
@@ -14651,10 +14651,48 @@ ALL DATABASE ENTRIES (14557)
  14550 feec2c9522011d13   yes          yes      
  14551 feec2c9522011d13   yes          yes      
  14552 feec2c9522011d13   yes          yes      
- 14553 4ba749ebdb5c9069   yes          yes      
- 14554 4ba749ebdb5c9069   yes          yes      
- 14555 47adcf8355608941   yes          yes      
- 14556 47adcf8355608941   yes          yes      
+ 14553 1efe89c5bb4cf15b   yes          MISSING  
+ 14554 1efe89c5bb4cf15b   yes          MISSING  
+ 14555 d2d7af3d217320a8   yes          MISSING  
+ 14556 d2d7af3d217320a8   yes          MISSING  
+ 14557 d2d7af3d217320a8   yes          MISSING  
+ 14558 d2d7af3d217320a8   yes          MISSING  
+ 14559 d2d7af3d217320a8   yes          MISSING  
+ 14560 d2d7af3d217320a8   yes          MISSING  
+ 14561 d2d7af3d217320a8   yes          MISSING  
+ 14562 d2d7af3d217320a8   yes          MISSING  
+ 14563 d2d7af3d217320a8   yes          MISSING  
+ 14564 d2d7af3d217320a8   yes          MISSING  
+ 14565 d2d7af3d217320a8   yes          MISSING  
+ 14566 d2d7af3d217320a8   yes          MISSING  
+ 14567 d2d7af3d217320a8   yes          MISSING  
+ 14568 d2d7af3d217320a8   yes          MISSING  
+ 14569 d2d7af3d217320a8   yes          MISSING  
+ 14570 d2d7af3d217320a8   yes          MISSING  
+ 14571 d2d7af3d217320a8   yes          MISSING  
+ 14572 d2d7af3d217320a8   yes          MISSING  
+ 14573 d2d7af3d217320a8   yes          MISSING  
+ 14574 d2d7af3d217320a8   yes          MISSING  
+ 14575 d2d7af3d217320a8   yes          MISSING  
+ 14576 d2d7af3d217320a8   yes          MISSING  
+ 14577 d2d7af3d217320a8   yes          MISSING  
+ 14578 d2d7af3d217320a8   yes          MISSING  
+ 14579 d2d7af3d217320a8   yes          MISSING  
+ 14580 d2d7af3d217320a8   yes          MISSING  
+ 14581 d2d7af3d217320a8   yes          MISSING  
+ 14582 d2d7af3d217320a8   yes          MISSING  
+ 14583 d2d7af3d217320a8   yes          MISSING  
+ 14584 d2d7af3d217320a8   yes          MISSING  
+ 14585 d2d7af3d217320a8   yes          MISSING  
+ 14586 d2d7af3d217320a8   yes          MISSING  
+ 14587 d2d7af3d217320a8   yes          MISSING  
+ 14588 d2d7af3d217320a8   yes          MISSING  
+ 14589 d2d7af3d217320a8   yes          MISSING  
+ 14590 d2d7af3d217320a8   yes          MISSING  
+ 14591 d2d7af3d217320a8   yes          MISSING  
+ 14592 d2d7af3d217320a8   yes          MISSING  
+ 14593 d2d7af3d217320a8   yes          MISSING  
+ 14594 d2d7af3d217320a8   yes          MISSING  
 
 ON-DISK BUNDLE NAMES (murmur64A of package path)
 ----------------------------------------------------------------------------------------------------
@@ -14678,10 +14716,8 @@ ON-DISK BUNDLE NAMES (murmur64A of package path)
 3ee1f740a8e57e21    modules/d01_caves/resources
 40d0e0479ffe0c4c    resource_packages/heroes/necromagus_base
 44bcc04093e5c506    core/editor_slave/level_editor/baked_lighting
-47adcf8355608941    <unknown>
 47f1b7369bdf82c5    core/editor_slave/level_editor/terrain_editor
 49d4d51fb4291f95    resource_packages/heroes/wizard_equipment
-4ba749ebdb5c9069    <unknown>
 4bbbfb1c3f6a00b8    resource_packages/elias/cave_labyrinth
 4df89a0790c4f425    resource_packages/heroes/valkyrie_capes
 4f2d313d15f129af    resource_packages/scripts_base

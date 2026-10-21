@@ -409,7 +409,8 @@ def load_bundle_blob(path: Path, full: bool):
 
 
 
-def collect_bundle_inventory(install_root: Path, hash_db, full=False):
+def collect_bundle_inventory(install_root: Path, hash_db, full=False,
+                             shipped_only=False, exclude_bundles=()):
     """Walk contents/ and return (bundle_reports, db_version, db_entries)."""
     contents = install_root / "contents"
     db_path = contents / "bundle_database.data"
@@ -467,6 +468,14 @@ def collect_bundle_inventory(install_root: Path, hash_db, full=False):
         except Exception as exc:  # noqa: BLE001 - report, never crash the sweep
             info["error"] = "%s: %s" % (type(exc).__name__, exc)
         bundles.append(info)
+    # A mod bundle lives in contents/ but is not registered in the shipped
+    # bundle_database.data.  The catalogue is the *shipped* game, so keep it out
+    # unless the caller explicitly wants everything.
+    if shipped_only:
+        bundles = [b for b in bundles if b["in_db"]]
+    if exclude_bundles:
+        drop = set(exclude_bundles)
+        bundles = [b for b in bundles if b["name"] not in drop]
     return bundles, db_version, db_entries
 
 
@@ -653,6 +662,13 @@ def main():
                                        "resources", "all"], default="all")
     ap.add_argument("--no-decompress", action="store_true",
                     help="Read only the TOC (fast, low memory)")
+    ap.add_argument("--shipped-only", action="store_true",
+                    help="Ignore bundles absent from bundle_database.data "
+                         "(installed mods); the catalogue then describes the "
+                         "shipped game only")
+    ap.add_argument("--exclude-bundle", action="append", default=[],
+                    metavar="HASH",
+                    help="Skip this bundle id (repeatable)")
     args = ap.parse_args()
 
     install_root = find_install_root(args.root or args.contents)
@@ -673,7 +689,9 @@ def main():
     bundles = []
     if args.only in ("bundles", "database", "resources", "all"):
         bundles, db_version, db_entries = collect_bundle_inventory(
-            install_root, hash_db, full=not args.no_decompress)
+            install_root, hash_db, full=not args.no_decompress,
+            shipped_only=args.shipped_only,
+            exclude_bundles=args.exclude_bundle)
         print("Bundles      : %d parsed" % len(bundles))
 
     if args.only in ("bundles", "all"):

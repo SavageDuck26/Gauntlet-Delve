@@ -1,4 +1,4 @@
-6,932 names in 48 type groups, alphabetical within each (generated 2026-10-12 03:42)
+6,938 names in 48 type groups, alphabetical within each (generated 2026-10-21 07:11)
 ### animation  (943 names)
 -----------------------------
 characters/avatar_elf/animations/blink_offset                        9e1e7f11cb642a9b
@@ -1292,7 +1292,7 @@ foundation/fonts/debug_large                                         992d9e81d9b
 foundation/fonts/debug_medium                                        974896cd1d834b94
 foundation/fonts/debug_small                                         7cf5abc20d160486
 
-### level  (668 names)
+### level  (669 names)
 -------------------------
 modules/d01_caves/arena/caves_arena01                                314594df2a1203f9
 modules/d01_caves/arena/caves_arena02                                ef83a248b58faa14
@@ -1802,6 +1802,7 @@ modules/d01_lava/dungeon_tiles/lavarock_dungeon_tiles_master         14d03b24ab9
 modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_end  68a3d761625817be
 modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_start  d294f860962fa534
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_d_w_d_01_corridor  58bbb8b2593e0594
+modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor  a9f3b892cabcf8c2
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_d_w_01_corridorturn  992d678e2fa1f2e3
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_01_corridor  5d8db61d32ebbcc0
 modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_02_corridor  2519b63de26905a0
@@ -4949,7 +4950,7 @@ gameobjects/spawners/spawner_t1                                      95d42a91eac
 ---------------------------
 localization/game_strings                                            b64470f86611db9a
 
-### texture  (1467 names)
+### texture  (1472 names)
 ---------------------------
 achievement_icons/accomplished_master                                0e3e0172a8c2101c
 achievement_icons/accomplished_master_locked                         e96f0b0ed15cd156
@@ -5180,6 +5181,8 @@ blocks/d01_crypt/cryptsmooth_wall_01_diff                            c95186f4cf3
 blocks/d01_crypt/cryptsmooth_wall_01_norm                            e46328a03e2a94b3
 blocks/d01_crypt/d01_crypt_swatch_diff                               580f21e8c21f030b
 blocks/d01_crypt/test_reflection_cube                                fd01d18f2b381932
+blocks/d01_hub_room/tutorial_cliff_01_diff                           c2fc0983bc5c5d99
+blocks/d01_hub_room/tutorial_cliff_01_norm                           1279fa7baa6a64e3
 blocks/d01_hub_room/tutorial_platform_diff                           44f4672de6c968e5
 blocks/d01_hub_room/tutorial_platform_norm                           a066b56c048795ad
 blocks/d01_lava/lava_tile_blend_mask                                 e196cdf6ab08d436
@@ -5212,6 +5215,8 @@ blocks/d01_lava/lavastruct_floor_tile_01_diff                        326550231e5
 blocks/d01_lava/lavastruct_floor_tile_01_norm                        315f62e2962c3b29
 blocks/d01_lava/lavastruct_fountain_01_diff                          a8a104eda3743ce2
 blocks/d01_lava/lavastruct_fountain_01_norm                          12d4363870a67434
+blocks/d01_lava/lavastruct_goat_satan_statue_diff                    c0a1917e0fd46589
+blocks/d01_lava/lavastruct_goat_satan_statue_norm                    062fdf681373e72f
 blocks/d01_lava/lavastruct_lavaflow_diff                             161d943d4511fbee
 blocks/d01_lava/lavastruct_lavaflow_normal                           10705713e79ee0cc
 blocks/d01_lava/lavastruct_pillar_01_diff                            7fff619aad4473f0
@@ -6393,6 +6398,7 @@ props/d01_lava/lava_wood_metal_set_01_norm                           fa32a76e932
 props/d01_lava/skysphere_dust                                        b29a080081d003e7
 props/d01_lava/skysphere_space                                       ace58f26ae0b5cc9
 props/d01_lava/souls_emissive                                        0e2467ce91e68aae
+props/d01_lava/swamp_redwizard_brazier_02_diff                       e549e905c4357a28
 props/d01_lava/swamp_redwizard_cage_01_diff                          c360e2facc448c23
 props/d01_lava/swamp_redwizard_cage_01_norm                          e21c473feddaf138
 props/loadout_background_01_mask                                     96083d062f793e2a

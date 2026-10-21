@@ -1,8 +1,6 @@
 status	hash	type	package	bundle	size	named_refs	unres_refs	reason	sample_named_referrer
 UNREACHABLE	e1eac81d372142af	level	modules/d01_caves/resources	3ee1f740a8e57e21	90592	0	0	nothing references it	
 UNREACHABLE	08958446a27515bf	level	modules/d01_lava/resources	0f07a1cb5132485b	8352	0	0	nothing references it	
-UNREACHABLE	47adcf8355608941	package		47adcf8355608941	4	0	0	nothing references it	
-UNREACHABLE	4ba749ebdb5c9069	package		4ba749ebdb5c9069	4	0	0	nothing references it	
 UNREACHABLE	6c17337d82c14f09	particles	resource_packages/all_effects	695b9dc585a733f4	6772	0	0	nothing references it	
 UNREACHABLE	0b190ef8bf6913ff	particles	resource_packages/menu	ec181385e7000cf1	4252	0	0	nothing references it	
 UNREACHABLE	66d1e2b6de607542	particles	resource_packages/all_effects	695b9dc585a733f4	3744	0	0	nothing references it	
@@ -14,7 +12,6 @@ UNREACHABLE	d94e836937cfc7a6	particles	resource_packages/all_effects	695b9dc585a
 UNREACHABLE	43ddef0511c8241e	shader	resource_packages/heroes/wizard_ability	5c5954828b367156	59568	0	0	nothing references it	
 UNREACHABLE	935ee7506742e484	shader	resource_packages/menu	ec181385e7000cf1	7296	0	0	nothing references it	
 UNREACHABLE	2b1bdea63cb3e2f8	texture	modules/menu/resources	07cdebae91f29fae	2253716	0	0	nothing references it	
-UNREACHABLE	1279fa7baa6a64e3	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	1398260	0	0	nothing references it	
 UNREACHABLE	9e3ba18a50a58667	texture	modules/menu/resources	07cdebae91f29fae	1383244	0	0	nothing references it	
 UNREACHABLE	7b92430911b96a75	texture	modules/menu/resources	07cdebae91f29fae	699220	0	0	nothing references it	
 UNREACHABLE	0abc30c794338950	texture	resource_packages/menu	ec181385e7000cf1	512404	0	0	nothing references it	
@@ -26,13 +23,11 @@ UNREACHABLE	01d4b1da2fcd59ff	texture	resource_packages/menu	ec181385e7000cf1	148
 UNREACHABLE	2d310d84c5753dbb	texture	resource_packages/menu	ec181385e7000cf1	147892	0	0	nothing references it	
 UNREACHABLE	c8a29522181ece69	texture	resource_packages/menu	ec181385e7000cf1	146004	0	0	nothing references it	
 UNREACHABLE	f8e4ff281c637169	texture	resource_packages/menu	ec181385e7000cf1	87572	0	0	nothing references it	
-UNREACHABLE	062fdf681373e72f	texture	modules/d01_crypt/resources	0164ad48615ba9ed	87540	0	0	nothing references it	
 UNREACHABLE	0b5fe2bb171e48ca	texture	resource_packages/menu	ec181385e7000cf1	43836	0	0	nothing references it	
 UNREACHABLE	d50dbdbf1334190b	texture	resource_packages/menu	ec181385e7000cf1	43836	0	0	nothing references it	
 UNREACHABLE	6a353470af568601	texture	resource_packages/menu	ec181385e7000cf1	22036	0	0	nothing references it	
 UNREACHABLE	28dc66e855004aac	texture	resource_packages/menu	ec181385e7000cf1	7012	0	0	nothing references it	
 UNREACHABLE	5c61aac138878980	texture	resource_packages/menu	ec181385e7000cf1	5612	0	0	nothing references it	
-UNREACHABLE	453e598f9df89c50	texture		47adcf8355608941	4256	0	0	nothing references it	
 UNREACHABLE	7b2bb0c0fee537ac	texture	resource_packages/menu	ec181385e7000cf1	1524	0	0	nothing references it	
 UNREACHABLE	b745ff4de16b4a3f	timpani_bank	resource_packages/base	099d12829b617a9b	32457804	0	0	nothing references it	
 UNREACHABLE	656adc56ebeee428	timpani_bank	resource_packages/heroes/warrior_banks	d08e4ae297a0acdf	25834485	0	0	nothing references it	
@@ -346,7 +341,6 @@ reachable	ca90915518001ff7	level	modules/d01_caves/resources	3ee1f740a8e57e21	55
 reachable	f6e003b8ed3e7eb7	level	modules/d01_crypt/resources	0164ad48615ba9ed	37632	2	0	nothing references it	modules/d01_crypt/resources
 reachable	2e5799e5242acdee	level	modules/d01_caves/resources	3ee1f740a8e57e21	13312	2	0	nothing references it	modules/d01_caves/resources
 reachable	01585bdee840cfb8	level	modules/d01_caves/resources	3ee1f740a8e57e21	5200	2	0	nothing references it	modules/d01_caves/resources
-reachable	a9f3b892cabcf8c2	level	modules/d01_lava/resources	0f07a1cb5132485b	3168	2	0	nothing references it	modules/d01_lava/dungeon_tiles/lavastruct_dungeon_tiles_master
 reachable	3e4d2e68729bb41c	level	modules/d01_lava/resources	0f07a1cb5132485b	1888	1	0	nothing references it	modules/d01_lava/arena/lava_arena03
 reachable	c5e449bbe8eae132	level	modules/d01_lava/resources	0f07a1cb5132485b	1120	6	0	nothing references it	modules/d01_lava/dungeon_tiles/lavarock_dungeon_tiles_master
 reachable	4f9acfb85f109970	material	modules/d01_crypt/resources	0164ad48615ba9ed	2904	11	0	nothing references it	modules/d01_caves/quilts/base/caves_quilt_straight__xx_e_xx_e__03_civilization
@@ -594,7 +588,6 @@ reachable	eebc2702875dabfe	texture	modules/d01_crypt/resources	0164ad48615ba9ed	
 reachable	3cda00f68b50069a	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	7	0	nothing references it	props/d01_caves/ground_ornament_02
 reachable	812b54616475399b	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	6	0	nothing references it	props/d01_caves/ground_ornament_02
 reachable	b25576cfebcabd92	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	4	0	nothing references it	props/d01_caves/ground_ornament_02
-reachable	c2fc0983bc5c5d99	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	2	1	no named referrer	modules/debug/resources
 reachable	cfccc965504f2217	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	699196	2	1	no named referrer	modules/debug/resources
 reachable	96895266ccfdc006	texture	resource_packages/d01_caves	8d83784c3ee9305b	699196	4	0	nothing references it	resource_packages/debug
 reachable	cb81cf0d6612bbd2	texture	modules/d01_crypt/resources	0164ad48615ba9ed	524444	17	0	nothing references it	modules/d01_crypt/shading_environment
@@ -632,7 +625,6 @@ reachable	939e3cebc55dbb2e	texture	modules/menu/resources	07cdebae91f29fae	34968
 reachable	d53accefc4e67c69	texture	modules/menu/resources	07cdebae91f29fae	349684	4	0	nothing references it	blocks/d01_caves/swamp_civilization
 reachable	2058cbdaaced0bf2	texture	modules/d01_lava/resources	0f07a1cb5132485b	349684	2	0	nothing references it	modules/d01_lava/resources
 reachable	8ccb7ff84d10946f	texture	modules/d01_lava/resources	0f07a1cb5132485b	349684	3	0	nothing references it	gameobjects/dispensers/dispenser_barrel_lava
-reachable	e549e905c4357a28	texture	modules/d01_lava/resources	0f07a1cb5132485b	349684	1	0	nothing references it	props/d01_lava/lava_topfence
 reachable	a646daf61a6effe5	texture	resource_packages/d01_lava	1bbcb9610a009446	349684	39	0	nothing references it	gameobjects/spawners/spawner_lava_daemon
 reachable	5e963fc690185df3	texture	modules/d01_hub_room/resources	2dcf25b90002fc07	349684	2	0	nothing references it	modules/d01_hub_room/resources
 reachable	42a7ab24e5def72c	texture	modules/menu/resources	07cdebae91f29fae	349676	4	0	nothing references it	modules/menu/resources
@@ -719,7 +711,6 @@ reachable	24262d1dc3811425	texture	modules/d01_crypt/resources	0164ad48615ba9ed	
 reachable	3c25028047123ccb	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	81	2	no named referrer	effects/boss_circle_turn_outer
 reachable	3ea8548ed96c6986	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	41	3	no named referrer	effects/cha_demon_ranged_position
 reachable	ba97e5bb90fa4d82	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	6	0	nothing references it	modules/menu/resources
-reachable	c0a1917e0fd46589	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	11	0	nothing references it	blocks/d01_lava/lavastruct_set
 reachable	d2e14e37eda483c3	texture	modules/d01_crypt/resources	0164ad48615ba9ed	43836	2	0	nothing references it	modules/d01_lava/resources
 reachable	aec5665329076d51	texture	modules/d01_lava/resources	0f07a1cb5132485b	43836	1	0	nothing references it	props/d01_lava/lava_redwizard_chair
 reachable	b4045ebc9601f4be	texture	modules/d01_lava/resources	0f07a1cb5132485b	43836	4	0	nothing references it	props/d01_lava/lava_redwizard_ritual

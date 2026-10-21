@@ -1,6 +1,6 @@
 GAUNTLET INSTALL FILE TREE
 Root: ~/.local/share/Steam/steamapps/common/Gauntlet
-Files: 1093
+Files: 1236
 ====================================================================================================
 
          857  Gauntlet-Source-DO_NOT_EDIT/ability_units/spawners/spawner_exploding_burning.lua
@@ -939,16 +939,117 @@ Files: 1093
     23209720  binaries/PhysX3Gpu_x86.dll
      2647040  binaries/PhysX3_x86.dll
        31407  binaries/bitsquid_win32_release_1603858_crash_2015_5_21T10_29_11C0.mdmp
-       88064  binaries/dinput8.dll
-     1585664  binaries/dinput8.dll.backup
+       84197  binaries/crash_trace.log
+     1683456  binaries/dinput8.dll
       262656  binaries/elias.dll
      3925504  binaries/gauntlet.exe
+        1911  binaries/level_mining.log
+       77164  binaries/levels/modules_d01_caves_arena_caves_arena01.json
+      170641  binaries/levels/modules_d01_caves_arena_caves_arena02.json
+       61098  binaries/levels/modules_d01_caves_arena_caves_arena03.json
+         226  binaries/levels/modules_d01_caves_quilts_base_caves_quilt_blackbox__x_x_x_x__01.json
+        4786  binaries/levels/modules_d01_caves_quilts_entrances_caves_quilt_entrance__xox_xx_xxx_xx__01.json
+        4829  binaries/levels/modules_d01_caves_quilts_entrances_caves_quilt_entrance__xox_xx_xxx_xx__02.json
+        4791  binaries/levels/modules_d01_caves_quilts_entrances_caves_quilt_entrance__xox_xx_xxx_xx__03.json
+      208152  binaries/levels/modules_d01_caves_room_caves_floor_10_boss.json
+      633407  binaries/levels/modules_d01_caves_room_caves_floor_adventure_1.json
+      861216  binaries/levels/modules_d01_caves_room_caves_floor_adventure_2.json
+      553462  binaries/levels/modules_d01_caves_room_caves_floor_adventure_3.json
+      193692  binaries/levels/modules_d01_crypt_arena_crypt_arena01.json
+      125336  binaries/levels/modules_d01_crypt_arena_crypt_arena02.json
+      105506  binaries/levels/modules_d01_crypt_arena_crypt_arena03.json
+         226  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_blackbox__x_x_x_x__01.json
+        4908  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_x_e_x__01_slaves.json
+        4791  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_x_e_x__01chain.json
+        7990  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_x_e_x__03_speartrapschain.json
+       11107  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_x_e_x__04_sarcophagus_slaves.json
+       11938  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_xx_e_xx__01_fancy.json
+       15538  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_xx_e_xx__01_slaves.json
+       12908  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_xx_e_xx__02_spiketrapschain.json
+       23790  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_xx_e_xx__03_bridge_fancy_02.json
+       25530  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__e_xx_e_xx__03_bridge_slaves.json
+        4025  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__x_e_x_e__01_slaves.json
+        7662  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__x_e_x_e__02_fancy.json
+        5646  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__x_e_x_e__02_sarcophagus.json
+        8866  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__x_e_x_e__03_fancy.json
+       12081  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__x_e_x_e__03_sarcophagus_slaves.json
+        9310  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__xx_e_xx_e__01_slaves.json
+       16018  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__xx_e_xx_e__02_fancy.json
+       24919  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__xx_e_xx_e__02_slaves.json
+       24651  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__xx_e_xx_e__03_bridge_slaves.json
+       16713  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_straight__xx_e_xx_e__04_gold_fancy.json
+        7489  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_e_x_x__01_fancy.json
+        6767  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_e_x_x__01_slaves.json
+        7896  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_e_x_x__03_gold_sand.json
+        3862  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_x_x_e__01.json
+        5528  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_x_x_e__01_slaves.json
+        4734  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__e_x_x_e__02_fancy.json
+        5718  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_e_e_x__01_fancy.json
+        8910  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_e_e_x__02_fancy.json
+       10387  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_e_e_x__02_slaves.json
+        7735  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_e_e_x__03_gold_sand.json
+        4140  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_x_e_e__01_sand.json
+        7988  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_x_e_e__01_slaves.json
+        6207  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_x_e_e__02_fancy.json
+        9257  binaries/levels/modules_d01_crypt_quilts_base_crypt_quilt_turn__x_x_e_e__02_slaves.json
+       13529  binaries/levels/modules_d01_crypt_quilts_entrances_crypt_quilt_entrance__xo_xx_xx_xx__01.json
+       12696  binaries/levels/modules_d01_crypt_quilts_entrances_crypt_quilt_entrance__xo_xx_xx_xx__03.json
+       44552  binaries/levels/modules_d01_crypt_quilts_entrances_crypt_quilt_entrance__xo_xx_xx_xx__start_01.json
+      565944  binaries/levels/modules_d01_crypt_room_crypt_floor_01_adventure.json
+      850540  binaries/levels/modules_d01_crypt_room_crypt_floor_02_adventure.json
+      847080  binaries/levels/modules_d01_crypt_room_crypt_floor_05_adventure.json
+      284392  binaries/levels/modules_d01_crypt_room_crypt_floor_06_boss.json
+      193469  binaries/levels/modules_d01_hub_room_custom_duckomp_room.json
+       64766  binaries/levels/modules_d01_hub_room_tutorial_room.json
+       75938  binaries/levels/modules_d01_lava_arena_lava_arena01.json
+      121336  binaries/levels/modules_d01_lava_arena_lava_arena02.json
+      138586  binaries/levels/modules_d01_lava_arena_lava_arena03.json
+         353  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__01_temple.json
+         349  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__02_bubbles_temple.json
+         238  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__03_spit_temple.json
+        1009  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__04_tworocks_temple.json
+         721  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__05_lyingrocks_temple.json
+        1126  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__07_threerocks_temple.json
+        3124  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__08_smallisland_temple.json
+        3013  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__09_smallisland_temple.json
+        2102  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__10_smallisland_temple.json
+        1890  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_blackbox__x_x_x_x__11_smallisland_temple.json
+       15104  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__e_x_e_x__01_temple.json
+       16662  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__e_x_e_x__02_temple.json
+       29635  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__e_xx_e_xx__01_temple.json
+       20212  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__x_e_x_e__01_temple.json
+       18276  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__xx_e_xx_e__01_temple.json
+       20094  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__xx_e_xx_e__02_temple.json
+       28439  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_straight__xx_e_xx_e__03_temple.json
+       13902  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__e_e_x_x__02_temple.json
+       12130  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__e_x_x_e__01_temple.json
+       14533  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__e_x_x_e__02_temple.json
+       13204  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__x_xe_e_xx__01_temple.json
+       12130  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__x_xe_e_xx__02_temple.json
+       15312  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__x_xx_e_ex__01_temple.json
+       21076  binaries/levels/modules_d01_lava_quilts_base_lava_quilt_turn__x_xx_e_ex__02_temple.json
+       29914  binaries/levels/modules_d01_lava_quilts_entrances_lava_quilt_entrance__xox_xxxxx_xxx_xxxxx__01.json
+       29766  binaries/levels/modules_d01_lava_quilts_entrances_lava_quilt_entrance__xox_xxxxx_xxx_xxxxx__02.json
+       29943  binaries/levels/modules_d01_lava_quilts_entrances_lava_quilt_entrance__xox_xxxxx_xxx_xxxxx__03.json
+      312534  binaries/levels/modules_d01_lava_room_lava_floor_10_boss.json
+      426233  binaries/levels/modules_d01_lava_room_lava_floor_adventure_1.json
+      940056  binaries/levels/modules_d01_lava_room_lava_floor_adventure_2.json
+      639569  binaries/levels/modules_d01_lava_room_lava_floor_adventure_3.json
+       41320  binaries/levels/modules_menu_loadout_caves.json
+       36603  binaries/levels/modules_menu_loadout_crypt.json
+       55346  binaries/levels/modules_menu_loadout_lava.json
+       88299  binaries/levels/modules_menu_loadout_tutorial.json
+        6462  binaries/levels/modules_menu_titlescreen.json
+      117103  binaries/levels/unknown.json
          260  binaries/loader.ini
-       78936  binaries/modloader.log
-       11509  binaries/name_mining.log
+       91956  binaries/modloader.log
+      147762  binaries/name_mining.log
        43520  binaries/nvToolsExt32_1.dll
-      366557  binaries/runtime_names.tsv
+       81200  binaries/runtime_lua_api.tsv
+    13692361  binaries/runtime_names.tsv
       360198  binaries/runtime_names_classified.tsv
+           0  binaries/runtime_unit_calls.tsv
+        3936  binaries/runtime_units.tsv
      2894832  binaries/steam.dll
       105152  binaries/steam_api.dll
    133170572  contents/0164ad48615ba9ed
@@ -964,6 +1065,7 @@ Files: 1093
      1621290  contents/11a95e9c862b533e
      4348574  contents/1a9c33dcd0301dfd
     49047792  contents/1bbcb9610a009446
+           0  contents/1efe89c5bb4cf15b.stream
        96082  contents/2366c0121dc7d2de
      2563964  contents/2b0c2ed671742eb7
      2353457  contents/2c8fb6cb55aba416
@@ -976,12 +1078,8 @@ Files: 1093
     16551600  contents/3ee1f740a8e57e21.stream
      2381224  contents/40d0e0479ffe0c4c
          499  contents/44bcc04093e5c506
-         182  contents/47adcf8355608941
-           0  contents/47adcf8355608941.stream
          807  contents/47f1b7369bdf82c5
      4462364  contents/49d4d51fb4291f95
-         163  contents/4ba749ebdb5c9069
-           0  contents/4ba749ebdb5c9069.stream
     15441924  contents/4bbbfb1c3f6a00b8
      5933222  contents/4df89a0790c4f425
      1037118  contents/4f2d313d15f129af
@@ -1020,14 +1118,21 @@ Files: 1093
      2059845  contents/bc1322b850aa1afd
     45223560  contents/bd1ab48c3674ac20
      2696373  contents/bd89f473071db9ba
-      756972  contents/bundle_database.data
-      756972  contents/bundle_database.data.preflight.bak
+      758948  contents/bundle_database.data
+      757440  contents/bundle_database.data.clean-072416.bak
+      757076  contents/bundle_database.data.dedup-064613.bak
+      756868  contents/bundle_database.data.pre-hangtest-073719.bak
+      758948  contents/bundle_database.data.preflight.bak
+      757076  contents/bundle_database.data.rollback-065952.bak
+      757336  contents/bundle_database.data.strip-073355.bak
     22179398  contents/c0aff80d521aa29b
     15948799  contents/c71709da31b1d305
       507514  contents/cd241d5192024482
     41200087  contents/d08e4ae297a0acdf
      4338503  contents/d08e4ae297a0acdf.stream
     45987874  contents/d17420e999bf5431
+     5675809  contents/d2d7af3d217320a8
+           0  contents/d2d7af3d217320a8.stream
      2225799  contents/d2fac3c70e7333f9
     31795350  contents/db47e7a6d2fca03b
      1070776  contents/dd5d5b00fde9b0fb
@@ -1043,10 +1148,22 @@ Files: 1093
       985613  contents/f3830d1c26ef30ee.stream
      5365172  contents/f76548f0d3e1077d
     54478480  contents/feec2c9522011d13
+         436  contents/modloader_preflight_backup/169133d4e2cf14ad.bak
+           0  contents/modloader_preflight_backup/169133d4e2cf14ad.stream.bak
+       22275  contents/modloader_preflight_backup/1efe89c5bb4cf15b.bak
+           0  contents/modloader_preflight_backup/1efe89c5bb4cf15b.stream.bak
          182  contents/modloader_preflight_backup/47adcf8355608941.bak
            0  contents/modloader_preflight_backup/47adcf8355608941.stream.bak
          163  contents/modloader_preflight_backup/4ba749ebdb5c9069.bak
            0  contents/modloader_preflight_backup/4ba749ebdb5c9069.stream.bak
+      115911  contents/modloader_preflight_backup/5aa67cb8548c3281.bak
+           0  contents/modloader_preflight_backup/5aa67cb8548c3281.stream.bak
+      119440  contents/modloader_preflight_backup/75b743117d313683.bak
+           0  contents/modloader_preflight_backup/75b743117d313683.stream.bak
+      113309  contents/modloader_preflight_backup/cf206f623df8eba0.bak
+           0  contents/modloader_preflight_backup/cf206f623df8eba0.stream.bak
+     5722264  contents/modloader_preflight_backup/d2d7af3d217320a8.bak
+           0  contents/modloader_preflight_backup/d2d7af3d217320a8.stream.bak
         1418  contents/settings.ini
         1418  contents/settings.ini.bak_cline_livingstatue
         1737  contents/settings_ls.ini
@@ -1055,8 +1172,34 @@ Files: 1093
         1418  contents/settings_sceasia.ini
         1357  contents/settings_scee.ini
         1613  contents/test.ini
-        7988  mods/bootstrap.lua
-        1193  mods/settings/loader.conf
+       14885  mods/bootstrap.lua
+         151  mods/bundles/CustomRunLevel/bundle.ini
+     5675821  mods/bundles/CustomRunLevel/d2d7af3d217320a8
+           0  mods/bundles/CustomRunLevel/d2d7af3d217320a8.stream
+        7634  mods/bundles/CustomRunLevel/manifest.json
+        2700  mods/external/Duckmode/README.md
+        4765  mods/external/Duckmode/script_main.lua
+        6593  mods/external/Duckmode/scripts/Fixes/script_fix_crests.lua
+        4088  mods/external/Duckmode/scripts/Fixes/script_fix_lock_chest.lua
+        2588  mods/external/Duckmode/scripts/Fixes/script_link_pressureplate.lua
+       24485  mods/external/Duckmode/scripts/script_commands.lua
+        3961  mods/external/Duckmode/scripts/script_dev_port.lua
+        6487  mods/external/Duckmode/scripts/script_hot_keys.lua
+         817  mods/external/Duckmode/scripts/script_main.lua
+        2838  mods/external/Duckmode/scripts/script_render_distance.lua
+         291  mods/external/Duckmode/scripts/script_test.lua
+       21348  mods/functions/ActorProbe/script_main.lua
+        4060  mods/functions/AutoLoadTest/script_main.lua
+         746  mods/functions/CustomRun/layouts/custom_duckomp.lua
+       28831  mods/functions/CustomRun/layouts/lookup.lua
+       13986  mods/functions/CustomRun/script_main.lua
+        2172  mods/functions/HubDeps/script_main.lua
+        3740  mods/functions/LevelProbe/script_head.tmp
+       10708  mods/functions/LevelProbe/script_main.lua
+        3377  mods/functions/PkgTrace/script_main.lua
+        4610  mods/settings/loader.conf
+       10708  mods_parked/LevelProbe/script_main.lua
+        7660  mods_parked/LevelProbe/script_main.lua.bak
       273353  mods_parked/bundles/CraneTexTest/CraneTexTest/5bfdd50f98f5d0d9
            0  mods_parked/bundles/CraneTexTest/CraneTexTest/5bfdd50f98f5d0d9.stream
          150  mods_parked/bundles/CraneTexTest/CraneTexTest/bundle.ini

@@ -1,55 +1,54 @@
 GAUNTLET NAME-RECOVERY PROGRESS
 ==================================================================================================
-generated 2026-10-13 01:00   (regenerate with: python3 make_progress_report.py)
+generated 2026-10-21 08:39   (regenerate with: python3 make_progress_report.py)
 
 1. HEADLINE
 --------------------------------------------------------------------------------------------------
-  catalogue rows                   20,004
-  rows with a name                 17,987   (89.92%)
-  unique hashes in catalogue        7,808
-  unique hashes resolved            6,932
-  unique hashes UNRESOLVED            876
-  names in the overlay              6,932
-  hits in matches.tsv (ever)        6,329
+  catalogue rows                   20,000
+  rows with a name                 18,024   (90.12%)
+  unique hashes in catalogue        7,805
+  unique hashes resolved            6,957
+  unique hashes UNRESOLVED            848
+  names in the overlay              6,957
+  hits in matches.tsv (ever)        6,355
   sweeps with a status log             27
-  unreachable (no named ref)           38   of which orphans 38
+  unreachable (no named ref)           33   of which orphans 33
 
-  note: 05_summary.txt reports "Unresolved 2017" - that is counted against the
+  note: 05_summary.txt reports "Unresolved 1999" - that is counted against the
   static hash_database.json, not against this overlay, which is why it never moves
   as names land.  The numbers above are the live ones.
 
 2. COVERAGE BY TYPE   (rows named / rows unresolved / unique unresolved)
 --------------------------------------------------------------------------------------------------
-  animation                    1,737 /    539 /    303
-  texture                      4,101 /    672 /    252
+  animation                    1,755 /    521 /    287
+  texture                      4,113 /    658 /    246
   shader_library               1,227 /    311 /    122
   material                     3,863 /    187 /     80
   particles                    2,335 /    141 /     67
-  unit                         1,780 /     48 /     39
   timpani_bank                    50 /     37 /     37
+  unit                         1,784 /     44 /     37
   shader                         173 /     64 /     36
-  level                          707 /     12 /     10
-  package                         74 /      2 /      2
+  level                          710 /      9 /      8
   flow                           155 /      4 /      1
-  (17 further types are fully named: apb, bones, config, font, lua, mouse_cursor, network_config, physics_p)
+  (18 further types are fully named: apb, bones, config, font, lua, mouse_cursor, network_config, package, )
 
 3. PACKAGES WITH THE MOST UNRESOLVED ROWS   (top 15)
 --------------------------------------------------------------------------------------------------
      153  resource_packages/all_effects
      132  resource_packages/menu
      122  core/rendering/renderer
-     118  modules/d01_lava/resources
-     116  modules/d01_crypt/resources
-     111  modules/d01_caves/resources
+     112  modules/d01_crypt/resources
+     112  modules/d01_lava/resources
      109  resource_packages/d01_caves
      106  resource_packages/d01_lava
+     105  modules/d01_caves/resources
      104  resource_packages/morak
       96  core/rendering/mobile_renderer
       95  resource_packages/d01_crypt
       93  core/rendering/emulate_renderer
       90  resource_packages/d01_arcade
-      78  modules/menu/resources
-      57  modules/d01_hub_room/resources
+      76  modules/menu/resources
+      53  modules/d01_hub_room/resources
 
 4. SWEEP HISTORY   (per-sweep status logs; +N summed over tier lines)
 --------------------------------------------------------------------------------------------------
@@ -107,19 +106,19 @@ generated 2026-10-13 01:00   (regenerate with: python3 make_progress_report.py)
 
 7. WHERE THE WORK IS RECORDED   (FINDINGS.txt, most recent last)
 --------------------------------------------------------------------------------------------------
-    67.3  CLOSED, WITH NUMBERS.  Every one of these is 0 against the residual:
-    67.4  WHAT IS LEFT.  `all_effects` 155 rows (61 effect names + 32 shared text
-      68  THE SHADER-CHAIN NEIGHBOURHOOD IS WORTH FIFTEEN NAMES
-    68.1  WHY THE CHAINS ARE WORTH CHASING.  The grouped view (#66.6) puts 350 of
-    68.2  WHAT FOUND THEM.  `tools/make_chain_candidates.py` - the project's own 
-    68.3  CLOSED AFTERWARDS, WITH NUMBERS.  With the fifteen in the corpus the sp
-    68.4  NOT FOR WANT OF TRYING: THE ACHIEVEMENT ICONS.  The thirteen unresolved
-      69  MUTATE, SIZED RIGHT, AND WHAT THE LAST LOOK ESTABLISHED
-    69.1  MUTATE'S COST MODEL, WHICH IS EASY TO GET WRONG.  `mutate` does `tokens
-    69.2  THE ANIMATION RESIDUAL IS ONE FAMILY.  Grouping the unresolved animatio
-    69.3  MY DIRECTORY LIST HAD A SCOPE GAP - AND FIXING IT DID NOT HELP.  Every 
-       0  The gap was real; it just was not the obstacle.
     69.4  WHAT THE BLOCKS AND PROPS ARE MISSING.  `modules/d01_crypt/resources` (
     68.5  WHY THE SUBSET SWEEPS ARE MOSTLY EMPTY - AND WHAT THAT MEANS.  A subset
+       1  TOC had (N+1) entries - a repeated "sentinel" of entry[0].  The engine'
+       2  Resource 0 got a 20-byte header with NO type and name.  Every resource 
+       3  Payloads were padded to a 4-byte boundary.  The engine advances to
+       1  TILE it - many instances of our unit, each carrying its own 8x8 patch, 
+       1  A KIND WITH NO REFERENCE MESH CANNOT BE RECOVERED.  Five nodes came bac
+       2  THE BOUNDING BOX CANNOT PICK A YAW.  A wall is symmetric along its leng
+       2  OUR floor unit placed 9 times, native stair + native pillar           -
+       3  OUR crane unit placed once, native floor + native stair               -
+       4  OUR crane MESH wearing the FLOOR template's trailer                   -
+       1  PLACEMENTS.  For every record of the deployed level: the quaternion the
+       2  UNITS.  For every shipped .unit: its mesh vertices against R_x(+90) . (
+      80  B, body all-zero, nav ignore) and everything else is the known-good flo
 
 ==================================================================================================

@@ -3,10 +3,17 @@
 //!
 //! Confirmed parameters:
 //!   * seed  = 0
-//!   * input = lowercase ASCII bytes of the resource path
+//!   * input = ASCII bytes of the resource path
 //!   * output = little-endian u64
 //!
-//! This matches `murmur_hash64()` in the Python toolchain bit-for-bit.
+//! This matches `murmur_hash64()` in the Python toolchain bit-for-bit, and
+//! `stingray.Sum` in xypwn/filediver (the Helldivers 2 extractor) - the same
+//! engine lineage, so both games share one hash namespace.
+//!
+//! **Case is a property of the caller, not of this function.**  Gauntlet folds
+//! resource paths to lowercase before hashing; Helldivers 2 does not (its hashes
+//! are case-sensitive).  [`hash_bytes`] therefore never touches the case - the
+//! `fold` policy lives in the CLI and in `pattern::Compiler`.
 
 pub const M: u64 = 0xc6a4_a793_5bd1_e995;
 pub const R: u32 = 47;
@@ -94,6 +101,28 @@ pub fn hash_str(s: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Cross-check against xypwn/filediver, the Helldivers 2 extractor, and
+    /// against **real** HD2 IDs from the community name database
+    /// (`Zekfad/hd2-hash-db`, `file.db`: `<hash> <name>` pairs).  These only
+    /// reproduce if the bytes are hashed exactly as written, which is the whole
+    /// point of `--preserve-case`.
+    #[test]
+    fn matches_filediver_and_hd2_ids() {
+        // filediver's own stingray/hash_test.go vectors
+        assert_eq!(hash_bytes(b"hello, world!"), 0xd18abe154a2a9637);
+        assert_eq!(hash_bytes(b"hello, world!!!!"), 0x2f9dea7bd39b9f7d); // len % 8 == 0
+        // real HD2 archive IDs (case-sensitive: they contain uppercase)
+        assert_eq!(hash_bytes(b"content/audio/Helldiver_IR"), 0x5b4c2833bad252c1);
+        assert_eq!(hash_bytes(b"content/audio/Init"), 0x065cfa3b2c82a13d);
+        assert_ne!(
+            hash_bytes(b"Actions/Aim_Rocket_Enter"),
+            hash_bytes(b"actions/aim_rocket_enter"),
+            "HD2 hashes are case-sensitive, so folding would silently lose the name"
+        );
+        // the thin (32-bit) form is the top half, as filediver's Hash.Thin()
+        assert_eq!(0x5b4c2833bad252c1u64 >> 32, 0x5b4c2833);
+    }
 
     #[test]
     fn matches_python_reference() {

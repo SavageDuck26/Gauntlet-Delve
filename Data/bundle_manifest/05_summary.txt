@@ -1,15 +1,15 @@
 GAUNTLET CATALOGUE SUMMARY
 ====================================================================================================
 Install root : ~/.local/share/Steam/steamapps/common/Gauntlet
-Total files  : 1093
-Bundle files : 77
+Total files  : 1236
+Bundle files : 75
 Scan check   : 0 bundle(s) with incomplete header scan
-Resources    : 20004
-Unresolved   : 2017 name hashes (not in hash_database.json)
+Resources    : 20000
+Unresolved   : 1999 name hashes (not in hash_database.json)
 
 RESOURCES BY TYPE
 ----------------------------------------------------------------------------------------------------
-    4773  texture
+    4771  texture
     4050  material
     2476  particles
     2276  animation
@@ -24,7 +24,7 @@ RESOURCES BY TYPE
      111  state_machine
       98  apb
       87  timpani_bank
-      76  package
+      74  package
       57  shader_library_group
       20  shading_environment
       13  xml

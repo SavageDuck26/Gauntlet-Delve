@@ -23,10 +23,8 @@ bundle                       size        .stream  inDB     res# layOK package_pa
 3ee1f740a8e57e21        111661794       16551600   yes     1341   yes modules/d01_caves/resources
 40d0e0479ffe0c4c          2381224              0   yes      227   yes resource_packages/heroes/necromagus_base
 44bcc04093e5c506              499              0   yes        1   yes core/editor_slave/level_editor/baked_lighting
-47adcf8355608941              182              0   yes        2   yes 
 47f1b7369bdf82c5              807              0   yes        1   yes core/editor_slave/level_editor/terrain_editor
 49d4d51fb4291f95          4462364              0   yes      183   yes resource_packages/heroes/wizard_equipment
-4ba749ebdb5c9069              163              0   yes        2   yes 
 4bbbfb1c3f6a00b8         15441924              0   yes       20   yes resource_packages/elias/cave_labyrinth
 4df89a0790c4f425          5933222              0   yes       82   yes resource_packages/heroes/valkyrie_capes
 4f2d313d15f129af          1037118              0   yes      363   yes resource_packages/scripts_base
@@ -81,4 +79,4 @@ f3830d1c26ef30ee         35717477         985613   yes        2   yes resource_p
 f76548f0d3e1077d          5365172              0   yes      157   yes resource_packages/heroes/warrior_equipment
 feec2c9522011d13         54478480              0   yes      922   yes resource_packages/morak
 ----------------------------------------------------------------------------------------------------
-Total: 77 bundles, 1.3 GiB packed + 110.9 MiB stream = 1.4 GiB
+Total: 75 bundles, 1.3 GiB packed + 110.9 MiB stream = 1.4 GiB

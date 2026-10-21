@@ -1,8 +1,4 @@
-13,972 names in 76 bundles, alphabetical within each (generated 2026-10-13 01:00)
-
-### 4ba749ebdb5c9069      (1 name)
-------------------------------------------------------------------------------
-  gameobjects/food/ham_diff
+14,009 names in 75 bundles, alphabetical within each (generated 2026-10-21 08:39)
 
 ### 44bcc04093e5c506   core/editor_slave/level_editor/baked_lighting   (1 name)
 ------------------------------------------------------------------------------
@@ -1496,7 +1492,7 @@
   foundation/sol/generate_foundation_sol
   foundation/sol/generate_project_sol
 
-### 3ee1f740a8e57e21   modules/d01_caves/resources   (1,035 names)
+### 3ee1f740a8e57e21   modules/d01_caves/resources   (1,041 names)
 ------------------------------------------------------------------------------
   achievement_icons/accomplished_master
   blocks/common/invisible_wall_2c
@@ -1708,7 +1704,9 @@
   blocks/d01_lava/floors/lavarock_floor_4c_2c
   blocks/d01_lava/floors/lavarock_floor_4c_4c
   blocks/d01_lava/floors/lavarock_floor_border_2c
+  blocks/d01_lava/floors/lavarock_floor_border_2c_twosided
   blocks/d01_lava/floors/lavarock_floor_border_4c
+  blocks/d01_lava/floors/lavarock_floor_border_4c_twosided
   blocks/d01_lava/floors/lavarock_floor_border_concave_2c
   blocks/d01_lava/floors/lavarock_floor_border_concave_4c
   blocks/d01_lava/floors/lavarock_floor_border_convex_2c
@@ -1746,6 +1744,8 @@
   blocks/d01_lava/lavastruct_floor_tile_01_norm
   blocks/d01_lava/lavastruct_fountain_01_diff
   blocks/d01_lava/lavastruct_fountain_01_norm
+  blocks/d01_lava/lavastruct_goat_satan_statue_diff
+  blocks/d01_lava/lavastruct_goat_satan_statue_norm
   blocks/d01_lava/lavastruct_lavaflow_diff
   blocks/d01_lava/lavastruct_lavaflow_normal
   blocks/d01_lava/lavastruct_pillar_01_diff
@@ -2195,6 +2195,7 @@
   modules/d01_caves/quilts/base/caves_quilt_turn__x_x_e_e__03_spider
   modules/d01_caves/quilts/base/caves_quilt_turn__x_x_e_e__04_civilization
   modules/d01_caves/quilts/base/caves_quilt_turn__x_x_e_e__04_spider
+  modules/d01_caves/quilts/encounters/caves_quilt_largeroom__eoe_xex_xix_eex__04_civilization
   modules/d01_caves/quilts/encounters/caves_quilt_largeroom__ooo_xex_iix_xex__01_civilization
   modules/d01_caves/quilts/encounters/caves_quilt_largeroom__ooo_xex_iix_xex__03_spider
   modules/d01_caves/quilts/encounters/caves_quilt_largeroom__ooo_xix_iii_xox__01_keydoorswest
@@ -2301,6 +2302,7 @@
   modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_end
   modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_start
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_d_w_d_01_corridor
+  modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_d_w_01_corridorturn
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_01_corridor
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_02_corridor
@@ -2534,7 +2536,7 @@
   textures/flat_norm
   textures/white
 
-### 0164ad48615ba9ed   modules/d01_crypt/resources   (1,225 names)
+### 0164ad48615ba9ed   modules/d01_crypt/resources   (1,229 names)
 ------------------------------------------------------------------------------
   achievement_icons/accomplished_master
   audio/enemy_mummy
@@ -2704,6 +2706,8 @@
   blocks/d01_lava/lavastruct_floor_tile_01_norm
   blocks/d01_lava/lavastruct_fountain_01_diff
   blocks/d01_lava/lavastruct_fountain_01_norm
+  blocks/d01_lava/lavastruct_goat_satan_statue_diff
+  blocks/d01_lava/lavastruct_goat_satan_statue_norm
   blocks/d01_lava/lavastruct_lavaflow_diff
   blocks/d01_lava/lavastruct_lavaflow_normal
   blocks/d01_lava/lavastruct_pillar_01_diff
@@ -2747,9 +2751,11 @@
   characters/boss_mummy/animations/intro
   characters/boss_mummy/animations/stunned_init
   characters/boss_mummy/animations/stunned_loop
+  characters/boss_mummy/animations/turn_left_130
   characters/boss_mummy/animations/turn_left_22
   characters/boss_mummy/animations/turn_left_45
   characters/boss_mummy/animations/turn_left_90
+  characters/boss_mummy/animations/turn_right_130
   characters/boss_mummy/animations/turn_right_22
   characters/boss_mummy/animations/turn_right_45
   characters/boss_mummy/animations/turn_right_90
@@ -3762,7 +3768,7 @@
   textures/black
   textures/flat_norm
 
-### 2dcf25b90002fc07   modules/d01_hub_room/resources   (269 names)
+### 2dcf25b90002fc07   modules/d01_hub_room/resources   (273 names)
 ------------------------------------------------------------------------------
   blocks/common/invisible_wall_2c
   blocks/d01_caves/caverock_border_low_diff
@@ -3848,6 +3854,8 @@
   blocks/d01_crypt/walls/crypt_entrance_skulldoor
   blocks/d01_crypt/walls/crypt_wall_2c
   blocks/d01_crypt/walls/cryptsmooth_wall_4c
+  blocks/d01_hub_room/tutorial_cliff_01_diff
+  blocks/d01_hub_room/tutorial_cliff_01_norm
   blocks/d01_hub_room/tutorial_platform_diff
   blocks/d01_hub_room/tutorial_platform_middle
   blocks/d01_hub_room/tutorial_platform_norm
@@ -3878,6 +3886,8 @@
   blocks/d01_lava/lavastruct_floor_tile_01_norm
   blocks/d01_lava/lavastruct_fountain_01_diff
   blocks/d01_lava/lavastruct_fountain_01_norm
+  blocks/d01_lava/lavastruct_goat_satan_statue_diff
+  blocks/d01_lava/lavastruct_goat_satan_statue_norm
   blocks/d01_lava/lavastruct_lavaflow_diff
   blocks/d01_lava/lavastruct_lavaflow_normal
   blocks/d01_lava/lavastruct_pillar_01_diff
@@ -4034,7 +4044,7 @@
   shaders/lava_flow
   shaders/tutorial_sand
 
-### 0f07a1cb5132485b   modules/d01_lava/resources   (963 names)
+### 0f07a1cb5132485b   modules/d01_lava/resources   (969 names)
 ------------------------------------------------------------------------------
   achievement_icons/accomplished_master
   blocks/common/invisible_wall_2c
@@ -4147,7 +4157,9 @@
   blocks/d01_lava/floors/lavarock_floor_4c_4c_invisibility
   blocks/d01_lava/floors/lavarock_floor_border_02_4c
   blocks/d01_lava/floors/lavarock_floor_border_2c
+  blocks/d01_lava/floors/lavarock_floor_border_2c_twosided
   blocks/d01_lava/floors/lavarock_floor_border_4c
+  blocks/d01_lava/floors/lavarock_floor_border_4c_twosided
   blocks/d01_lava/floors/lavarock_floor_border_concave_2c
   blocks/d01_lava/floors/lavarock_floor_border_concave_4c
   blocks/d01_lava/floors/lavarock_floor_border_convex_2c
@@ -4207,6 +4219,8 @@
   blocks/d01_lava/lavastruct_floor_tile_01_norm
   blocks/d01_lava/lavastruct_fountain_01_diff
   blocks/d01_lava/lavastruct_fountain_01_norm
+  blocks/d01_lava/lavastruct_goat_satan_statue_diff
+  blocks/d01_lava/lavastruct_goat_satan_statue_norm
   blocks/d01_lava/lavastruct_lavaflow_diff
   blocks/d01_lava/lavastruct_lavaflow_normal
   blocks/d01_lava/lavastruct_pillar_01_diff
@@ -4625,6 +4639,7 @@
   modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_end
   modules/d01_lava/dungeon_tiles/lavastruct_16c_16c_ww_ww_ww_dw_01_start
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_d_w_d_01_corridor
+  modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_d_w_d_w_01_corridor
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_d_w_01_corridorturn
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_01_corridor
   modules/d01_lava/dungeon_tiles/lavastruct_8c_8c_w_d_w_d_02_corridor
@@ -4976,6 +4991,7 @@
   props/d01_lava/skysphere_vortex
   props/d01_lava/souls_01
   props/d01_lava/souls_emissive
+  props/d01_lava/swamp_redwizard_brazier_02_diff
   props/d01_lava/swamp_redwizard_cage_01_diff
   props/d01_lava/swamp_redwizard_cage_01_norm
   props/d01_lava/vase
@@ -5000,7 +5016,7 @@
   textures/flat_norm
   textures/white
 
-### 07cdebae91f29fae   modules/menu/resources   (429 names)
+### 07cdebae91f29fae   modules/menu/resources   (431 names)
 ------------------------------------------------------------------------------
   blocks/d01_caves/caverock_border_low_diff
   blocks/d01_caves/caverock_border_low_norm
@@ -5153,6 +5169,8 @@
   blocks/d01_lava/lavastruct_floor_tile_01_norm
   blocks/d01_lava/lavastruct_fountain_01_diff
   blocks/d01_lava/lavastruct_fountain_01_norm
+  blocks/d01_lava/lavastruct_goat_satan_statue_diff
+  blocks/d01_lava/lavastruct_goat_satan_statue_norm
   blocks/d01_lava/lavastruct_lavaflow_diff
   blocks/d01_lava/lavastruct_lavaflow_normal
   blocks/d01_lava/lavastruct_pillar_01_diff
@@ -6742,7 +6760,7 @@
   shaders/ice_shard
   textures/black
 
-### af66175d2487bb0d   resource_packages/crypt_boss   (86 names)
+### af66175d2487bb0d   resource_packages/crypt_boss   (88 names)
 ------------------------------------------------------------------------------
   audio/enemy_mummy_king
   blocks/d01_crypt/crypt_wall_01_diff
@@ -6769,9 +6787,11 @@
   characters/boss_mummy/animations/intro
   characters/boss_mummy/animations/stunned_init
   characters/boss_mummy/animations/stunned_loop
+  characters/boss_mummy/animations/turn_left_130
   characters/boss_mummy/animations/turn_left_22
   characters/boss_mummy/animations/turn_left_45
   characters/boss_mummy/animations/turn_left_90
+  characters/boss_mummy/animations/turn_right_130
   characters/boss_mummy/animations/turn_right_22
   characters/boss_mummy/animations/turn_right_45
   characters/boss_mummy/animations/turn_right_90
@@ -9391,7 +9411,7 @@
 ------------------------------------------------------------------------------
   audio/heroes_elf
 
-### 2c8fb6cb55aba416   resource_packages/heroes/elf_base   (166 names)
+### 2c8fb6cb55aba416   resource_packages/heroes/elf_base   (168 names)
 ------------------------------------------------------------------------------
   characters/avatar_base
   characters/avatar_elf/animations/blink_offset
@@ -9428,8 +9448,10 @@
   characters/avatar_elf/animations/character_select_pos02_var03
   characters/avatar_elf/animations/character_select_pos03
   characters/avatar_elf/animations/character_select_pos04
+  characters/avatar_elf/animations/charselect_turndown
   characters/avatar_elf/animations/charselect_turnleft
   characters/avatar_elf/animations/charselect_turnright
+  characters/avatar_elf/animations/charselect_turnup
   characters/avatar_elf/animations/crank_turn
   characters/avatar_elf/animations/crank_turn_idle
   characters/avatar_elf/animations/die_decapitated
@@ -9880,7 +9902,7 @@
 ------------------------------------------------------------------------------
   audio/heroes_necromagus
 
-### 40d0e0479ffe0c4c   resource_packages/heroes/necromagus_base   (151 names)
+### 40d0e0479ffe0c4c   resource_packages/heroes/necromagus_base   (157 names)
 ------------------------------------------------------------------------------
   characters/avatar_base
   characters/avatar_necromagus/animation/ability_summon
@@ -9922,17 +9944,23 @@
   characters/avatar_necromagus/animation/hit_offset_01
   characters/avatar_necromagus/animation/idle
   characters/avatar_necromagus/animation/idle_left
+  characters/avatar_necromagus/animation/idle_leftback
   characters/avatar_necromagus/animation/idle_right
+  characters/avatar_necromagus/animation/idle_rightback
   characters/avatar_necromagus/animation/knockback
   characters/avatar_necromagus/animation/knockback_short
   characters/avatar_necromagus/animation/leap
   characters/avatar_necromagus/animation/leap_windup
   characters/avatar_necromagus/animation/move_run
   characters/avatar_necromagus/animation/move_run_left
+  characters/avatar_necromagus/animation/move_run_leftback
   characters/avatar_necromagus/animation/move_run_right
+  characters/avatar_necromagus/animation/move_run_rightback
   characters/avatar_necromagus/animation/move_walk
   characters/avatar_necromagus/animation/move_walk_left
+  characters/avatar_necromagus/animation/move_walk_leftback
   characters/avatar_necromagus/animation/move_walk_right
+  characters/avatar_necromagus/animation/move_walk_rightback
   characters/avatar_necromagus/animation/push_block
   characters/avatar_necromagus/animation/push_block_idle
   characters/avatar_necromagus/animation/spawn_default
@@ -10197,7 +10225,7 @@
 ------------------------------------------------------------------------------
   audio/heroes_valkyrie
 
-### d2fac3c70e7333f9   resource_packages/heroes/valkyrie_base   (185 names)
+### d2fac3c70e7333f9   resource_packages/heroes/valkyrie_base   (187 names)
 ------------------------------------------------------------------------------
   characters/avatar_base
   characters/avatar_valkyrie/animations/ability_dash_bash
@@ -10217,8 +10245,10 @@
   characters/avatar_valkyrie/animations/character_select_pos03_var1
   characters/avatar_valkyrie/animations/character_select_pos03_var2
   characters/avatar_valkyrie/animations/character_select_pos03_var3
+  characters/avatar_valkyrie/animations/character_select_turndown
   characters/avatar_valkyrie/animations/character_select_turnleft
   characters/avatar_valkyrie/animations/character_select_turnright
+  characters/avatar_valkyrie/animations/character_select_turnup
   characters/avatar_valkyrie/animations/crank_idle
   characters/avatar_valkyrie/animations/crank_turn
   characters/avatar_valkyrie/animations/death_decapitated
@@ -10538,7 +10568,7 @@
 ------------------------------------------------------------------------------
   audio/heroes_warrior
 
-### 67fdaf59c0374dce   resource_packages/heroes/warrior_base   (176 names)
+### 67fdaf59c0374dce   resource_packages/heroes/warrior_base   (178 names)
 ------------------------------------------------------------------------------
   characters/avatar_base
   characters/avatar_warrior/animations/ability_talisman_01
@@ -10574,8 +10604,10 @@
   characters/avatar_warrior/animations/character_select_pos01_var02
   characters/avatar_warrior/animations/character_select_pos01_var03
   characters/avatar_warrior/animations/character_select_pos02
+  characters/avatar_warrior/animations/character_select_pos02_turndown
   characters/avatar_warrior/animations/character_select_pos02_turnleft
   characters/avatar_warrior/animations/character_select_pos02_turnright
+  characters/avatar_warrior/animations/character_select_pos02_turnup
   characters/avatar_warrior/animations/character_select_pos02_var01
   characters/avatar_warrior/animations/character_select_pos02_var02
   characters/avatar_warrior/animations/character_select_pos02_var03
@@ -10973,7 +11005,7 @@
 ------------------------------------------------------------------------------
   audio/heroes_wizard
 
-### 8c75217fc3fad29b   resource_packages/heroes/wizard_base   (174 names)
+### 8c75217fc3fad29b   resource_packages/heroes/wizard_base   (176 names)
 ------------------------------------------------------------------------------
   characters/avatar_base
   characters/avatar_wizard/abilities/spell_frost_serpents
@@ -11008,8 +11040,10 @@
   characters/avatar_wizard/animations/character_select_pos04
   characters/avatar_wizard/animations/character_select_pos04_var01
   characters/avatar_wizard/animations/character_select_pos04_var02
+  characters/avatar_wizard/animations/charselect_turndown
   characters/avatar_wizard/animations/charselect_turnleft
   characters/avatar_wizard/animations/charselect_turnright
+  characters/avatar_wizard/animations/charselect_turnup
   characters/avatar_wizard/animations/conjuring
   characters/avatar_wizard/animations/conjuring_astral
   characters/avatar_wizard/animations/conjuring_fire

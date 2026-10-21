@@ -77,6 +77,17 @@ CRACK OPTIONS
   --cpu               force the CPU path (also used automatically as fallback)
   --safe              reference CPU path (build the name, then hash it; no
                       arena, no GPU) - only to cross-check the fast path
+
+ CASE AND TARGET WIDTH (all engines)
+  --preserve-case     do NOT lowercase candidates.  Helldivers 2 hashes are
+                      case-SENSITIVE (filediver's stingray.Sum hashes the bytes
+                      as written), so `Actions/Aim_Rocket_Enter` is only
+                      findable with this flag; Gauntlet/Stingray resource paths
+                      are folded before hashing, which is the default.
+  --thin              targets are 32-bit ids (filediver's thinhashes.txt, or
+                      `tools/hd2_targets.py --thin`): a candidate matches when
+                      the TOP HALF of its 64-bit hash equals the target.
+                      Hits print the full 64-bit hash the name really hashes to.
 "
     );
 }
@@ -123,10 +134,25 @@ impl Args {
     pub(crate) fn has(&self, key: &str) -> bool {
         self.flags.iter().any(|(k, _)| k == key)
     }
+    /// Case policy for this run: `true` folds every candidate to lowercase.
+    ///
+    /// Gauntlet/Bitsquid lowercases resource paths before hashing, so folding
+    /// is correct - and is the default.  Helldivers 2 does **not**: its hashes
+    /// are case-sensitive (filediver's `stingray.Sum` hashes the bytes as
+    /// written), so `--preserve-case` is required for any HD2 target whose
+    /// source string contains an uppercase character.
+    pub(crate) fn fold(&self) -> bool {
+        !self.has("preserve-case")
+    }
 }
 
-/// Read a file of lines into lowercased, non-empty byte vectors.
-pub(crate) fn read_lines(path: &str) -> Result<Vec<Vec<u8>>> {
+/// Read a file of lines into non-empty byte vectors.
+///
+/// `fold` lowercases each line (the Gauntlet convention).  With `fold == false`
+/// the bytes are kept exactly as written, which is what a case-sensitive
+/// namespace (Helldivers 2) needs.  Blank and `#` comment lines are dropped
+/// either way.
+pub(crate) fn read_lines(path: &str, fold: bool) -> Result<Vec<Vec<u8>>> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {path}"))?;
     let mut out = Vec::new();
     for line in text.lines() {
@@ -134,7 +160,11 @@ pub(crate) fn read_lines(path: &str) -> Result<Vec<Vec<u8>>> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        out.push(line.bytes().map(|b| b.to_ascii_lowercase()).collect());
+        if fold {
+            out.push(line.bytes().map(|b| b.to_ascii_lowercase()).collect());
+        } else {
+            out.push(line.as_bytes().to_vec());
+        }
     }
     Ok(out)
 }
@@ -163,6 +193,9 @@ pub(crate) fn read_targets(path: &str) -> Result<HashSet<u64>> {
 pub(crate) struct TargetSet {
     mask: usize,
     slots: Vec<u64>,
+    /// Compare only the high 32 bits of a candidate (`stingray.Hash.Thin()`,
+    /// the top half of the 64-bit murmur) - for 32-bit `--thin` target sets.
+    thin: bool,
 }
 
 impl TargetSet {
@@ -170,7 +203,33 @@ impl TargetSet {
     fn slot(h: u64, mask: usize) -> usize {
         (h.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 40) as usize & mask
     }
+    /// A candidate's comparison form: the whole 64-bit hash, or its high 32 bits
+    /// for a thin (32-bit) target set.
+    ///
+    /// Targets are stored *exactly as given*: a thin target file already holds
+    /// 32-bit ids (`tools/hd2_targets.py --thin`, filediver's `thinhashes.txt`),
+    /// so only candidates are narrowed.
+    #[inline]
+    fn key(h: u64, thin: bool) -> u64 {
+        if thin {
+            h >> 32
+        } else {
+            h
+        }
+    }
+
     pub(crate) fn new(hashes: impl IntoIterator<Item = u64>) -> Self {
+        Self::build(hashes, false)
+    }
+
+    /// Like [`TargetSet::new`], but a candidate matches when its *top 32 bits*
+    /// equal the target (Helldivers 2 `ThinHash`).  Two 64-bit hashes that share
+    /// a top half therefore both match one thin id - as they should.
+    pub(crate) fn new_thin(hashes: impl IntoIterator<Item = u64>) -> Self {
+        Self::build(hashes, true)
+    }
+
+    fn build(hashes: impl IntoIterator<Item = u64>, thin: bool) -> Self {
         let v: Vec<u64> = hashes.into_iter().collect();
         let mut cap = 16;
         while cap < v.len() * 2 {
@@ -180,7 +239,7 @@ impl TargetSet {
         // array plus a bit-packed "used" bitmap (the bit test cost a load, a
         // shift and a mask per candidate). The GPU table has always used this
         // convention, so both paths now probe identical tables.
-        let mut s = TargetSet { mask: cap - 1, slots: vec![0; cap] };
+        let mut s = TargetSet { mask: cap - 1, slots: vec![0; cap], thin };
         for h in v {
             debug_assert!(h != 0, "a 0 target collides with the empty-slot marker");
             if h == 0 {
@@ -202,6 +261,7 @@ impl TargetSet {
     }
     #[inline]
     pub(crate) fn contains(&self, h: u64) -> bool {
+        let h = Self::key(h, self.thin);
         let mut i = Self::slot(h, self.mask);
         loop {
             let v = self.slots[i];
@@ -268,6 +328,10 @@ fn crack(argv: &[String]) -> Result<()> {
     // --safe forces the reference path (build the string, then hash it) so the
     // arena fast path can be diffed against it on the same space.
     let safe = args.has("safe");
+    // Case policy and target width: HD2 needs `--preserve-case` (its hashes are
+    // case-sensitive) and often `--thin` (32-bit `Hash.Thin()` IDs).
+    let fold = args.fold();
+    let thin = args.has("thin");
 
     let mut targets = read_targets(&targets_path)?;
     if let Some(ex) = args.one("exclude") {
@@ -276,22 +340,32 @@ fn crack(argv: &[String]) -> Result<()> {
         targets.retain(|h| !drop.contains(h));
         println!("excluded     : {} already-solved", before - targets.len());
     }
+    // 0 marks an empty table slot (and murmur("") is 0) - a target file can never
+    // contain one, in either width.
     if targets.contains(&0) {
         return Err(anyhow!(
-            "a target hash is 0, which marks empty table slots (murmur(\"\") is 0 too)"
+            "a target hash is 0, which marks empty table slots \
+             (murmur(\"\") is 0 too); drop it with --exclude"
         ));
     }
     println!("targets      : {} hashes", targets.len());
+    println!(
+        "case policy  : {}",
+        if fold { "fold to lowercase (Gauntlet/Stingray default)" } else { "preserve as written (--preserve-case)" }
+    );
+    if thin {
+        println!("target width : 32-bit thin (top half of the 64-bit hash)");
+    }
 
     // build compiler + load word lists (must exist before compiling patterns)
-    let mut comp = Compiler::new();
+    let mut comp = Compiler::new(fold);
     for spec in args.all("list") {
         let (slot, file) = spec
             .split_once('=')
             .ok_or_else(|| anyhow!("--list must be X=FILE, got {spec:?}"))?;
         let c = slot.bytes().next().ok_or_else(|| anyhow!("empty slot in {spec:?}"))?;
         let idx = comp.slot(c);
-        let words = read_lines(file)?;
+        let words = read_lines(file, fold)?;
         println!("list %{}       : {} words  ({file})", c as char, words.len());
         comp.lists[idx] = words;
     }
@@ -306,7 +380,11 @@ fn crack(argv: &[String]) -> Result<()> {
     let matches_path = args.one_or("matches", "matches.tsv");
     let matches = Mutex::new(Matches::open(&matches_path)?);
     let new_hits = AtomicU64::new(0);
-    let tset = TargetSet::new(targets.iter().copied());
+    let tset = if thin {
+        TargetSet::new_thin(targets.iter().copied())
+    } else {
+        TargetSet::new(targets.iter().copied())
+    };
     println!(
         "matches file : {matches_path} ({} names already)",
         matches.lock().unwrap().len()
@@ -343,7 +421,7 @@ fn crack(argv: &[String]) -> Result<()> {
 
     // Optional: a plain list of candidate strings to test (no pattern needed).
     if let Some(cf) = args.one("candidates") {
-        let cands = read_lines(&cf)?;
+        let cands = read_lines(&cf, fold)?;
         println!("candidates   : {} strings  ({cf})", cands.len());
         let t0 = std::time::Instant::now();
         pool.install(|| {
@@ -372,7 +450,7 @@ fn crack(argv: &[String]) -> Result<()> {
         let mut done = false;
         if let Some(g) = &gpu {
             let mut cb = |h: u64, name: &[u8]| record(h, name);
-            match g.eval_pattern(pat, &targets, limit, &mut cb) {
+            match g.eval_pattern(pat, &targets, limit, &mut cb, thin) {
                 Ok(_) => done = true,
                 Err(e) => eprintln!("  gpu: {e} - falling back to CPU for this pattern"),
             }
@@ -485,9 +563,12 @@ fn mutate(argv: &[String]) -> Result<()> {
     let names_path = args.one("names").ok_or_else(|| anyhow!("--names required"))?;
     let targets_path = args.one("targets").ok_or_else(|| anyhow!("--targets required"))?;
     let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
+    // Same case policy as `crack`: HD2 keeps its bytes, Gauntlet folds them.
+    let fold = args.fold();
+    let thin = args.has("thin");
 
-    let suffixes: Vec<Vec<u8>> = match args.one("suffixes") { Some(f) => read_lines(&f)?, None => Vec::new() };
-    let tokens: Vec<Vec<u8>> = match args.one("tokens") { Some(f) => read_lines(&f)?, None => Vec::new() };
+    let suffixes: Vec<Vec<u8>> = match args.one("suffixes") { Some(f) => read_lines(&f, fold)?, None => Vec::new() };
+    let tokens: Vec<Vec<u8>> = match args.one("tokens") { Some(f) => read_lines(&f, fold)?, None => Vec::new() };
     let mut numbers: Vec<Vec<u8>> = Vec::with_capacity(200);
     for i in 0..100 {
         numbers.push(format!("{i:02}").into_bytes());
@@ -499,7 +580,7 @@ fn mutate(argv: &[String]) -> Result<()> {
     // precompute (dir-with-slash, leaf tokens) per known name - all byte-based
     // so the hot loop never allocates a String.
     let mut ents: Vec<(Vec<u8>, Vec<Vec<u8>>)> = Vec::new();
-    for line in read_lines(&names_path)? {
+    for line in read_lines(&names_path, fold)? {
         let (dir, leaf) = match line.iter().rposition(|&b| b == b'/') {
             Some(i) => (line[..=i].to_vec(), line[i + 1..].to_vec()),
             None => (Vec::new(), line.clone()),
@@ -513,12 +594,17 @@ fn mutate(argv: &[String]) -> Result<()> {
         let drop = read_targets(&ex)?;
         targets.retain(|h| !drop.contains(h));
     }
+    // 0 marks an empty table slot (and murmur("") is 0)
     if targets.contains(&0) {
         return Err(anyhow!(
             "a target hash is 0, which marks empty table slots (murmur(\"\") is 0 too)"
         ));
     }
-    let tset = TargetSet::new(targets.iter().copied());
+    let tset = if thin {
+        TargetSet::new_thin(targets.iter().copied())
+    } else {
+        TargetSet::new(targets.iter().copied())
+    };
 
     // --- chains: names of the form `technique:flag:flag` (shader libraries).  The
     // engine sorts a chain's flags alphabetically, so every candidate here is emitted
@@ -529,7 +615,7 @@ fn mutate(argv: &[String]) -> Result<()> {
     let mut chain_ents: Vec<(Vec<u8>, Vec<Vec<u8>>)> = Vec::new();
     let mut techniques: Vec<Vec<u8>> = Vec::new();
     let mut chain_flags: Vec<Vec<u8>> = Vec::new();
-    for line in read_lines(&names_path)? {
+    for line in read_lines(&names_path, fold)? {
         if !line.contains(&b':') {
             continue;
         }
@@ -783,14 +869,14 @@ fn bench(argv: &[String]) -> Result<()> {
     let threads: usize = args.one_or("threads", "0").parse().unwrap_or(0);
     let limit: u64 = args.one_or("limit", "0").parse().unwrap_or(0);
 
-    let mut comp = Compiler::new();
+    let mut comp = Compiler::new(args.fold());
     for spec in args.all("list") {
         let (slot, file) = spec
             .split_once('=')
             .ok_or_else(|| anyhow!("--list must be X=FILE, got {spec:?}"))?;
         let c = slot.bytes().next().ok_or_else(|| anyhow!("empty slot in {spec:?}"))?;
         let idx = comp.slot(c);
-        comp.lists[idx] = read_lines(file)?;
+        comp.lists[idx] = read_lines(file, args.fold())?;
     }
     let pat = comp.compile(&pattern).map_err(|e| anyhow!(e))?;
     let nslots = pat.slots();
@@ -878,7 +964,7 @@ fn mine(argv: &[String]) -> Result<()> {
     if corpora.is_empty() {
         return Err(anyhow!("at least one --corpus required"));
     }
-    let dict = read_lines(&dict_path)?;
+    let dict = read_lines(&dict_path, args.fold())?;
     let ac = AhoCorasickBuilder::new()
         .ascii_case_insensitive(true)
         .build(dict.iter().map(|w| w.as_slice()))
