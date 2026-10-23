@@ -31,6 +31,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 HC = HERE.parent
 DIG = HC.parent / "Data"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(HC.parent / "scripts"))   # bundle_tools / list_game_bundles live here
 from hunt_unit_textures import murmur                            # noqa: E402
 
 

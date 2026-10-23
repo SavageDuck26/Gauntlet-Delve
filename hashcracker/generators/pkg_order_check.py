@@ -20,6 +20,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 DIG = REPO / "Data"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(REPO / "scripts"))       # list_game_bundles lives here
 from list_game_bundles import (decompress_bundle, parse_toc, parse_resources,  # noqa
                                find_install_root)
 

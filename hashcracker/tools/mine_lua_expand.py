@@ -39,6 +39,7 @@ HC = HERE.parent
 REPO = HC.parent
 DIG = HC.parent / "Data"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(HC.parent / "scripts"))   # bundle_tools / list_game_bundles live here
 sys.path.insert(0, str(HERE))
 from bundle_tools import murmur_hash64  # noqa: E402
 from named_textures import load_names  # noqa: E402

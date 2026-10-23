@@ -35,6 +35,7 @@ HC = HERE.parent
 REPO = HC.parent
 DIG = HC.parent / "Data"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(HC.parent / "scripts"))   # bundle_tools / list_game_bundles live here
 from bundle_tools import murmur_hash64  # noqa: E402
 
 CATALOGUE = DIG / "bundle_manifest" / "04_bundle_resources.csv"

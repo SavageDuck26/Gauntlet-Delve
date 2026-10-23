@@ -145,6 +145,16 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     names, full, n_glb = collect(export)
+    # A missing export tree used to produce an EMPTY stems.txt, silently
+    # overwriting a good vocabulary that had been shipped to the machine running
+    # the sweep (the box has no 1.4 GB export tree, so export_corpus.sh wiped its
+    # own word lists and swept nothing).  Refuse instead - nothing is written.
+    if n_glb == 0:
+        raise SystemExit(
+            f"no glTF files under {export}/levels_glb or {export}/view/glb\n"
+            f"  point --export at the export tree (this is the machine that has it),\n"
+            f"  or run the sweep with the vocabulary already in {out} - refusing to\n"
+            f"  overwrite it with an empty one.")
     _rows, dirs, targets, tex_suffixes = catalogue()
 
     stems = set()

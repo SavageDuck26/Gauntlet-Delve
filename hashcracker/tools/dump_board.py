@@ -45,6 +45,7 @@ DIG = HC.parent / "Data"
 CATALOGUE = DIG / "bundle_manifest" / "04_bundle_resources.csv"
 OVERLAY = DIG / "resource_name_overlay.json"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(HC.parent / "scripts"))   # bundle_tools / list_game_bundles live here
 import list_game_bundles as L                                          # noqa: E402
 from hunt_unit_textures import find_body, murmur                       # noqa: E402
 

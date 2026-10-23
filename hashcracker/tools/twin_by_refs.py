@@ -34,6 +34,7 @@ CATALOGUE = DIG / "bundle_manifest" / "04_bundle_resources.csv"
 OVERLAY = DIG / "resource_name_overlay.json"
 GRAPH = HC / "work" / "ref_graph.json"
 sys.path.insert(0, str(DIG))
+sys.path.insert(0, str(HC.parent / "scripts"))   # bundle_tools / list_game_bundles live here
 from bundle_tools import murmur_hash64                              # noqa: E402
 
 SUF = ["diff", "norm", "spec", "normal", "mask", "glow", "icon", "color",
