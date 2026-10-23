@@ -4323,7 +4323,7 @@ BUNDLE 1a9c33dcd0301dfd   (core/rendering/renderer)
    65 shader_library           e5ee32a477239a93   5704141c4c1055fb        73395      73395 base:deferred_decals_group_prop:diffuse_map:normal_map:self_illumination_map
    66 shader_library           e5ee32a477239a93   96f35f485cfe7234        69347      69347 base:diffuse_map:normal_map
    67 shader_library           e5ee32a477239a93   c5ef731de0e5c0e9         2931       2931 nv_dof_tridiagonal_fill:direction_x
-   68 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 <unresolved>
+   68 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 base:instanced:deferred_decals_group_floor:diffuse_map:material_map
    69 shader_library           e5ee32a477239a93   82240d048a2d520e        71723      71723 base:diffuse_map:fade_to_black_z_pos:material_tint_rgb:normal_map
    70 shader_library           e5ee32a477239a93   5afc3f70ebee85f1        24257      24257 character:enemy
    71 shader_library           e5ee32a477239a93   3014b18067cb6f45        27098      27098 <unresolved>
@@ -4617,7 +4617,7 @@ BUNDLE 1a9c33dcd0301dfd   (core/rendering/renderer)
   359 shader_library           e5ee32a477239a93   6466dc75ba134334        67555      67555 base:diffuse_map:material_map
   360 shader_library           e5ee32a477239a93   7c4f6eb5077b0929        96667      96667 <unresolved>
   361 shader_library           e5ee32a477239a93   6ac7100bd70b7ead        19070      19070 billboard:blend_additive:diffuse_map:rotation:soft_particles:vertex_color
-  362 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 <unresolved>
+  362 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting
   363 shader_library           e5ee32a477239a93   a9961bab9ec0d387        54849      54849 <unresolved>
   364 shader_library           e5ee32a477239a93   f32191a09dcb5bb3        24289      24289 <unresolved>
   365 shader_library_group     9e5c3cc74575aeb5   d7303ea3244ec44f           16         16 core/rendering/canvas
@@ -8010,7 +8010,7 @@ BUNDLE 40d0e0479ffe0c4c   (resource_packages/heroes/necromagus_base)
    73 animation                931e336d7646cc26   ebf29e5b91e7d750         3956       3956 characters/avatar_necromagus/animation/push_block_idle
    74 animation                931e336d7646cc26   f07f369240ca3b1e         8480       8480 characters/avatar_necromagus/animation/carry_drop
    75 animation                931e336d7646cc26   f56db9649ec25434         2628       2628 characters/avatar_necromagus/animation/death_default
-   76 animation                931e336d7646cc26   f575a1e2f13d958a         9162       9162 <unresolved>
+   76 animation                931e336d7646cc26   f575a1e2f13d958a         9162       9162 characters/avatar_necromagus/animation/colosseum_profile_alt1
    77 animation                931e336d7646cc26   f7a02c8cd763c2a8        10924      10924 characters/avatar_necromagus/animation/move_run_rightback
    78 animation                931e336d7646cc26   fe0284d2c79a90bc         8424       8424 <unresolved>
    79 animation                931e336d7646cc26   ffdbae46a8d94661        16014      16014 characters/avatar_necromagus/animation/leap
@@ -12400,7 +12400,7 @@ BUNDLE 8cbde06d754ef613   (core/rendering/emulate_renderer)
   207 shader_library           e5ee32a477239a93   2f0f4f9994c70e21        77023      77023 base:deferred_decals_group_floor:detail_normal_map:diffuse_map:instanced:normal_map
   208 shader_library           e5ee32a477239a93   597118b5d5b3780d        54013      54013 billboard:diffuse_map:pivot:soft_particles:tangent_locked:uv_animation:vertex_color
   209 shader_library           e5ee32a477239a93   3014b18067cb6f45        27098      27098 <unresolved>
-  210 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 <unresolved>
+  210 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 base:instanced:deferred_decals_group_floor:diffuse_map:material_map
   211 shader_library           e5ee32a477239a93   6f7950078ddcbd00        71999      71999 base:deferred_decals_group_floor:diffuse_map:instanced
   212 shader_library           e5ee32a477239a93   502ec68f5b6cb505        83099      83099 base:deferred_decals_group_prop:diffuse_map:normal_map:one_bit_alpha:static_lighting
   213 shader_library           e5ee32a477239a93   33bb2307c7d357a3        70643      70643 base:deferred_decals_group_floor:diffuse_map:global_uv_scale:normal_map:uv_proj_world_z
@@ -12518,7 +12518,7 @@ BUNDLE 8cbde06d754ef613   (core/rendering/emulate_renderer)
   325 shader_library           e5ee32a477239a93   e5327610f5963fc5        17873      17873 <unresolved>
   326 shader_library           e5ee32a477239a93   01dd244781e1b470        46469      46469 billboard:diffuse_map:external_rotation:rotation:vertex_color
   327 shader_library           e5ee32a477239a93   4d8789a570e84746        93035      93035 base:diffuse_map:instanced:one_bit_alpha:self_illumination_map:vegetation_bending
-  328 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 <unresolved>
+  328 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting
   329 shader_library           e5ee32a477239a93   cdd53dc65fe37f7f         8422       8422 <unresolved>
   330 shader_library           e5ee32a477239a93   4d32a095e03730da        15558      15558 <unresolved>
   331 shader_library           e5ee32a477239a93   d08146b863c7258f        85547      85547 base:diffuse_map:instanced:static_lighting
@@ -14879,7 +14879,7 @@ BUNDLE b4d3a1fda591b2a4   (core/rendering/mobile_renderer)
   241 shader_library           e5ee32a477239a93   4c45970b38829f3d        76855      76855 base:deferred_decals_group_floor:diffuse_map:global_uv_scale:instanced:material_tint_rgb:normal_map:uv_proj_world_z
   242 shader_library           e5ee32a477239a93   d0036635993570cb        64895      64895 base:double_sided
   243 shader_library           e5ee32a477239a93   25b8d2f89afbacc5        75511      75511 base:deferred_decals_group_floor:deferred_decals_group_level:deferred_decals_group_prop:diffuse_map:instanced:normal_map
-  244 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 <unresolved>
+  244 shader_library           e5ee32a477239a93   e21e6d4c0560b33c        72967      72967 base:instanced:deferred_decals_group_floor:diffuse_map:material_map
   245 shader_library           e5ee32a477239a93   89aa432eac4d4c9c        18253      18253 billboard:diffuse_map:disable_lighting:external_rotation:rotation:vertex_color
   246 shader_library           e5ee32a477239a93   d6e84f16c2aa5626        76599      76599 base:deferred_decals_group_prop:diffuse_map:fade_to_black_z_pos:instanced:normal_map
   247 shader_library           e5ee32a477239a93   746a5ab0c09dcfd7         5866       5866 gui:depth_test_enabled:diffuse_map:one_bit_alpha
@@ -15023,7 +15023,7 @@ BUNDLE b4d3a1fda591b2a4   (core/rendering/mobile_renderer)
   385 shader_library           e5ee32a477239a93   c95f77e294895aaa        69471      69471 base:self_illumination_map:self_illumination_tint_material
   386 shader_library           e5ee32a477239a93   e99f67134b0d0754        17930      17930 billboard:blend_additive:diffuse_map:pivot:rotation:vertex_color
   387 shader_library_group     9e5c3cc74575aeb5   82ea6708b4384ce3          152        152 core/rendering/default_shaders
-  388 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 <unresolved>
+  388 shader_library           e5ee32a477239a93   7355547fffbd1b03       109415     109415 base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting
   389 shader_library           e5ee32a477239a93   e5327610f5963fc5        17873      17873 <unresolved>
   390 shader_library           e5ee32a477239a93   c95a62fba00d504e         2899       2899 ao_integrator:sun_occlusion
   391 shader_library           e5ee32a477239a93   ce0539e0496738d1        42901      42901 billboard:vertex_color

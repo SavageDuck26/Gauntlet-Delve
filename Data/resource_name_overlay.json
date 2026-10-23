@@ -6955,5 +6955,8 @@
   "f7a02c8cd763c2a8": "characters/avatar_necromagus/animation/move_run_rightback",
   "8a855c1142c7506b": "characters/avatar_necromagus/animation/idle_leftback",
   "0b9858fc601db786": "characters/boss_mummy/animations/turn_right_130",
-  "e3b929b47878ef1f": "characters/boss_mummy/animations/turn_left_130"
+  "e3b929b47878ef1f": "characters/boss_mummy/animations/turn_left_130",
+  "f575a1e2f13d958a": "characters/avatar_necromagus/animation/colosseum_profile_alt1",
+  "7355547fffbd1b03": "base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting",
+  "e21e6d4c0560b33c": "base:instanced:deferred_decals_group_floor:diffuse_map:material_map"
 }

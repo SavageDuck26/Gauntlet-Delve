@@ -4253,7 +4253,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 1a9c33dcd0301dfd,core/rendering/renderer,65,shader_library,e5ee32a477239a93,5704141c4c1055fb,base:deferred_decals_group_prop:diffuse_map:normal_map:self_illumination_map,73395,73395,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,66,shader_library,e5ee32a477239a93,96f35f485cfe7234,base:diffuse_map:normal_map,69347,69347,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,67,shader_library,e5ee32a477239a93,c5ef731de0e5c0e9,nv_dof_tridiagonal_fill:direction_x,2931,2931,0,1
-1a9c33dcd0301dfd,core/rendering/renderer,68,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,,72967,72967,0,1
+1a9c33dcd0301dfd,core/rendering/renderer,68,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,base:instanced:deferred_decals_group_floor:diffuse_map:material_map,72967,72967,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,69,shader_library,e5ee32a477239a93,82240d048a2d520e,base:diffuse_map:fade_to_black_z_pos:material_tint_rgb:normal_map,71723,71723,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,70,shader_library,e5ee32a477239a93,5afc3f70ebee85f1,character:enemy,24257,24257,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,71,shader_library,e5ee32a477239a93,3014b18067cb6f45,,27098,27098,0,1
@@ -4547,7 +4547,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 1a9c33dcd0301dfd,core/rendering/renderer,359,shader_library,e5ee32a477239a93,6466dc75ba134334,base:diffuse_map:material_map,67555,67555,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,360,shader_library,e5ee32a477239a93,7c4f6eb5077b0929,,96667,96667,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,361,shader_library,e5ee32a477239a93,6ac7100bd70b7ead,billboard:blend_additive:diffuse_map:rotation:soft_particles:vertex_color,19070,19070,0,1
-1a9c33dcd0301dfd,core/rendering/renderer,362,shader_library,e5ee32a477239a93,7355547fffbd1b03,,109415,109415,0,1
+1a9c33dcd0301dfd,core/rendering/renderer,362,shader_library,e5ee32a477239a93,7355547fffbd1b03,base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting,109415,109415,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,363,shader_library,e5ee32a477239a93,a9961bab9ec0d387,,54849,54849,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,364,shader_library,e5ee32a477239a93,f32191a09dcb5bb3,,24289,24289,0,1
 1a9c33dcd0301dfd,core/rendering/renderer,365,shader_library_group,9e5c3cc74575aeb5,d7303ea3244ec44f,core/rendering/canvas,16,16,0,1
@@ -7860,7 +7860,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,73,animation,931e336d7646cc26,ebf29e5b91e7d750,characters/avatar_necromagus/animation/push_block_idle,3956,3956,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,74,animation,931e336d7646cc26,f07f369240ca3b1e,characters/avatar_necromagus/animation/carry_drop,8480,8480,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,75,animation,931e336d7646cc26,f56db9649ec25434,characters/avatar_necromagus/animation/death_default,2628,2628,0,1
-40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,76,animation,931e336d7646cc26,f575a1e2f13d958a,,9162,9162,0,1
+40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,76,animation,931e336d7646cc26,f575a1e2f13d958a,characters/avatar_necromagus/animation/colosseum_profile_alt1,9162,9162,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,77,animation,931e336d7646cc26,f7a02c8cd763c2a8,characters/avatar_necromagus/animation/move_run_rightback,10924,10924,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,78,animation,931e336d7646cc26,fe0284d2c79a90bc,,8424,8424,0,1
 40d0e0479ffe0c4c,resource_packages/heroes/necromagus_base,79,animation,931e336d7646cc26,ffdbae46a8d94661,characters/avatar_necromagus/animation/leap,16014,16014,0,1
@@ -12106,7 +12106,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 8cbde06d754ef613,core/rendering/emulate_renderer,207,shader_library,e5ee32a477239a93,2f0f4f9994c70e21,base:deferred_decals_group_floor:detail_normal_map:diffuse_map:instanced:normal_map,77023,77023,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,208,shader_library,e5ee32a477239a93,597118b5d5b3780d,billboard:diffuse_map:pivot:soft_particles:tangent_locked:uv_animation:vertex_color,54013,54013,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,209,shader_library,e5ee32a477239a93,3014b18067cb6f45,,27098,27098,0,1
-8cbde06d754ef613,core/rendering/emulate_renderer,210,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,,72967,72967,0,1
+8cbde06d754ef613,core/rendering/emulate_renderer,210,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,base:instanced:deferred_decals_group_floor:diffuse_map:material_map,72967,72967,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,211,shader_library,e5ee32a477239a93,6f7950078ddcbd00,base:deferred_decals_group_floor:diffuse_map:instanced,71999,71999,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,212,shader_library,e5ee32a477239a93,502ec68f5b6cb505,base:deferred_decals_group_prop:diffuse_map:normal_map:one_bit_alpha:static_lighting,83099,83099,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,213,shader_library,e5ee32a477239a93,33bb2307c7d357a3,base:deferred_decals_group_floor:diffuse_map:global_uv_scale:normal_map:uv_proj_world_z,70643,70643,0,1
@@ -12224,7 +12224,7 @@ bundle,package_path,index,type,type_hash,name_hash,name,body_size,declared_size,
 8cbde06d754ef613,core/rendering/emulate_renderer,325,shader_library,e5ee32a477239a93,e5327610f5963fc5,,17873,17873,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,326,shader_library,e5ee32a477239a93,01dd244781e1b470,billboard:diffuse_map:external_rotation:rotation:vertex_color,46469,46469,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,327,shader_library,e5ee32a477239a93,4d8789a570e84746,base:diffuse_map:instanced:one_bit_alpha:self_illumination_map:vegetation_bending,93035,93035,0,1
-8cbde06d754ef613,core/rendering/emulate_renderer,328,shader_library,e5ee32a477239a93,7355547fffbd1b03,,109415,109415,0,1
+8cbde06d754ef613,core/rendering/emulate_renderer,328,shader_library,e5ee32a477239a93,7355547fffbd1b03,base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting,109415,109415,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,329,shader_library,e5ee32a477239a93,cdd53dc65fe37f7f,,8422,8422,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,330,shader_library,e5ee32a477239a93,4d32a095e03730da,,15558,15558,0,1
 8cbde06d754ef613,core/rendering/emulate_renderer,331,shader_library,e5ee32a477239a93,d08146b863c7258f,base:diffuse_map:instanced:static_lighting,85547,85547,0,1
@@ -14473,7 +14473,7 @@ b4d3a1fda591b2a4,core/rendering/mobile_renderer,240,shader_library,e5ee32a477239
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,241,shader_library,e5ee32a477239a93,4c45970b38829f3d,base:deferred_decals_group_floor:diffuse_map:global_uv_scale:instanced:material_tint_rgb:normal_map:uv_proj_world_z,76855,76855,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,242,shader_library,e5ee32a477239a93,d0036635993570cb,base:double_sided,64895,64895,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,243,shader_library,e5ee32a477239a93,25b8d2f89afbacc5,base:deferred_decals_group_floor:deferred_decals_group_level:deferred_decals_group_prop:diffuse_map:instanced:normal_map,75511,75511,0,1
-b4d3a1fda591b2a4,core/rendering/mobile_renderer,244,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,,72967,72967,0,1
+b4d3a1fda591b2a4,core/rendering/mobile_renderer,244,shader_library,e5ee32a477239a93,e21e6d4c0560b33c,base:instanced:deferred_decals_group_floor:diffuse_map:material_map,72967,72967,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,245,shader_library,e5ee32a477239a93,89aa432eac4d4c9c,billboard:diffuse_map:disable_lighting:external_rotation:rotation:vertex_color,18253,18253,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,246,shader_library,e5ee32a477239a93,d6e84f16c2aa5626,base:deferred_decals_group_prop:diffuse_map:fade_to_black_z_pos:instanced:normal_map,76599,76599,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,247,shader_library,e5ee32a477239a93,746a5ab0c09dcfd7,gui:depth_test_enabled:diffuse_map:one_bit_alpha,5866,5866,0,1
@@ -14617,7 +14617,7 @@ b4d3a1fda591b2a4,core/rendering/mobile_renderer,384,shader_library,e5ee32a477239
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,385,shader_library,e5ee32a477239a93,c95f77e294895aaa,base:self_illumination_map:self_illumination_tint_material,69471,69471,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,386,shader_library,e5ee32a477239a93,e99f67134b0d0754,billboard:blend_additive:diffuse_map:pivot:rotation:vertex_color,17930,17930,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,387,shader_library_group,9e5c3cc74575aeb5,82ea6708b4384ce3,core/rendering/default_shaders,152,152,0,1
-b4d3a1fda591b2a4,core/rendering/mobile_renderer,388,shader_library,e5ee32a477239a93,7355547fffbd1b03,,109415,109415,0,1
+b4d3a1fda591b2a4,core/rendering/mobile_renderer,388,shader_library,e5ee32a477239a93,7355547fffbd1b03,base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting,109415,109415,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,389,shader_library,e5ee32a477239a93,e5327610f5963fc5,,17873,17873,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,390,shader_library,e5ee32a477239a93,c95a62fba00d504e,ao_integrator:sun_occlusion,2899,2899,0,1
 b4d3a1fda591b2a4,core/rendering/mobile_renderer,391,shader_library,e5ee32a477239a93,ce0539e0496738d1,billboard:vertex_color,42901,42901,0,1
