@@ -13540,3 +13540,80 @@ contributes nothing, and a per-kind template is still the only working lever for
 
 
 
+================================================================================
+SWEEPER LOG  -  2026-10-23  -  the GPU box's first session after the reorganise
+================================================================================
+
+THE EXPORT CORPUS, SWEPT TO THE END: 979,564,256 CANDIDATES, NOTHING NEW
+
+`tools/make_export_vocab.py` + `sweeps/export_corpus.sh` had never been run to
+completion - the sweep existed, its vocabulary existed, and its output file was
+zero bytes.  Run properly it is 1,039 exported GLBs -> 7,247 leaf names -> 7,472
+stems, crossed with the 372 directories named resources actually live in and the
+153 map/part suffixes named textures actually use:
+
+    patterns %d/%l, %d/%l%s, %d/%l_%n, %d/%l%n, %l, %l%s  + 115 full paths
+    total candidates  : 979,564,256
+    wall clock        : 3 s on the RTX 4060 (2.74 G/s on the widest pattern)
+    new matches       : 0, against 847 unresolved hashes
+
+RECORDED NEGATIVE, and it is now a closed one: the export tree's material/node/
+mesh names are the same names we already hold.  The five textures its *first*
+(partial) run found - `swamp_redwizard_brazier_02_diff`, `lavastruct_goat_satan_
+statue_diff/_norm`, `tutorial_cliff_01_diff/_norm` - were already in the overlay,
+so nothing in the corpus is new at this overlay.  Re-run it after a batch of new
+names, not before: it is 3 s of GPU, so it costs nothing to re-check, and it is
+type-agnostic (the hash decides whether a stem is a texture, a material or a
+unit leaf).
+
+TWO shader_library CHAINS, and one name only the box had
+
+    e21e6d4c0560b33c  base:instanced:deferred_decals_group_floor:diffuse_map:material_map
+    7355547fffbd1b03  base:instanced:diffuse_map:silhouette:silhouette_decals_group_level:static_lighting
+
+both in `core/rendering/renderer`, found by the standing battery (`sweeps/
+battery.sh 2 0`).  The third name of the session came from the union, not from a
+sweep:
+
+    f575a1e2f13d958a  characters/avatar_necromagus/animation/colosseum_profile_alt1
+
+The box's `matches.tsv` held it and ours did not - a straight rsync would have
+deleted it, which is the case 61.14 warned about and why `tools/pull-gpu.sh`
+unions instead (our 6,355 lines + the box's 6,355 lines = 6,355 unique hashes
+with one name swapped).  Overlay 6,957 -> 6,960; unique unresolved 848 -> 845.
+
+THE REORGANISE LEFT NINETEEN TOOLS BROKEN, AND NOBODY NOTICED
+
+be25c61 moved `Scripting/GauntletGameDigging/` to `scripts/` (the Python
+toolchain) + `Data/` (the catalogue and the findings), and updated `generators/`
+to reach `scripts/`.  Nineteen `tools/` files kept inserting the *old* directory
+on `sys.path` while importing modules that now live in `scripts/`, so every one
+of them died with `ModuleNotFoundError: No module named 'bundle_tools'` - and the
+battery's `twin_by_refs` step (its 3rd phase) died with exactly that traceback
+and the battery carried on regardless.  Fixed: the repo's `scripts/` is now on
+the path (`Data/` stays on it too - it is still where the catalogue and the
+overlay are read from).
+
+Two more of the same family, both silent:
+
+  * `make_export_vocab.py` overwrote a good vocabulary with an empty one.  Run
+    where the 1.4 GB export tree is absent it wrote a 0-line `stems.txt`, and
+    `sweeps/export_corpus.sh` regenerates unconditionally - so the box's own word
+    lists were destroyed and the sweep reported "0 candidates" in 2 s INSTEAD of
+    sweeping 979 M.  The tool now refuses and writes nothing; the sweep
+    regenerates only where the tree actually is (the vocabulary is 136 KB, so a
+    second machine is shipped it, not asked to rebuild it).
+  * 31 sweep call sites ran the catalogue refresh as `cd ../Data && python3
+    list_game_bundles.py` - that file is in `scripts/` now, the redirect hid the
+    error, and every post-cycle catalogue refresh was a no-op.
+
+AND THE CATALOGUE ITSELF: `--shipped-only` CANNOT SEE A REGISTERED MOD
+
+Re-reading the catalogue picked up 40 extra rows (20,000 -> 20,040) with 38
+`unit`s, a `package` and a `level`, all from bundle `d2d7af3d217320a8` - the
+`arena_mod` test bundle, which our own `add_bundle_to_db.py` registered in
+`bundle_database.data`.  `--shipped-only` keys on exactly that file, so it keeps
+the mod; the lever is `--exclude-bundle d2d7af3d217320a8` (75 bundles, 20,000
+resources, 18,031 named = 90.16%).  Worth knowing before reading any row count
+taken on a machine that has the mods installed.
+
